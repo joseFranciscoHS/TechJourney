@@ -13,10 +13,9 @@ def fit_model(
     scheduler,
     train_loader,
     num_epochs=10,
-    num_volumes=6,
     device="cuda",
     mask_p=0.25,
-    checkpoint_dir="",
+    checkpoint_dir=".",
 ):
     model.to(device)
 
@@ -35,18 +34,14 @@ def fit_model(
 
     logging.info(f"start epoch : {start_epoch}")
 
-    for epoch in tqdm(
-        range(start_epoch, num_epochs), desc=f"Training volumes {num_volumes}"
-    ):
+    for epoch in tqdm(range(start_epoch, num_epochs), desc=f"Training"):
         model.train()
         total_loss = 0
 
         for x in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
             [x] = x
             x = x.to(device)
-            p_mtx = np.random.uniform(
-                size=[x.shape[0], x.shape[1], x.shape[2], x.shape[3]]
-            )
+            p_mtx = np.random.uniform(size=[x.shape[0], x.shape[1], x.shape[2], x.shape[3]])
             mask = (p_mtx > mask_p).astype(np.double)
             mask = torch.tensor(mask).to(device, dtype=torch.float32)
 
@@ -54,9 +49,7 @@ def fit_model(
             # forward pass
             x_recon = model(x_masked)
             # loss
-            loss = torch.sum((x_recon - x) * (x_recon - x) * (1 - mask)) / torch.sum(
-                1 - mask
-            )
+            loss = torch.sum((x_recon - x) * (x_recon - x) * (1 - mask)) / torch.sum(1 - mask)
             # zero grad
             optimizer.zero_grad()
             # backward pass

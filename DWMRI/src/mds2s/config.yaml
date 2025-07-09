@@ -1,23 +1,42 @@
-train:
-  num_epochs: 100
-  num_volumes: 6
-  device: cpu
-  mask_p: 0.3
-  dropout_p: 0.3
-  checkpoint_dir: "checkpoints"
-  learning_rate: 0.00001
-  batch_size: 4
-
-model:
-  in_channel: 10
-  out_channel: 10
-
-data:
-  take_volumes: 6
-  noise_sigma: 0.01
-  bvalue: 2500
-
-checkpoints:
-  dir: "checkpoints"
-  name: "mds2s"
-  
+dbrain:
+  train:
+    num_epochs: 100
+    device: cpu
+    mask_p: 0.3
+    dropout_p: 0.3
+    learning_rate: 0.00001
+    batch_size: 8
+    scheduler_step_size: 10
+    scheduler_gamma: 0.1
+  model:
+    in_channel: 9
+    out_channel: 9
+  data:
+    num_volumes: 10
+    noise_sigma: 0.01
+    bvalue: 2500
+    nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+  checkpoints:
+    dir: "checkpoints"
+    name: "mds2s"
+stanford:
+  train:
+    num_epochs: 100
+    num_volumes: 6
+    device: cpu
+    mask_p: 0.3
+    dropout_p: 0.3
+    checkpoint_dir: "checkpoints"
+    learning_rate: 0.00001
+    batch_size: 8
+  model:
+    in_channel: 9
+    out_channel: 9
+  data:
+    num_volumes: 10
+    noise_sigma: 0.01
+    bvalue: 2500
+  checkpoints:
+    dir: "checkpoints"
+    name: "mds2s"

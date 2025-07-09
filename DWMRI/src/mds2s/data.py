@@ -28,13 +28,9 @@ class DBrainDataLoader:
         # Compute the magnitudes
         magnitudes = np.linalg.norm(bvecs, axis=1)
         # Identify non-zero magnitudes
-        non_zero_mask = (
-            magnitudes > 1e-8
-        )  # Threshold for considering a magnitude as non-zero
+        non_zero_mask = magnitudes > 1e-8  # Threshold for considering a magnitude as non-zero
         # Normalize only the non-zero vectors
-        bvecs[non_zero_mask] = (
-            bvecs[non_zero_mask] / magnitudes[non_zero_mask, np.newaxis]
-        )
+        bvecs[non_zero_mask] = bvecs[non_zero_mask] / magnitudes[non_zero_mask, np.newaxis]
         # Create b-values
         bvals = np.zeros(b_matrix.shape[0])
         bvals[np.sum(b_matrix, axis=1) > 0] = self.bvalue
@@ -76,7 +72,7 @@ class StanfordDataLoader:
 
         data_norm_spatial = normalize_spatial_dimensions(data)
 
-        return data_norm_spatial
+        return None, data_norm_spatial
 
 
 def add_rician_noise(data, sigma):
