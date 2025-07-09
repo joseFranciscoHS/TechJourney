@@ -50,6 +50,8 @@ def main(dataset: str):
         gamma=settings.train.scheduler_gamma,
     )
 
+    # checkpoint_dir =
+
     fit_model(
         model=model,
         optimizer=optimizer,
