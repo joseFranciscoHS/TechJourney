@@ -1,0 +1,23 @@
+train:
+  num_epochs: 100
+  num_volumes: 6
+  device: cpu
+  mask_p: 0.3
+  dropout_p: 0.3
+  checkpoint_dir: "checkpoints"
+  learning_rate: 0.00001
+  batch_size: 4
+
+model:
+  in_channel: 10
+  out_channel: 10
+
+data:
+  take_volumes: 6
+  noise_sigma: 0.01
+  bvalue: 2500
+
+checkpoints:
+  dir: "checkpoints"
+  name: "mds2s"
+  
