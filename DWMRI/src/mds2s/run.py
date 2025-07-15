@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data import DBrainDataLoader, StanfordDataLoader
 from fit import fit_model
 from model import Self2self
-
 from utils.utils import load_config
 
 
@@ -35,6 +34,8 @@ def main(dataset: str):
         raise ValueError(f"Invalid dataset: {dataset}")
 
     _, noisy_data = data_loader.load_data()
+    print(f"Noisy data shape: {noisy_data.shape}")
+    print("Taking slices")
     noisy_data = noisy_data[..., : settings.data.num_volumes]
 
     model = Self2self(

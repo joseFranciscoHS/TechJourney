@@ -104,7 +104,7 @@ class DataSet(Dataset):
     def __init__(self, data: np.ndarray, take_volumes=8):
         self.data = torch.from_numpy(data).type(torch.float)
         self.n_vols = data.shape[-1]
-        # Permute to (Z, X, Y, Bvalues)
+        # Permute from (X, Y, Z, Bvalues) to (Z, X, Y, Bvalues)
         self.data = self.data.permute(2, 0, 1, 3)
         self.take_volumes = take_volumes
 
