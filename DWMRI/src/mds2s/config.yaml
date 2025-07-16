@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 100
+    num_epochs: 2
     device: cpu
     mask_p: 0.3
     dropout_p: 0.3
@@ -8,9 +8,10 @@ dbrain:
     batch_size: 8
     scheduler_step_size: 10
     scheduler_gamma: 0.1
+    checkpoint_dir: "mds2s/checkpoints"
   model:
-    in_channel: 9
-    out_channel: 9
+    in_channel: 10 # is the same as the number of volumes
+    out_channel: 10
   data:
     num_volumes: 10
     noise_sigma: 0.01

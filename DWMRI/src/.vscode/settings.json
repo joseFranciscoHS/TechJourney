@@ -1,14 +1,30 @@
 {
     "python.linting.banditEnabled": false,
-    "python.linting.flake8Enabled": false,
-    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": false,
     "python.linting.pydocstyleEnabled": false,
     "python.linting.enabled": true,
     "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "79"
+    ],
     "black-formatter.interpreter": [
         "/home/zeus/miniconda3/envs/cloudspace/bin/python"
     ],
+    "black-formatter.args": [
+        "--line-length",
+        "79"
+    ],
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
-    }
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+    },
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
 }
