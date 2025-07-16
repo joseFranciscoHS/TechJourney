@@ -123,16 +123,29 @@ def fit_model(
         if avg_loss < best_loss:
             best_loss = avg_loss
             logging.info(f"New best loss: {best_loss:.6f}")
+            logging.info(f"Saving checkpoint with best loss: {best_loss:.6f}")
+            best_loss_checkpoint = os.path.join(
+                checkpoint_dir, "best_loss_checkpoint.pth"
+            )
+            save_checkpoint(
+                model_state_dict=model.state_dict(),
+                optimizer_state_dict=optimizer.state_dict(),
+                epoch=epoch + 1,
+                loss=avg_loss,
+                best_loss=best_loss,
+                filename=best_loss_checkpoint,
+                scheduler_state_dict=scheduler.state_dict(),
+            )
 
         # Save the latest checkpoint
         save_checkpoint(
-            model.state_dict(),
-            optimizer.state_dict(),
-            epoch + 1,
-            avg_loss,
-            best_loss,
-            latest_checkpoint,
-            scheduler.state_dict(),
+            model_state_dict=model.state_dict(),
+            optimizer_state_dict=optimizer.state_dict(),
+            epoch=epoch + 1,
+            loss=avg_loss,
+            best_loss=best_loss,
+            filename=latest_checkpoint,
+            scheduler_state_dict=scheduler.state_dict(),
         )
 
     logging.info("Training completed successfully.")

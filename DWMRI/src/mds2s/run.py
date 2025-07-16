@@ -110,6 +110,16 @@ def main(dataset: str):
     logging.info(f"Mask probability: {settings.train.mask_p}")
     logging.info(f"Checkpoint directory: {settings.train.checkpoint_dir}")
 
+    # setting checkpoint dir taking into account run/model parameters
+    checkpoint_dir = os.path.join(
+        settings.train.checkpoint_dir,
+        f"bvalue_{settings.data.bvalue}",
+        f"num_volumes_{settings.data.num_volumes}",
+        f"noise_sigma_{settings.data.noise_sigma}",
+        f"learning_rate_{settings.train.learning_rate}",
+    )
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
     fit_model(
         model=model,
         optimizer=optimizer,
@@ -118,7 +128,7 @@ def main(dataset: str):
         num_epochs=settings.train.num_epochs,
         device=settings.train.device,
         mask_p=settings.train.mask_p,
-        checkpoint_dir=settings.train.checkpoint_dir,
+        checkpoint_dir=checkpoint_dir,
     )
 
     logging.info("Training setup completed successfully")
