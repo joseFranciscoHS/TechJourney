@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 2
+    num_epochs: 100
     device: cpu
     mask_p: 0.3
     dropout_p: 0.3
@@ -8,7 +8,13 @@ dbrain:
     batch_size: 8
     scheduler_step_size: 10
     scheduler_gamma: 0.1
-    checkpoint_dir: "mds2s/checkpoints"
+    checkpoint_dir: "mds2s/checkpoints/dbrain"
+  reconstruct:
+    n_preds: 2
+    mask_p: 0.3
+    device: cpu
+    metrics_dir: "mds2s/metrics/dbrain"
+    images_dir: "mds2s/images/dbrain"
   model:
     in_channel: 10 # is the same as the number of volumes
     out_channel: 10
@@ -18,9 +24,6 @@ dbrain:
     bvalue: 2500
     nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
-  checkpoints:
-    dir: "checkpoints"
-    name: "mds2s"
 stanford:
   train:
     num_epochs: 100
@@ -38,6 +41,3 @@ stanford:
     num_volumes: 10
     noise_sigma: 0.01
     bvalue: 2500
-  checkpoints:
-    dir: "checkpoints"
-    name: "mds2s"
