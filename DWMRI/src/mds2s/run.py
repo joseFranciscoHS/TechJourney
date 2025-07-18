@@ -108,15 +108,19 @@ def main(
     optimizer = torch.optim.Adam(
         model.parameters(), lr=settings.train.learning_rate
     )
-    scheduler = torch.optim.lr_scheduler.StepLR(
-        optimizer,
-        step_size=settings.train.scheduler_step_size,
-        gamma=settings.train.scheduler_gamma,
-    )
     logging.info(f"Optimizer: Adam(lr={settings.train.learning_rate})")
-    logging.info(
-        f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, gamma={settings.train.scheduler_gamma})"
-    )
+
+    scheduler = None
+    if settings.train.use_scheduler:
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=settings.train.scheduler_step_size,
+            gamma=settings.train.scheduler_gamma,
+        )
+        logging.info(
+            f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
+            f"gamma={settings.train.scheduler_gamma})"
+        )
 
     logging.info(f"Training device: {settings.train.device}")
     logging.info(f"Number of epochs: {settings.train.num_epochs}")

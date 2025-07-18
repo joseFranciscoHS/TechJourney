@@ -12,7 +12,7 @@ from utils.checkpoint import load_checkpoint, save_checkpoint
 def fit_model(
     model,
     optimizer: torch.optim.Optimizer,
-    scheduler: LRScheduler,
+    scheduler: LRScheduler | None,
     train_loader,
     num_epochs=10,
     device="cuda",
@@ -43,7 +43,7 @@ def fit_model(
     )
 
     # Restore scheduler state if it exists
-    if scheduler_state_dict is not None:
+    if scheduler is not None and scheduler_state_dict is not None:
         scheduler.load_state_dict(scheduler_state_dict)
         logging.info("Scheduler state restored from checkpoint")
 
@@ -106,7 +106,8 @@ def fit_model(
         max_loss = max(epoch_losses)
         std_loss = np.std(epoch_losses)
 
-        scheduler.step(epoch)
+        if scheduler is not None:
+            scheduler.step(epoch)
         new_lr = optimizer.param_groups[0]["lr"]
 
         logging.info(f"Epoch {epoch+1}/{num_epochs} completed")
@@ -127,6 +128,9 @@ def fit_model(
             best_loss_checkpoint = os.path.join(
                 checkpoint_dir, "best_loss_checkpoint.pth"
             )
+            scheduler_state_dict = (
+                scheduler.state_dict() if scheduler is not None else None
+            )
             save_checkpoint(
                 model_state_dict=model.state_dict(),
                 optimizer_state_dict=optimizer.state_dict(),
@@ -134,7 +138,7 @@ def fit_model(
                 loss=avg_loss,
                 best_loss=best_loss,
                 filename=best_loss_checkpoint,
-                scheduler_state_dict=scheduler.state_dict(),
+                scheduler_state_dict=scheduler_state_dict,
             )
 
         # Save the latest checkpoint
@@ -145,7 +149,7 @@ def fit_model(
             loss=avg_loss,
             best_loss=best_loss,
             filename=latest_checkpoint,
-            scheduler_state_dict=scheduler.state_dict(),
+            scheduler_state_dict=scheduler_state_dict,
         )
 
     logging.info("Training completed successfully.")
