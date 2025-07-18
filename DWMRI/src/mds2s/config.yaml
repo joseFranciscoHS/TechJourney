@@ -1,7 +1,7 @@
 dbrain:
   train:
     num_epochs: 100
-    device: cpu
+    device: cuda
     mask_p: 0.3
     dropout_p: 0.3
     learning_rate: 0.00001
@@ -10,9 +10,9 @@ dbrain:
     scheduler_gamma: 0.1
     checkpoint_dir: "mds2s/checkpoints/dbrain"
   reconstruct:
-    n_preds: 2
+    n_preds: 5
     mask_p: 0.3
-    device: cpu
+    device: cuda
     metrics_dir: "mds2s/metrics/dbrain"
     images_dir: "mds2s/images/dbrain"
   model:
@@ -22,8 +22,10 @@ dbrain:
     num_volumes: 10
     noise_sigma: 0.01
     bvalue: 2500
-    nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
-    bvecs_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
 stanford:
   train:
     num_epochs: 100

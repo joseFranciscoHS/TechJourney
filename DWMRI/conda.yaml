@@ -253,7 +253,7 @@ dependencies:
     - defusedxml==0.7.1 
     - jupyterlab-server==2.27.3 
     - grpcio==1.70.0 
-    - torch==2.2.1+cu121 
+    - torch==2.2.1+cu121 torchvision==0.17.1+cu121 torchaudio==2.2.1 --index-url https://download.pytorch.org/whl/cu121
     - ipython==8.17.2 
     - prompt-toolkit==3.0.50 
     - fonttools==4.55.8 
