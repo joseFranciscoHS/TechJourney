@@ -21,7 +21,7 @@ dbrain:
     out_channel: 10
   data:
     num_volumes: 10
-    noise_sigma: 0.06
+    noise_sigma: 0.1
     bvalue: 2500
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
