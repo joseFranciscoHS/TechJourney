@@ -1,7 +1,6 @@
 import logging
 import os
 
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
@@ -39,7 +38,7 @@ def main(
     logging.info(f"Loading config from: {config_path}")
 
     settings = load_config(config_path)
-    logging.info(f"Configuration loaded successfully")
+    logging.info("Configuration loaded successfully")
 
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
@@ -65,10 +64,10 @@ def main(
     _, noisy_data = data_loader.load_data()
     # omitting the b0s from the data
     take_volumes = settings.data.num_b0s + settings.data.num_volumes
-    noisy_data = np.transpose(
-        noisy_data[..., settings.data.num_b0s : take_volumes],
-        (2, 3, 0, 1),
+    logging.info(
+        f"Taking volumes from {settings.data.num_b0s} to {take_volumes}"
     )
+    noisy_data = noisy_data[..., settings.data.num_b0s : take_volumes]
     logging.info(f"Noisy data shape: {noisy_data.shape}")
     logging.info(
         f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"

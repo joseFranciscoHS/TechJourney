@@ -1,3 +1,5 @@
+# flake8: noqa: E501
+import logging
 from collections import OrderedDict
 
 import torch
@@ -7,6 +9,9 @@ import torch.nn as nn
 class FactorizedBlock(nn.Module):
     def __init__(self, in_channels, out_channels, groups):
         super(FactorizedBlock, self).__init__()
+        logging.info(
+            f"Initializing FactorizedBlock: in_channels={in_channels}, out_channels={out_channels}, groups={groups}"
+        )
 
         self.conv_1 = nn.Sequential(
             OrderedDict(
@@ -80,13 +85,14 @@ class FactorizedBlock(nn.Module):
         )
 
     def forward(self, x):
+        logging.debug(f"FactorizedBlock forward: input shape={x.shape}")
         x_1 = self.conv_1(x)
         x_2 = self.conv_2(x)
         x_3 = self.conv_3(x)
 
         x = torch.cat([x_1, x_2, x_3], 1)
         x = self.conv_4(x)
-
+        logging.debug(f"FactorizedBlock forward: output shape={x.shape}")
         return x
 
 
@@ -101,6 +107,9 @@ class DenoisingBlock(nn.Module):
         groups=16,
     ):
         super(DenoisingBlock, self).__init__()
+        logging.info(
+            f"Initializing DenoisingBlock: in_channels={in_channels}, inner_channels={inner_channels}, out_channels={out_channels}, inner_convolutions={inner_convolutions}, residual={residual}"
+        )
 
         self.inner_convolutions = inner_convolutions
         self.residual = residual
@@ -144,6 +153,7 @@ class DenoisingBlock(nn.Module):
         )
 
     def forward(self, x):
+        logging.debug(f"DenoisingBlock forward: input shape={x.shape}")
         output = self.input_convolution(x)
         output = torch.cat([x, output], 1)
 
@@ -156,12 +166,16 @@ class DenoisingBlock(nn.Module):
         if self.residual:
             output += x
 
+        logging.debug(f"DenoisingBlock forward: output shape={x.shape}")
         return output
 
 
 class InputBlock(nn.Module):
     def __init__(self, in_channels, inner_channels, out_channels):
         super(InputBlock, self).__init__()
+        logging.info(
+            f"Initializing InputBlock: in_channels={in_channels}, inner_channels={inner_channels}, out_channels={out_channels}"
+        )
         self.in_channels = in_channels
         self.inner_channels = inner_channels
         self.out_channels = out_channels
@@ -194,15 +208,20 @@ class InputBlock(nn.Module):
         )
 
     def forward(self, inputs):
+        logging.debug(f"InputBlock forward: input shape={inputs.shape}")
         inputs = self.input_conv(inputs)  # 1 x M x N
         down = self.down_conv(inputs)  # K x M/2 x N/2
 
+        logging.debug(f"InputBlock forward: output shape={inputs.shape}")
         return down, inputs
 
 
 class OutputBlock(nn.Module):
     def __init__(self, in_channels, inner_channels, out_channels):
         super(OutputBlock, self).__init__()
+        logging.info(
+            f"Initializing OutputBlock: in_channels={in_channels}, inner_channels={inner_channels}, out_channels={out_channels}"
+        )
         self.conv_t = nn.ConvTranspose3d(
             in_channels,
             inner_channels,
@@ -229,6 +248,9 @@ class OutputBlock(nn.Module):
         )
 
     def forward(self, x, residual):
+        logging.debug(
+            f"OutputBlock forward: input x shape={x.shape}, residual shape={residual.shape}"
+        )
         x = self.act_t(self.conv_t(x)) + residual
         return self.output_conv(x)
 
@@ -236,6 +258,9 @@ class OutputBlock(nn.Module):
 class GatedBlock(nn.Module):
     def __init__(self, x_channels, h_channels, dense_convs=1, groups=1):
         super(GatedBlock, self).__init__()
+        logging.info(
+            f"Initializing GatedBlock: x_channels={x_channels}, h_channels={h_channels}, dense_convs={dense_convs}, groups={groups}"
+        )
         self._test = False
 
         self.z_t = nn.Sequential(
@@ -280,6 +305,9 @@ class GatedBlock(nn.Module):
         )
 
     def forward(self, x, h):
+        logging.debug(
+            f"GatedBlock forward: x shape={x.shape}, h shape={h.shape}"
+        )
         if h is None:
             h = torch.zeros(
                 x.size(), dtype=x.dtype, layout=x.layout, device=x.device
@@ -309,7 +337,10 @@ class DenoiserNet(nn.Module):
         residual=True,
         base_filters=32,
     ):
-        super().__init__()
+        super(DenoiserNet, self).__init__()
+        logging.info(
+            f"Initializing DenoiserNet: input_channels={input_channels}, output_channels={output_channels}, groups={groups}, dense_convs={dense_convs}, residual={residual}, base_filters={base_filters}"
+        )
         groups = groups
 
         dense_convs = dense_convs
@@ -397,6 +428,7 @@ class DenoiserNet(nn.Module):
         )
 
     def forward(self, inputs):
+        logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
         up_0 = self.input_block(inputs)
         x = self.down_block(up_0)
 
