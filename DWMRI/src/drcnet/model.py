@@ -261,7 +261,6 @@ class GatedBlock(nn.Module):
         logging.info(
             f"Initializing GatedBlock: x_channels={x_channels}, h_channels={h_channels}, dense_convs={dense_convs}, groups={groups}"
         )
-        self._test = False
 
         self.z_t = nn.Sequential(
             OrderedDict(
@@ -305,9 +304,6 @@ class GatedBlock(nn.Module):
         )
 
     def forward(self, x, h):
-        logging.debug(
-            f"GatedBlock forward: x shape={x.shape}, h shape={h.shape}"
-        )
         if h is None:
             h = torch.zeros(
                 x.size(), dtype=x.dtype, layout=x.layout, device=x.device
@@ -321,10 +317,10 @@ class GatedBlock(nn.Module):
 
         h_t = (1 - z_t) * h + z_t * h_t
 
-        if self._test:
-            return h_t, z_t
-        else:
-            return h_t
+        logging.debug(
+            f"GatedBlock forward: h_t shape={h_t.shape}, z_t shape={z_t.shape}, r_t shape={r_t.shape}"
+        )
+        return h_t
 
 
 class DenoiserNet(nn.Module):
