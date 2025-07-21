@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import torch
+from torch.nn import L1Loss
 from torch.optim.lr_scheduler import LRScheduler
 from tqdm import tqdm
 
@@ -45,6 +46,7 @@ def fit_model(
 
     logging.info(f"Training starting from epoch: {start_epoch}")
     logging.info(f"Best loss so far: {best_loss:.6f}")
+    loss_fn = L1Loss()
 
     for epoch in tqdm(range(start_epoch, num_epochs), desc="Training"):
         model.train()
@@ -76,7 +78,7 @@ def fit_model(
             # forward pass
             x_recon = model(x)
             # loss
-            loss = torch.sum((x_recon - y) * (x_recon - y)) / torch.sum(1)
+            loss = loss_fn(x_recon, y)
             # zero grad
             optimizer.zero_grad()
             # backward pass
