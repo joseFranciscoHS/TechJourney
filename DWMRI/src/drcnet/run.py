@@ -147,7 +147,6 @@ def main(
             train_loader=train_loader,
             num_epochs=settings.train.num_epochs,
             device=settings.train.device,
-            mask_p=settings.train.mask_p,
             checkpoint_dir=checkpoint_dir,
         )
 

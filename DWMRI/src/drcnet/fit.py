@@ -16,14 +16,10 @@ def fit_model(
     train_loader,
     num_epochs=10,
     device="cuda",
-    mask_p=0.25,
     checkpoint_dir=".",
 ):
     logging.info(
-        (
-            f"Starting training - device: {device}, "
-            f"epochs: {num_epochs}, mask_p: {mask_p}"
-        )
+        (f"Starting training - device: {device}, " f"epochs: {num_epochs}")
     )
     logging.info(f"Model device: {next(model.parameters()).device}")
 
