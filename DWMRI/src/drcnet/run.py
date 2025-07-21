@@ -76,7 +76,12 @@ def main(
     train_set = DataSet(
         noisy_data,
         take_volume_idx=settings.data.take_volume_idx,
-        patch_size=settings.data.patch_size,
+        patch_size=(
+            settings.data.num_volumes,
+            settings.data.patch_size,
+            settings.data.patch_size,
+            settings.data.patch_size,
+        ),
         step=settings.data.step,
     )
     train_loader = DataLoader(
