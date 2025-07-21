@@ -5,12 +5,12 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from mds2s.data import DBrainDataLoader, StanfordDataLoader
 from mds2s.fit import fit_model
 from mds2s.model import Self2self
 from mds2s.reconstruction import reconstruct_dwis
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
+from utils.data import DBrainDataLoader, StanfordDataLoader
 from utils.metrics import (
     compare_volumes,
     compute_metrics,
@@ -70,8 +70,11 @@ def main(
     logging.info(
         f"Transposing data with num_volumes={settings.data.num_volumes}"
     )
+    # omitting the b0s from the data
+    take_volumes = settings.data.num_b0s + settings.data.num_volumes
     noisy_data = np.transpose(
-        noisy_data[..., : settings.data.num_volumes], (2, 3, 0, 1)
+        noisy_data[..., settings.data.num_b0s : take_volumes],
+        (2, 3, 0, 1),
     )
     logging.info(f"Transposed data shape: {noisy_data.shape}")
     logging.info(
