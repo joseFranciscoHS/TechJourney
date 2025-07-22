@@ -67,7 +67,12 @@ def main(
     logging.info(
         f"Taking volumes from {settings.data.num_b0s} to {take_volumes}"
     )
-    noisy_data = noisy_data[..., :96, settings.data.num_b0s : take_volumes]
+    noisy_data = noisy_data[
+        : settings.data.take_x,
+        : settings.data.take_y,
+        : settings.data.take_z,
+        settings.data.num_b0s : take_volumes,
+    ]
     logging.info(f"Noisy data shape: {noisy_data.shape}")
     logging.info(
         f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
@@ -98,7 +103,12 @@ def main(
         dense_convs=settings.model.dense_convs,
         residual=settings.model.residual,
         base_filters=settings.model.base_filters,
-        output_shape=(settings.model.out_channel, *noisy_data.shape[:3]),
+        output_shape=(
+            settings.model.out_channel,
+            settings.data.patch_size,
+            settings.data.patch_size,
+            settings.data.patch_size,
+        ),
         device=settings.train.device,
     )
     logging.info(
@@ -160,21 +170,36 @@ def main(
         best_loss_checkpoint = os.path.join(
             checkpoint_dir, "best_loss_checkpoint.pth"
         )
-        model, _, _, _, _ = load_checkpoint(
-            model=model,
+        del model
+        reconstruct_model = DenoiserNet(
+            input_channels=settings.model.in_channel,
+            output_channels=settings.model.out_channel,
+            groups=settings.model.groups,
+            dense_convs=settings.model.dense_convs,
+            residual=settings.model.residual,
+            base_filters=settings.model.base_filters,
+            output_shape=(
+                settings.model.out_channel,
+                settings.data.take_x,
+                settings.data.take_y,
+                settings.data.take_z,
+            ),
+            device=settings.train.device,
+        )
+        reconstruct_model, _, _, _, _ = load_checkpoint(
+            model=reconstruct_model,
             optimizer=optimizer,
             filename=best_loss_checkpoint,
             device=settings.reconstruct.device,
         )
-        noisy_data_shape = noisy_data.shape
         reconstruct_set = DataSet(
             noisy_data,
             take_volume_idx=settings.data.take_volume_idx,
             patch_size=(
-                noisy_data_shape[3],
-                noisy_data_shape[0],
-                noisy_data_shape[1],
-                noisy_data_shape[2],
+                settings.data.num_volumes,
+                settings.data.take_x,
+                settings.data.take_y,
+                settings.data.take_z,
             ),
             step=1,
         )
@@ -182,7 +207,7 @@ def main(
             reconstruct_set, batch_size=1, shuffle=False
         )
         reconstructed_dwis = reconstruct_dwis(
-            model=model,
+            model=reconstruct_model,
             data_loader=reconstruct_loader,
             device=settings.reconstruct.device,
         )

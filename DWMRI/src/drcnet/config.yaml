@@ -27,6 +27,9 @@ dbrain:
     num_volumes: 10
     noise_sigma: 0.01
     bvalue: 2500
+    take_x: 128
+    take_y: 128
+    take_z: 96
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
