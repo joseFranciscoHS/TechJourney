@@ -67,7 +67,7 @@ def main(
     logging.info(
         f"Taking volumes from {settings.data.num_b0s} to {take_volumes}"
     )
-    noisy_data = noisy_data[..., settings.data.num_b0s : take_volumes]
+    noisy_data = noisy_data[...,:96 , settings.data.num_b0s : take_volumes]
     logging.info(f"Noisy data shape: {noisy_data.shape}")
     logging.info(
         f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
@@ -98,7 +98,8 @@ def main(
         dense_convs=settings.model.dense_convs,
         residual=settings.model.residual,
         base_filters=settings.model.base_filters,
-        output_shape=(settings.model.output_channels, *noisy_data.shape[:3]),
+        output_shape=(settings.model.out_channel, *noisy_data.shape[:3]),
+        device=settings.train.device,
     )
     logging.info(
         f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"

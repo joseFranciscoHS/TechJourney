@@ -333,6 +333,7 @@ class DenoiserNet(nn.Module):
         residual=True,
         base_filters=32,
         output_shape=(1, 128, 128, 128),
+        device="cpu",
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
@@ -425,6 +426,7 @@ class DenoiserNet(nn.Module):
         )
 
         self.output_image = torch.rand(output_shape, dtype=torch.float)
+        self.output_image.to(device)
 
     def forward(self, inputs):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
