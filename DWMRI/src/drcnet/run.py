@@ -98,6 +98,7 @@ def main(
         dense_convs=settings.model.dense_convs,
         residual=settings.model.residual,
         base_filters=settings.model.base_filters,
+        output_shape=(settings.model.output_channels, *noisy_data.shape[:3]),
     )
     logging.info(
         f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"

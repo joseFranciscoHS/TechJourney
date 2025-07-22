@@ -332,6 +332,7 @@ class DenoiserNet(nn.Module):
         dense_convs=2,
         residual=True,
         base_filters=32,
+        output_shape=(1, 128, 128, 128),
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
@@ -423,6 +424,10 @@ class DenoiserNet(nn.Module):
             )
         )
 
+        self.output_image = torch.rand_like(
+            output_shape, dtype=torch.float32, requires_grad=False
+        )
+
     def forward(self, inputs):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
         up_0 = self.input_block(inputs)
@@ -436,4 +441,6 @@ class DenoiserNet(nn.Module):
 
         up_3 = self.up_block(x)
 
-        return self.output_block(torch.cat([up_0, up_3], 1)) + inputs
+        return (
+            self.output_block(torch.cat([up_0, up_3], 1)) + self.output_image
+        )
