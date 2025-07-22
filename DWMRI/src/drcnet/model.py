@@ -424,9 +424,7 @@ class DenoiserNet(nn.Module):
             )
         )
 
-        self.output_image = torch.rand_like(
-            output_shape, dtype=torch.float32, requires_grad=False
-        )
+        self.output_image = torch.rand(output_shape, dtype=torch.float)
 
     def forward(self, inputs):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
