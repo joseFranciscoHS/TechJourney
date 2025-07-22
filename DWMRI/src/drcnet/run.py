@@ -1,23 +1,23 @@
 import logging
 import os
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
 from drcnet.data import DataSet
 from drcnet.fit import fit_model
 from drcnet.model import DenoiserNet
+from drcnet.reconstruction import reconstruct_dwis
 from utils import setup_logging
-
-# from utils.checkpoint import load_checkpoint
+from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
-
-# from utils.metrics import (
-#     compare_volumes,
-#     compute_metrics,
-#     save_metrics,
-#     visualize_single_volume,
-# )
+from utils.metrics import (
+    compare_volumes,
+    compute_metrics,
+    save_metrics,
+    visualize_single_volume,
+)
 from utils.utils import load_config
 
 
@@ -67,7 +67,7 @@ def main(
     logging.info(
         f"Taking volumes from {settings.data.num_b0s} to {take_volumes}"
     )
-    noisy_data = noisy_data[...,:96 , settings.data.num_b0s : take_volumes]
+    noisy_data = noisy_data[..., :96, settings.data.num_b0s : take_volumes]
     logging.info(f"Noisy data shape: {noisy_data.shape}")
     logging.info(
         f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
@@ -155,72 +155,84 @@ def main(
         logging.info("Training setup completed successfully")
         logging.info(f"Training completed. Log file: {log_file}")
 
-    # if reconstruct:
-    #     logging.info("Reconstructing DWIs...")
-    #     best_loss_checkpoint = os.path.join(
-    #         checkpoint_dir, "best_loss_checkpoint.pth"
-    #     )
-    #     model, _, _, _, _ = load_checkpoint(
-    #         model=model,
-    #         optimizer=optimizer,
-    #         filename=best_loss_checkpoint,
-    #         device=settings.reconstruct.device,
-    #     )
-    #     reconstruct_loader = DataLoader(train_set, batch_size=1, shuffle=False)
-    #     reconstructed_dwis = reconstruct_dwis(
-    #         model=model,
-    #         data_loader=reconstruct_loader,
-    #         device=settings.reconstruct.device,
-    #         data_shape=x_train.shape,
-    #         mask_p=settings.reconstruct.mask_p,
-    #         n_preds=settings.reconstruct.n_preds,
-    #     )
-    #     logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
-    #     logging.info(
-    #         f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
-    #         f"max: {reconstructed_dwis.max():.4f}, "
-    #         f"mean: {reconstructed_dwis.mean():.4f}"
-    #     )
-    #     logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
+    if reconstruct:
+        logging.info("Reconstructing DWIs...")
+        best_loss_checkpoint = os.path.join(
+            checkpoint_dir, "best_loss_checkpoint.pth"
+        )
+        model, _, _, _, _ = load_checkpoint(
+            model=model,
+            optimizer=optimizer,
+            filename=best_loss_checkpoint,
+            device=settings.reconstruct.device,
+        )
+        noisy_data_shape = noisy_data.shape
+        reconstruct_set = DataSet(
+            noisy_data,
+            take_volume_idx=settings.data.take_volume_idx,
+            patch_size=(
+                noisy_data_shape[3],
+                noisy_data_shape[0],
+                noisy_data_shape[1],
+                noisy_data_shape[2],
+            ),
+            step=1,
+        )
+        reconstruct_loader = DataLoader(
+            reconstruct_set, batch_size=1, shuffle=False
+        )
+        reconstructed_dwis = reconstruct_dwis(
+            model=model,
+            data_loader=reconstruct_loader,
+            device=settings.reconstruct.device,
+        )
+        logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
+        logging.info(
+            f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
+            f"max: {reconstructed_dwis.max():.4f}, "
+            f"mean: {reconstructed_dwis.mean():.4f}"
+        )
+        logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-    #     metrics = compute_metrics(noisy_data, reconstructed_dwis)
-    #     logging.info(f"Metrics: {metrics}")
-    #     # setting metrics dir taking into account run/model parameters
-    #     metrics_dir = os.path.join(
-    #         settings.reconstruct.metrics_dir,
-    #         f"bvalue_{settings.data.bvalue}",
-    #         f"num_volumes_{settings.data.num_volumes}",
-    #         f"noise_sigma_{settings.data.noise_sigma}",
-    #         f"learning_rate_{settings.train.learning_rate}",
-    #     )
-    #     os.makedirs(metrics_dir, exist_ok=True)
-    #     save_metrics(metrics, metrics_dir)
+        metrics = compute_metrics(noisy_data, reconstructed_dwis)
+        logging.info(f"Metrics: {metrics}")
+        # setting metrics dir taking into account run/model parameters
+        metrics_dir = os.path.join(
+            settings.reconstruct.metrics_dir,
+            f"bvalue_{settings.data.bvalue}",
+            f"num_volumes_{settings.data.num_volumes}",
+            f"noise_sigma_{settings.data.noise_sigma}",
+            f"learning_rate_{settings.train.learning_rate}",
+        )
+        os.makedirs(metrics_dir, exist_ok=True)
+        save_metrics(metrics, metrics_dir)
 
-    #     if generate_images:
-    #         logging.info("Generating images...")
-    #         # setting images dir taking into account run/model parameters
-    #         images_dir = os.path.join(
-    #             settings.reconstruct.images_dir,
-    #             f"bvalue_{settings.data.bvalue}",
-    #             f"num_volumes_{settings.data.num_volumes}",
-    #             f"noise_sigma_{settings.data.noise_sigma}",
-    #             f"learning_rate_{settings.train.learning_rate}",
-    #         )
-    #         os.makedirs(images_dir, exist_ok=True)
-    #         logging.info(f"Saving images to: {images_dir}")
-    #         compare_volumes(
-    #             noisy_data,
-    #             reconstructed_dwis,
-    #             file_name=os.path.join(images_dir, "comparison.png"),
-    #         )
-    #         logging.info(
-    #             f"Saving single volume image to: {images_dir}/single.png"
-    #         )
-    #         visualize_single_volume(
-    #             reconstructed_dwis,
-    #             file_name=os.path.join(images_dir, "single.png"),
-    #         )
+        if generate_images:
+            logging.info("Generating images...")
+            # setting images dir taking into account run/model parameters
+            images_dir = os.path.join(
+                settings.reconstruct.images_dir,
+                f"bvalue_{settings.data.bvalue}",
+                f"num_volumes_{settings.data.num_volumes}",
+                f"noise_sigma_{settings.data.noise_sigma}",
+                f"learning_rate_{settings.train.learning_rate}",
+            )
+            os.makedirs(images_dir, exist_ok=True)
+            logging.info(f"Saving images to: {images_dir}")
+            compare_volumes(
+                np.transpose(noisy_data, (3, 0, 1, 2)),
+                np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
+                file_name=os.path.join(images_dir, "comparison.png"),
+            )
+            logging.info(
+                f"Saving single volume image to: {images_dir}/single.png"
+            )
+            visualize_single_volume(
+                reconstructed_dwis,
+                file_name=os.path.join(images_dir, "single.png"),
+            )
 
 
 if __name__ == "__main__":
+    main(dataset="dbrain")
     main(dataset="dbrain")

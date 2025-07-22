@@ -1,7 +1,7 @@
 dbrain:
   train:
-    num_epochs: 1
-    device: cpu
+    num_epochs: 300
+    device: cuda
     learning_rate: 0.0001
     batch_size: 8
     use_scheduler: False
@@ -9,7 +9,7 @@ dbrain:
     scheduler_gamma: 0.1
     checkpoint_dir: "drcnet/checkpoints/dbrain"
   reconstruct:
-    device: cpu
+    device: cuda
     metrics_dir: "drcnet/metrics/dbrain"
     images_dir: "drcnet/images/dbrain"
   model:
