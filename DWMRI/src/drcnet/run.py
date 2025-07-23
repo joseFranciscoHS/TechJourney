@@ -219,18 +219,18 @@ def main(
         )
         logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-        metrics = compute_metrics(noisy_data, reconstructed_dwis)
-        logging.info(f"Metrics: {metrics}")
+        # metrics = compute_metrics(noisy_data, reconstructed_dwis)
+        # logging.info(f"Metrics: {metrics}")
         # setting metrics dir taking into account run/model parameters
-        metrics_dir = os.path.join(
-            settings.reconstruct.metrics_dir,
-            f"bvalue_{settings.data.bvalue}",
-            f"num_volumes_{settings.data.num_volumes}",
-            f"noise_sigma_{settings.data.noise_sigma}",
-            f"learning_rate_{settings.train.learning_rate}",
-        )
-        os.makedirs(metrics_dir, exist_ok=True)
-        save_metrics(metrics, metrics_dir)
+        # metrics_dir = os.path.join(
+        #     settings.reconstruct.metrics_dir,
+        #     f"bvalue_{settings.data.bvalue}",
+        #     f"num_volumes_{settings.data.num_volumes}",
+        #     f"noise_sigma_{settings.data.noise_sigma}",
+        #     f"learning_rate_{settings.train.learning_rate}",
+        # )
+        # os.makedirs(metrics_dir, exist_ok=True)
+        # save_metrics(metrics, metrics_dir)
 
         if generate_images:
             logging.info("Generating images...")
@@ -244,17 +244,21 @@ def main(
             )
             os.makedirs(images_dir, exist_ok=True)
             logging.info(f"Saving images to: {images_dir}")
-            compare_volumes(
-                np.transpose(noisy_data, (3, 0, 1, 2)),
-                np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
-                file_name=os.path.join(images_dir, "comparison.png"),
-            )
+            #compare_volumes(
+            #    np.transpose(noisy_data, (3, 0, 1, 2)),
+            #    np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
+            #    file_name=os.path.join(images_dir, "comparison.png"),
+            #)
             logging.info(
                 f"Saving single volume image to: {images_dir}/single.png"
             )
             visualize_single_volume(
-                reconstructed_dwis,
+                np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
                 file_name=os.path.join(images_dir, "single.png"),
+            )
+            visualize_single_volume(
+                np.transpose(noisy_data, (2,3,0,1)),
+                file_name=os.path.join(images_dir, "noisy.png"),
             )
 
 

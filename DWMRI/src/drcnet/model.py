@@ -425,9 +425,7 @@ class DenoiserNet(nn.Module):
             )
         )
 
-        self.output_image = torch.rand(output_shape, dtype=torch.float).to(
-            device
-        )
+        self.output_image = torch.full(output_shape, 0, dtype=torch.float, device=device)
 
     def forward(self, inputs):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")

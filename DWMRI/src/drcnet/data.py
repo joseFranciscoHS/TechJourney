@@ -35,7 +35,7 @@ class DataSet(torch.utils.data.Dataset):
         # transpose data from (X, Y, Z, Bvalues) to (Bvalues, X, Y, Z)
         self.n_vols = data.shape[-1]
         data = np.transpose(data, (3, 0, 1, 2))
-        logging.debug(f"Data transposed to: {data.shape}")
+        logging.info(f"Data transposed to: {data.shape}")
         windows = sliding_windows(data, patch_size, step)
         self.windows = torch.from_numpy(windows).type(torch.float)
         logging.info(
@@ -48,7 +48,7 @@ class DataSet(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         x = self.windows[index, self.take_volumes]
-        y = self.windows[index, self.take_volume_idx]
+        y = self.windows[index, self.take_volume_idx:self.take_volume_idx+1]
         logging.debug(
             f"__getitem__ index={index}, x.shape={x.shape}, y.shape={y.shape}"
         )

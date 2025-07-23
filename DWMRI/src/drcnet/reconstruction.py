@@ -14,4 +14,4 @@ def reconstruct_dwis(model, data_loader, device):
             reconstructed = model(x)
             reconstructed = reconstructed.squeeze().detach().cpu().numpy()
     logging.info("DWI reconstruction completed.")
-    return reconstructed[..., None]
+    return reconstructed[None, ...]
