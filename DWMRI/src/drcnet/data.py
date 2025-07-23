@@ -75,8 +75,8 @@ class ReconstructionDataSet(torch.utils.data.Dataset):
         take_volumes = [
             i for i in range(self.n_vols) if i != index
         ]
-        x = self.data[None, take_volumes]
-        y = self.data[None, index:index+1]
+        x = self.data[take_volumes]
+        y = self.data[index:index+1]
         return x, y
 
     def __len__(self):
