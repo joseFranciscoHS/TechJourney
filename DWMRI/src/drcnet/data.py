@@ -25,7 +25,7 @@ def sliding_windows(image, patch_size, step):
     return image
 
 
-class DataSet(torch.utils.data.Dataset):
+class TrainingDataSet(torch.utils.data.Dataset):
     def __init__(
         self, data: np.ndarray, take_volume_idx=0, patch_size=32, step=16
     ):
@@ -59,3 +59,27 @@ class DataSet(torch.utils.data.Dataset):
         length = len(self.windows)
         logging.debug(f"__len__ called, returning {length}")
         return length
+
+
+class ReconstructionDataSet(torch.utils.data.Dataset):
+    def __init__(
+        self, data: np.ndarray
+    ):
+        logging.info(f"Initializing DataSet: data.shape={data.shape}")
+        # transpose data from (X, Y, Z, Bvalues) to (Bvalues, X, Y, Z)
+        self.n_vols = data.shape[-1]
+        self.data = torch.from_numpy(np.transpose(data, (3, 0, 1, 2))).type(torch.float)
+        logging.info(f"Data transposed to: {self.data.shape}")
+
+    def __getitem__(self, index):
+        take_volumes = [
+            i for i in range(self.n_vols) if i != index
+        ]
+        x = self.data[None, take_volumes]
+        y = self.data[None, index:index+1]
+        return x, y
+
+    def __len__(self):
+        """number of volumes"""
+        logging.debug(f"__len__ called, returning {self.n_vols}")
+        return self.n_vols

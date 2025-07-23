@@ -3,12 +3,11 @@ import os
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-
-from drcnet.data import DataSet
+from drcnet.data import ReconstructionDataSet, TrainingDataSet
 from drcnet.fit import fit_model
 from drcnet.model import DenoiserNet
 from drcnet.reconstruction import reconstruct_dwis
+from torch.utils.data import DataLoader
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
@@ -78,7 +77,7 @@ def main(
         f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
     )
 
-    train_set = DataSet(
+    train_set = TrainingDataSet(
         noisy_data,
         take_volume_idx=settings.data.take_volume_idx,
         patch_size=(
@@ -192,17 +191,7 @@ def main(
             filename=best_loss_checkpoint,
             device=settings.reconstruct.device,
         )
-        reconstruct_set = DataSet(
-            noisy_data,
-            take_volume_idx=settings.data.take_volume_idx,
-            patch_size=(
-                settings.data.num_volumes,
-                settings.data.take_x,
-                settings.data.take_y,
-                settings.data.take_z,
-            ),
-            step=1,
-        )
+        reconstruct_set = ReconstructionDataSet(noisy_data)
         reconstruct_loader = DataLoader(
             reconstruct_set, batch_size=1, shuffle=False
         )
