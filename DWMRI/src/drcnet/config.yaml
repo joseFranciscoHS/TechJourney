@@ -1,11 +1,11 @@
 dbrain:
   train:
-    num_epochs: 15
+    num_epochs: 30
     device: cuda
     learning_rate: 0.00001
     batch_size: 32
     use_scheduler: False
-    scheduler_step_size: 1000
+    scheduler_step_size: 20
     scheduler_gamma: 0.1
     checkpoint_dir: "drcnet/checkpoints/dbrain"
   reconstruct:
