@@ -238,9 +238,10 @@ def main(
             logging.info(f"Saving images to: {images_dir}")
             compare_volumes(
                 # volumes in b,z,x,y
-                np.transpose(noisy_data, (3, 2, 0, 1)),
+                np.transpose(noisy_data, (2, 3, 0, 1)),
                 np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
                 file_name=os.path.join(images_dir, "comparison.png"),
+                volume_idx=0,
             )
             logging.info(
                 f"Saving single volume image to: {images_dir}/single.png"
@@ -248,10 +249,12 @@ def main(
             visualize_single_volume(
                 np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
                 file_name=os.path.join(images_dir, "single.png"),
+                volume_idx=0,
             )
             visualize_single_volume(
-                np.transpose(noisy_data, (3, 2, 0, 1)),
+                np.transpose(noisy_data, (2, 3, 0, 1)),
                 file_name=os.path.join(images_dir, "noisy.png"),
+                volume_idx=0,
             )
 
 
