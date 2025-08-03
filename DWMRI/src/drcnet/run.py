@@ -209,7 +209,9 @@ def main(
         )
         logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-        metrics = compute_metrics(noisy_data, reconstructed_dwis)
+        metrics = compute_metrics(
+            np.transpose(noisy_data, (3, 0, 1, 2)), reconstructed_dwis
+        )
         logging.info(f"Metrics: {metrics}")
         # setting metrics dir taking into account run/model parameters
         metrics_dir = os.path.join(
@@ -235,7 +237,8 @@ def main(
             os.makedirs(images_dir, exist_ok=True)
             logging.info(f"Saving images to: {images_dir}")
             compare_volumes(
-                np.transpose(noisy_data, (3, 0, 1, 2)),
+                # volumes in b,z,x,y
+                np.transpose(noisy_data, (3, 2, 0, 1)),
                 np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
                 file_name=os.path.join(images_dir, "comparison.png"),
             )
@@ -247,7 +250,7 @@ def main(
                 file_name=os.path.join(images_dir, "single.png"),
             )
             visualize_single_volume(
-                np.transpose(noisy_data, (3, 0, 1, 2)),
+                np.transpose(noisy_data, (3, 2, 0, 1)),
                 file_name=os.path.join(images_dir, "noisy.png"),
             )
 

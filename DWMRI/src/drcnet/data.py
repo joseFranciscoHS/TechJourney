@@ -48,7 +48,9 @@ class TrainingDataSet(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         x = self.windows[index, self.take_volumes]
-        y = self.windows[index, self.take_volume_idx:self.take_volume_idx+1]
+        y = self.windows[
+            index, self.take_volume_idx : self.take_volume_idx + 1
+        ]
         logging.debug(
             f"__getitem__ index={index}, x.shape={x.shape}, y.shape={y.shape}"
         )
@@ -62,21 +64,19 @@ class TrainingDataSet(torch.utils.data.Dataset):
 
 
 class ReconstructionDataSet(torch.utils.data.Dataset):
-    def __init__(
-        self, data: np.ndarray
-    ):
+    def __init__(self, data: np.ndarray):
         logging.info(f"Initializing DataSet: data.shape={data.shape}")
         # transpose data from (X, Y, Z, Bvalues) to (Bvalues, X, Y, Z)
         self.n_vols = data.shape[-1]
-        self.data = torch.from_numpy(np.transpose(data, (3, 0, 1, 2))).type(torch.float)
+        self.data = torch.from_numpy(np.transpose(data, (3, 0, 1, 2))).type(
+            torch.float
+        )
         logging.info(f"Data transposed to: {self.data.shape}")
 
     def __getitem__(self, index):
-        take_volumes = [
-            i for i in range(self.n_vols) if i != index
-        ]
+        take_volumes = [i for i in range(self.n_vols) if i != index]
         x = self.data[take_volumes]
-        y = self.data[index:index+1]
+        y = self.data[index : index + 1]
         return x, y
 
     def __len__(self):
