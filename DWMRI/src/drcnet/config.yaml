@@ -18,10 +18,10 @@ dbrain:
     groups: 1
     dense_convs: 2
     residual: true
-    base_filters: 64
+    base_filters: 32
   data:
-    patch_size: 64
-    step: 16
+    patch_size: 32
+    step: 32
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.01
