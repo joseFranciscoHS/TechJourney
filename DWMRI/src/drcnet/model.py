@@ -425,10 +425,11 @@ class DenoiserNet(nn.Module):
             )
         )
 
-        self.output_image = torch.full(output_shape, 0, dtype=torch.float, device=device)
-
     def forward(self, inputs):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
+        # taking as base output image the mean of the inputs over volumes
+        # i.e. mean of the X training volumes
+        output_image = inputs.mean(dim=1, keepdim=True)
         up_0 = self.input_block(inputs)
         x = self.down_block(up_0)
 
@@ -440,6 +441,4 @@ class DenoiserNet(nn.Module):
 
         up_3 = self.up_block(x)
 
-        return (
-            self.output_block(torch.cat([up_0, up_3], 1)) + self.output_image
-        )
+        return self.output_block(torch.cat([up_0, up_3], 1)) + output_image

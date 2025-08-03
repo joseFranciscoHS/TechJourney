@@ -1,9 +1,13 @@
 dbrain:
   train:
+<<<<<<< HEAD
     num_epochs: 100
+=======
+    num_epochs: 2
+>>>>>>> 9009506957e98678e0964ffc61063545d2569d0a
     device: cuda
-    learning_rate: 0.00001
-    batch_size: 32
+    learning_rate: 0.0001
+    batch_size: 16
     use_scheduler: False
     scheduler_step_size: 40
     scheduler_gamma: 0.1
@@ -18,10 +22,10 @@ dbrain:
     groups: 1
     dense_convs: 2
     residual: true
-    base_filters: 32
+    base_filters: 64
   data:
-    patch_size: 32
-    step: 4
+    patch_size: 64
+    step: 1
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.01
