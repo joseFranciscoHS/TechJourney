@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 2
+    num_epochs: 10
     device: cuda
     learning_rate: 0.0001
     batch_size: 16
@@ -21,7 +21,7 @@ dbrain:
     base_filters: 32
   data:
     patch_size: 32
-    step: 32
+    step: 1
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.01
