@@ -44,10 +44,10 @@ class TrainingDataSet(torch.utils.data.Dataset):
     def __getitem__(self, index: int):
         # taking random volumes for training but keeping the same logic
         # if taking one out to be predicted
-        take_volume_idx = index % self.n_volumes
-        take_volumes = [i for i in range(self.n_vols) if i != take_volume_idx]
+        random_index = np.random.randint(0, self.n_volumes)
+        take_volumes = [i for i in range(self.n_vols) if i != random_index]
         x = self.windows[index, take_volumes]
-        y = self.windows[index, take_volume_idx : take_volume_idx + 1]
+        y = self.windows[index, random_index : random_index + 1]
         logging.debug(
             f"__getitem__ index={index}, x.shape={x.shape}, y.shape={y.shape}"
         )
