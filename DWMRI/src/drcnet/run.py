@@ -80,7 +80,6 @@ def main(
 
     train_set = TrainingDataSet(
         noisy_data,
-        take_volume_idx=settings.data.take_volume_idx,
         patch_size=(
             settings.data.num_volumes,
             settings.data.patch_size,

@@ -26,11 +26,9 @@ def sliding_windows(image, patch_size, step):
 
 
 class TrainingDataSet(torch.utils.data.Dataset):
-    def __init__(
-        self, data: np.ndarray, take_volume_idx=0, patch_size=32, step=16
-    ):
+    def __init__(self, data: np.ndarray, patch_size=32, step=16):
         logging.info(
-            f"Initializing DataSet: data.shape={data.shape}, take_volume_idx={take_volume_idx}, patch_size={patch_size}, step={step}"
+            f"Initializing DataSet: data.shape={data.shape}, patch_size={patch_size}, step={step}"
         )
         # transpose data from (X, Y, Z, Bvalues) to (Bvalues, X, Y, Z)
         self.n_vols = data.shape[-1]
@@ -41,16 +39,15 @@ class TrainingDataSet(torch.utils.data.Dataset):
         logging.info(
             f"Created {self.windows.shape[0]} windows of shape {self.windows.shape[1:]}."
         )
-        self.take_volume_idx = take_volume_idx
-        self.take_volumes = [
-            i for i in range(self.n_vols) if i != take_volume_idx
-        ]
+        self.n_volumes = self.windows.shape[1]
 
-    def __getitem__(self, index):
-        x = self.windows[index, self.take_volumes]
-        y = self.windows[
-            index, self.take_volume_idx : self.take_volume_idx + 1
-        ]
+    def __getitem__(self, index: int):
+        # taking random volumes for training but keeping the same logic
+        # if taking one out to be predicted
+        take_volume_idx = index % self.n_volumes
+        take_volumes = [i for i in range(self.n_vols) if i != take_volume_idx]
+        x = self.windows[index, take_volumes]
+        y = self.windows[index, take_volume_idx : take_volume_idx + 1]
         logging.debug(
             f"__getitem__ index={index}, x.shape={x.shape}, y.shape={y.shape}"
         )
