@@ -43,8 +43,10 @@ def load_checkpoint(model, optimizer, filename, device="cuda"):
             checkpoint = torch.load(
                 filename, map_location=torch.device(device)
             )
-            model.load_state_dict(checkpoint["model_state_dict"])
-            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            if model is not None:
+                model.load_state_dict(checkpoint["model_state_dict"])
+            if optimizer is not None:
+                optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
             epoch = checkpoint["epoch"]
             loss = checkpoint["loss"]
             best_loss = checkpoint["best_loss"]
