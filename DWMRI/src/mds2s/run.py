@@ -218,6 +218,7 @@ def main(
                 noisy_data,
                 reconstructed_dwis,
                 file_name=os.path.join(images_dir, "comparison.png"),
+                volume_idx=0,
             )
             logging.info(
                 f"Saving single volume image to: {images_dir}/single.png"
@@ -225,6 +226,12 @@ def main(
             visualize_single_volume(
                 reconstructed_dwis,
                 file_name=os.path.join(images_dir, "single.png"),
+                volume_idx=0,
+            )
+            visualize_single_volume(
+                noisy_data,
+                file_name=os.path.join(images_dir, "noisy.png"),
+                volume_idx=0,
             )
 
 

@@ -3,12 +3,11 @@ import os
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-
 from drcnet.data import ReconstructionDataSet, TrainingDataSet
 from drcnet.fit import fit_model
 from drcnet.model import DenoiserNet
 from drcnet.reconstruction import reconstruct_dwis
+from torch.utils.data import DataLoader
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
