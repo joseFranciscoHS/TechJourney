@@ -3,11 +3,10 @@ import os
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, TensorDataset
-
 from mds2s.fit import fit_model
 from mds2s.model import Self2self
 from mds2s.reconstruction import reconstruct_dwis
+from torch.utils.data import DataLoader, TensorDataset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
@@ -161,15 +160,21 @@ def main(
         best_loss_checkpoint = os.path.join(
             checkpoint_dir, "best_loss_checkpoint.pth"
         )
-        model, _, _, _, _ = load_checkpoint(
-            model=model,
+        del model
+        reconstruct_model = Self2self(
+            in_channel=settings.model.in_channel,
+            out_channel=settings.model.out_channel,
+            p=settings.train.dropout_p,
+        )
+        reconstruct_model, _, _, _, _ = load_checkpoint(
+            model=reconstruct_model,
             optimizer=optimizer,
             filename=best_loss_checkpoint,
             device=settings.reconstruct.device,
         )
         reconstruct_loader = DataLoader(train_set, batch_size=1, shuffle=False)
         reconstructed_dwis = reconstruct_dwis(
-            model=model,
+            model=reconstruct_model,
             data_loader=reconstruct_loader,
             device=settings.reconstruct.device,
             data_shape=x_train.shape,
