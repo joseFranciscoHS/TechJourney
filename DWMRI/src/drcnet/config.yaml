@@ -1,9 +1,9 @@
 dbrain:
   train:
-    num_epochs: 50
+    num_epochs: 200
     device: cuda
-    learning_rate: 0.0001
-    batch_size: 32
+    learning_rate: 0.001
+    batch_size: 64
     use_scheduler: False
     scheduler_step_size: 20
     scheduler_gamma: 0.1
@@ -16,12 +16,12 @@ dbrain:
     in_channel: 9 # is the number of volumes taking one out to be predicted
     out_channel: 1 # is the predicted volume
     groups: 1
-    dense_convs: 2
+    dense_convs: 3
     residual: true
     base_filters: 16
   data:
     patch_size: 16
-    step: 2
+    step: 4
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
