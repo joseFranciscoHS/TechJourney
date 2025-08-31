@@ -1,11 +1,11 @@
 dbrain:
   train:
-    num_epochs: 200
+    num_epochs: 100
     device: cuda
-    learning_rate: 0.001
-    batch_size: 64
-    use_scheduler: False
-    scheduler_step_size: 20
+    learning_rate: 0.01
+    batch_size: 8
+    use_scheduler: True
+    scheduler_step_size: 40
     scheduler_gamma: 0.1
     checkpoint_dir: "drcnet/checkpoints/dbrain"
   reconstruct:
@@ -16,11 +16,11 @@ dbrain:
     in_channel: 9 # is the number of volumes taking one out to be predicted
     out_channel: 1 # is the predicted volume
     groups: 1
-    dense_convs: 3
+    dense_convs: 2
     residual: true
-    base_filters: 16
+    base_filters: 32
   data:
-    patch_size: 16
+    patch_size: 32
     step: 4
     num_b0s: 6
     num_volumes: 10

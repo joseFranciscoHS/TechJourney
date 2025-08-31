@@ -59,7 +59,7 @@ def main(
         raise ValueError(f"Invalid dataset: {dataset}")
 
     logging.info("Loading data...")
-    _, noisy_data = data_loader.load_data()
+    original_data, noisy_data = data_loader.load_data()
     logging.info(f"Noisy data shape: {noisy_data.shape}")
 
     # Permute from (X, Y, Z, Bvalues) to (Z, Bvalues, X, Y)
@@ -73,6 +73,10 @@ def main(
     take_volumes = settings.data.num_b0s + settings.data.num_volumes
     noisy_data = np.transpose(
         noisy_data[..., settings.data.num_b0s : take_volumes],
+        (2, 3, 0, 1),
+    )
+    original_data = np.transpose(
+        original_data[..., settings.data.num_b0s : take_volumes],
         (2, 3, 0, 1),
     )
     logging.info(f"Transposed data shape: {noisy_data.shape}")
@@ -189,7 +193,7 @@ def main(
         )
         logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-        metrics = compute_metrics(noisy_data, reconstructed_dwis)
+        metrics = compute_metrics(original_data, reconstructed_dwis)
         logging.info(f"Metrics: {metrics}")
         # setting metrics dir taking into account run/model parameters
         metrics_dir = os.path.join(

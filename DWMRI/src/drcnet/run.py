@@ -60,13 +60,19 @@ def main(
         raise ValueError(f"Invalid dataset: {dataset}")
 
     logging.info("Loading data...")
-    _, noisy_data = data_loader.load_data()
+    original_data, noisy_data = data_loader.load_data()
     # omitting the b0s from the data
     take_volumes = settings.data.num_b0s + settings.data.num_volumes
     logging.info(
         f"Taking volumes from {settings.data.num_b0s} to {take_volumes}"
     )
     noisy_data = noisy_data[
+        : settings.data.take_x,
+        : settings.data.take_y,
+        : settings.data.take_z,
+        settings.data.num_b0s : take_volumes,
+    ]
+    original_data = original_data[
         : settings.data.take_x,
         : settings.data.take_y,
         : settings.data.take_z,
@@ -208,7 +214,8 @@ def main(
         logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
         metrics = compute_metrics(
-            np.transpose(noisy_data, (3, 0, 1, 2)), reconstructed_dwis
+            np.transpose(original_data, (2, 3, 0, 1)), 
+            np.transpose(reconstructed_dwis, (3, 0, 1, 2))
         )
         logging.info(f"Metrics: {metrics}")
         # setting metrics dir taking into account run/model parameters
