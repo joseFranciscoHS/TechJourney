@@ -5,9 +5,15 @@ dbrain:
     learning_rate: 0.01
     batch_size: 8
     use_scheduler: True
+    scheduler_type: "cosine"
+    checkpoint_dir: "drcnet/checkpoints/dbrain"
+    ## cosine annealing warm restarts
+    scheduler_T_0: 10
+    eta_min_lr: 0.0001
+    T_mult_factor: 2
+    ## stepLR
     scheduler_step_size: 40
     scheduler_gamma: 0.1
-    checkpoint_dir: "drcnet/checkpoints/dbrain"
   reconstruct:
     device: cuda
     metrics_dir: "drcnet/metrics/dbrain"

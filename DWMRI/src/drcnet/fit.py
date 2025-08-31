@@ -4,24 +4,21 @@ import os
 import numpy as np
 import torch
 from torch.nn import L1Loss
-from torch.optim.lr_scheduler import LRScheduler
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
-
 from utils.checkpoint import load_checkpoint, save_checkpoint
 
 
 def fit_model(
     model,
     optimizer: torch.optim.Optimizer,
-    scheduler: LRScheduler | None,
+    scheduler: CosineAnnealingWarmRestarts | LRScheduler | None,
     train_loader,
     num_epochs=10,
     device="cuda",
     checkpoint_dir=".",
 ):
-    logging.info(
-        (f"Starting training - device: {device}, " f"epochs: {num_epochs}")
-    )
+    logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
 
     model.to(device)
@@ -35,8 +32,8 @@ def fit_model(
 
     # Load the latest checkpoint if it exists
     latest_checkpoint = os.path.join(checkpoint_dir, "latest_checkpoint.pth")
-    model, optimizer, start_epoch, scheduler_state_dict, best_loss = (
-        load_checkpoint(model, optimizer, latest_checkpoint, device)
+    model, optimizer, start_epoch, scheduler_state_dict, best_loss = load_checkpoint(
+        model, optimizer, latest_checkpoint, device
     )
 
     # Restore scheduler state if it exists

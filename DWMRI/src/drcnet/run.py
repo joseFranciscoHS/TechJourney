@@ -63,9 +63,7 @@ def main(
     original_data, noisy_data = data_loader.load_data()
     # omitting the b0s from the data
     take_volumes = settings.data.num_b0s + settings.data.num_volumes
-    logging.info(
-        f"Taking volumes from {settings.data.num_b0s} to {take_volumes}"
-    )
+    logging.info(f"Taking volumes from {settings.data.num_b0s} to {take_volumes}")
     noisy_data = noisy_data[
         : settings.data.take_x,
         : settings.data.take_y,
@@ -123,22 +121,31 @@ def main(
     )
 
     logging.info("Setting up optimizer and scheduler...")
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=settings.train.learning_rate
-    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
     logging.info(f"Optimizer: Adam(lr={settings.train.learning_rate})")
 
     scheduler = None
     if settings.train.use_scheduler:
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer,
-            step_size=settings.train.scheduler_step_size,
-            gamma=settings.train.scheduler_gamma,
-        )
-        logging.info(
-            f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
-            f"gamma={settings.train.scheduler_gamma})"
-        )
+        if settings.train.scheduler_type == "step":
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=settings.train.scheduler_step_size,
+                gamma=settings.train.scheduler_gamma,
+            )
+            logging.info(
+                f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
+                f"gamma={settings.train.scheduler_gamma})"
+            )
+        elif settings.train.scheduler_type == "cosine":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                optimizer,
+                T_0=settings.train.scheduler_T_0,
+                T_mult=settings.train.scheduler_T_mult,
+                eta_min=settings.train.eta_min_lr,
+            )
+            logging.info(
+                f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, T_mult={settings.train.scheduler_T_mult}, eta_min={settings.train.eta_min_lr})"
+            )
 
     logging.info(f"Training device: {settings.train.device}")
     logging.info(f"Number of epochs: {settings.train.num_epochs}")
@@ -171,9 +178,7 @@ def main(
 
     if reconstruct:
         logging.info("Reconstructing DWIs...")
-        best_loss_checkpoint = os.path.join(
-            checkpoint_dir, "best_loss_checkpoint.pth"
-        )
+        best_loss_checkpoint = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
         del model
         reconstruct_model = DenoiserNet(
             input_channels=settings.model.in_channel,
@@ -197,9 +202,7 @@ def main(
             device=settings.reconstruct.device,
         )
         reconstruct_set = ReconstructionDataSet(noisy_data)
-        reconstruct_loader = DataLoader(
-            reconstruct_set, batch_size=1, shuffle=False
-        )
+        reconstruct_loader = DataLoader(reconstruct_set, batch_size=1, shuffle=False)
         reconstructed_dwis = reconstruct_dwis(
             model=reconstruct_model,
             data_loader=reconstruct_loader,
@@ -214,8 +217,8 @@ def main(
         logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
         metrics = compute_metrics(
-            np.transpose(original_data, (2, 3, 0, 1)), 
-            np.transpose(reconstructed_dwis, (3, 0, 1, 2))
+            np.transpose(original_data, (2, 3, 0, 1)),
+            np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
         )
         logging.info(f"Metrics: {metrics}")
         # setting metrics dir taking into account run/model parameters
@@ -248,9 +251,7 @@ def main(
                 file_name=os.path.join(images_dir, "comparison.png"),
                 volume_idx=0,
             )
-            logging.info(
-                f"Saving single volume image to: {images_dir}/single.png"
-            )
+            logging.info(f"Saving single volume image to: {images_dir}/single.png")
             visualize_single_volume(
                 np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
                 file_name=os.path.join(images_dir, "single.png"),
