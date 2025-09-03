@@ -30,8 +30,8 @@ dbrain:
     residual: true
     base_filters: 32
   data:
-    patch_size: 16
-    step: 4
+    patch_size: 32
+    step: 2
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
