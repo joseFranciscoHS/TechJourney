@@ -425,6 +425,15 @@ class DenoiserNet(nn.Module):
             )
         )
 
+        # Log model parameters
+        total_params = sum(p.numel() for p in self.parameters())
+        trainable_params = sum(
+            p.numel() for p in self.parameters() if p.requires_grad
+        )
+        logging.info(
+            f"DenoiserNet model created - Total parameters: {total_params:,}, Trainable parameters: {trainable_params:,}"
+        )
+
     def forward(self, inputs):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
         # taking as base output image the mean of the inputs over volumes

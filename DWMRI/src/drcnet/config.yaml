@@ -1,16 +1,16 @@
 dbrain:
   train:
-    num_epochs: 100
+    num_epochs: 60
     device: cuda
-    learning_rate: 0.01
+    learning_rate: 0.001
     batch_size: 32
     use_scheduler: True
     scheduler_type: "cosine"
     checkpoint_dir: "drcnet/checkpoints/dbrain"
     ## cosine annealing warm restarts
-    scheduler_T_0: 10
+    scheduler_T_0: 30
     eta_min_lr: 0.0001
-    T_mult_factor: 2
+    scheduler_T_mult: 2
     ## stepLR
     scheduler_step_size: 40
     scheduler_gamma: 0.1
@@ -26,7 +26,7 @@ dbrain:
     residual: true
     base_filters: 32
   data:
-    patch_size: 32
+    patch_size: 16
     step: 4
     num_b0s: 6
     num_volumes: 10
