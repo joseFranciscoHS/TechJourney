@@ -146,6 +146,16 @@ def main(
             logging.info(
                 f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, T_mult={settings.train.scheduler_T_mult}, eta_min={settings.train.eta_min_lr})"
             )
+        elif settings.train.scheduler_type == "reduceLROnPlateau":
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                patience=settings.train.scheduler_patience,
+                factor=settings.train.scheduler_factor,
+                min_lr=settings.train.min_lr,
+            )
+            logging.info(
+                f"Scheduler: ReduceLROnPlateau(patience={settings.train.scheduler_patience}, factor={settings.train.scheduler_factor}, min_lr={settings.train.min_lr})"
+            )
 
     logging.info(f"Training device: {settings.train.device}")
     logging.info(f"Number of epochs: {settings.train.num_epochs}")
