@@ -53,25 +53,21 @@ class DBrainDataLoader:
         logging.info(f"Loading data from {self.nii_path}")
 
         data, _ = load_nifti(self.nii_path)
-        logging.info(
-            f"Raw data loaded - shape: {data.shape}, dtype: {data.dtype}"
-        )
+        logging.info(f"Raw data loaded - shape: {data.shape}, dtype: {data.dtype}")
         logging.info(
             f"Raw data stats - min: {data.min():.4f}, max: {data.max():.4f}, mean: {data.mean():.4f}"
+        )
+
+        logging.info(f"Adding Rician noise with sigma={self.noise_sigma}...")
+        noisy_data = add_rician_noise(data, sigma=self.noise_sigma)
+        logging.info(
+            f"Noisy data stats - min: {noisy_data.min():.4f}, max: {noisy_data.max():.4f}, mean: {noisy_data.mean():.4f}"
         )
 
         logging.info("Normalizing spatial dimensions...")
         data_norm_spatial = normalize_spatial_dimensions(data)
         logging.info(
             f"Normalized data stats - min: {data_norm_spatial.min():.4f}, max: {data_norm_spatial.max():.4f}, mean: {data_norm_spatial.mean():.4f}"
-        )
-
-        logging.info(f"Adding Rician noise with sigma={self.noise_sigma}...")
-        noisy_data = add_rician_noise(
-            data_norm_spatial, sigma=self.noise_sigma
-        )
-        logging.info(
-            f"Noisy data stats - min: {noisy_data.min():.4f}, max: {noisy_data.max():.4f}, mean: {noisy_data.mean():.4f}"
         )
 
         logging.info("Normalizing noisy data spatial dimensions...")
@@ -112,9 +108,7 @@ class StanfordDataLoader:
         hardi_fname, _, _ = get_fnames("stanford_hardi")
         logging.info(f"Stanford HARDI data file: {hardi_fname}")
         data, _ = load_nifti(hardi_fname)
-        logging.info(
-            f"Stanford data loaded - shape: {data.shape}, dtype: {data.dtype}"
-        )
+        logging.info(f"Stanford data loaded - shape: {data.shape}, dtype: {data.dtype}")
         logging.info(
             f"Stanford data stats - min: {data.min():.4f}, max: {data.max():.4f}, mean: {data.mean():.4f}"
         )
@@ -134,12 +128,8 @@ def add_rician_noise(data, sigma):
     )
     noisy = np.zeros_like(data)
     for vol in range(data.shape[-1]):
-        noise_1 = np.random.normal(0, sigma, data[..., vol].shape).astype(
-            "float32"
-        )
-        noise_2 = np.random.normal(0, sigma, data[..., vol].shape).astype(
-            "float32"
-        )
+        noise_1 = np.random.normal(0, sigma, data[..., vol].shape).astype("float32")
+        noise_2 = np.random.normal(0, sigma, data[..., vol].shape).astype("float32")
         noisy[..., vol] = (data[..., vol] + noise_1) ** 2 + noise_2**2
         noisy[..., vol] = noisy[..., vol] ** 0.5
     logging.info(f"Rician noise added - noisy data shape: {noisy.shape}")
@@ -147,9 +137,7 @@ def add_rician_noise(data, sigma):
 
 
 def normalize_spatial_dimensions(data):
-    logging.info(
-        f"Normalizing spatial dimensions for data of shape {data.shape}"
-    )
+    logging.info(f"Normalizing spatial dimensions for data of shape {data.shape}")
     # Assuming data shape is (x, y, z, c)
     normalized_data = np.zeros_like(data, dtype=np.float32)
 
@@ -159,9 +147,7 @@ def normalize_spatial_dimensions(data):
         max_val = np.max(volume)
 
         # Normalize to [0, 1] range
-        normalized_data[..., i] = (volume - min_val) / (
-            max_val - min_val + 1e-6
-        )
+        normalized_data[..., i] = (volume - min_val) / (max_val - min_val + 1e-6)
 
     logging.info(
         f"Spatial normalization completed - output shape: {normalized_data.shape}"
