@@ -45,7 +45,7 @@ def fit_model(
     logging.info(f"Best loss so far: {best_loss:.6f}")
     loss_fn = L1Loss()
 
-    for epoch in tqdm(range(start_epoch, num_epochs), desc="Training"):
+    for epoch in tqdm(range(start_epoch, num_epochs), desc=f"Training DRCnet", total=num_epochs):
         model.train()
         total_loss = 0
         batch_count = 0
@@ -55,11 +55,7 @@ def fit_model(
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
-        for batch_idx, (x, y) in tqdm(
-            enumerate(train_loader),
-            desc=f"Epoch {epoch+1}/{num_epochs}",
-            total=len(train_loader),
-        ):
+        for batch_idx, (x, y) in enumerate(train_loader):
             x = x.to(device)
             y = y.to(device)
 
