@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 60
     device: cuda
     learning_rate: 0.001
-    batch_size: 32
+    batch_size: 64
     use_scheduler: True
     scheduler_type: "reduceLROnPlateau"
     checkpoint_dir: "drcnet/checkpoints/dbrain"
@@ -31,7 +31,7 @@ dbrain:
     base_filters: 32
   data:
     patch_size: 32
-    step: 2
+    step: 8
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
