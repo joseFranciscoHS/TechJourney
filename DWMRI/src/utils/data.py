@@ -65,13 +65,13 @@ class DBrainDataLoader:
         )
 
         logging.info("Normalizing spatial dimensions...")
-        data_norm_spatial = normalize_spatial_dimensions(data)
+        data_norm_spatial, normalization_params = normalize_spatial_dimensions_with_params(data)
         logging.info(
             f"Normalized data stats - min: {data_norm_spatial.min():.4f}, max: {data_norm_spatial.max():.4f}, mean: {data_norm_spatial.mean():.4f}"
         )
 
-        logging.info("Normalizing noisy data spatial dimensions...")
-        noisy_data_norm_spatial = normalize_spatial_dimensions(noisy_data)
+        logging.info("Normalizing noisy data using clean data statistics...")
+        noisy_data_norm_spatial = normalize_with_existing_params(noisy_data, normalization_params)
         logging.info(
             f"Final noisy data stats - min: {noisy_data_norm_spatial.min():.4f}, max: {noisy_data_norm_spatial.max():.4f}, mean: {noisy_data_norm_spatial.mean():.4f}"
         )
@@ -123,6 +123,16 @@ class StanfordDataLoader:
 
 
 def add_rician_noise(data, sigma):
+    """
+    Add Rician noise to MRI data.
+    
+    Args:
+        data: Input MRI data of shape (x, y, z, volumes)
+        sigma: Standard deviation of the Gaussian noise components
+    
+    Returns:
+        noisy_data: Data with Rician noise added
+    """
     logging.info(
         f"Adding Rician noise with sigma={sigma} to data of shape {data.shape}"
     )
@@ -133,6 +143,31 @@ def add_rician_noise(data, sigma):
         noisy[..., vol] = (data[..., vol] + noise_1) ** 2 + noise_2**2
         noisy[..., vol] = noisy[..., vol] ** 0.5
     logging.info(f"Rician noise added - noisy data shape: {noisy.shape}")
+    return noisy
+
+
+def add_rician_noise_scaled(data, sigma, scale_factor=1.0):
+    """
+    Add Rician noise with scaling factor for better visibility.
+    
+    Args:
+        data: Input MRI data of shape (x, y, z, volumes)
+        sigma: Standard deviation of the Gaussian noise components
+        scale_factor: Multiplier for noise intensity (higher = more visible noise)
+    
+    Returns:
+        noisy_data: Data with scaled Rician noise added
+    """
+    logging.info(
+        f"Adding scaled Rician noise with sigma={sigma}, scale_factor={scale_factor} to data of shape {data.shape}"
+    )
+    noisy = np.zeros_like(data)
+    for vol in range(data.shape[-1]):
+        noise_1 = np.random.normal(0, sigma * scale_factor, data[..., vol].shape).astype("float32")
+        noise_2 = np.random.normal(0, sigma * scale_factor, data[..., vol].shape).astype("float32")
+        noisy[..., vol] = (data[..., vol] + noise_1) ** 2 + noise_2**2
+        noisy[..., vol] = noisy[..., vol] ** 0.5
+    logging.info(f"Scaled Rician noise added - noisy data shape: {noisy.shape}")
     return noisy
 
 
@@ -151,5 +186,54 @@ def normalize_spatial_dimensions(data):
 
     logging.info(
         f"Spatial normalization completed - output shape: {normalized_data.shape}"
+    )
+    return normalized_data
+
+
+def normalize_spatial_dimensions_with_params(data):
+    """
+    Normalize spatial dimensions and return normalization parameters for consistent scaling.
+    This ensures noisy data can be normalized using the same parameters as clean data.
+    """
+    logging.info(f"Normalizing spatial dimensions for data of shape {data.shape}")
+    # Assuming data shape is (x, y, z, c)
+    normalized_data = np.zeros_like(data, dtype=np.float32)
+    normalization_params = {}
+
+    for i in range(data.shape[-1]):  # Iterate over each volume
+        volume = data[..., i]
+        min_val = np.min(volume)
+        max_val = np.max(volume)
+        
+        # Store normalization parameters
+        normalization_params[i] = {'min': min_val, 'max': max_val}
+
+        # Normalize to [0, 1] range
+        normalized_data[..., i] = (volume - min_val) / (max_val - min_val + 1e-6)
+
+    logging.info(
+        f"Spatial normalization completed - output shape: {normalized_data.shape}"
+    )
+    return normalized_data, normalization_params
+
+
+def normalize_with_existing_params(data, normalization_params):
+    """
+    Normalize data using pre-computed normalization parameters.
+    This ensures consistent scaling between clean and noisy data.
+    """
+    logging.info(f"Normalizing data with existing parameters for shape {data.shape}")
+    normalized_data = np.zeros_like(data, dtype=np.float32)
+
+    for i in range(data.shape[-1]):  # Iterate over each volume
+        volume = data[..., i]
+        min_val = normalization_params[i]['min']
+        max_val = normalization_params[i]['max']
+
+        # Normalize to [0, 1] range using the same parameters
+        normalized_data[..., i] = (volume - min_val) / (max_val - min_val + 1e-6)
+
+    logging.info(
+        f"Normalization with existing params completed - output shape: {normalized_data.shape}"
     )
     return normalized_data
