@@ -5,9 +5,9 @@
     "python.linting.pydocstyleEnabled": false,
     "python.linting.enabled": true,
     "python.formatting.provider": "black",
-    "black-formatter.interpreter": [
-        "/home/zeus/miniconda3/envs/cloudspace/bin/python"
-    ],
+    // "black-formatter.interpreter": [
+    //     "/home/zeus/miniconda3/envs/cloudspace/bin/python"
+    // ],
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
     }
