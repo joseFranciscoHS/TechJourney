@@ -7,7 +7,6 @@ dbrain:
     use_scheduler: True
     scheduler_type: "cosine"  # Better for denoising tasks
     checkpoint_dir: "drcnet/checkpoints/dbrain"
-    
     # Multi-GPU settings
     multi_gpu: true  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
