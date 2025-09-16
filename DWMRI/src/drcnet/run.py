@@ -17,6 +17,7 @@ from utils.metrics import (
     save_metrics,
     visualize_single_volume,
 )
+from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config
 
 
@@ -120,9 +121,21 @@ def main(
         f"Total model parameters: {sum(p.numel() for p in model.parameters())}"
     )
 
+    # Setup multi-GPU training
+    multi_gpu_config = create_multi_gpu_config_from_dict({
+        "multi_gpu": settings.train.multi_gpu,
+        "gpu_ids": settings.train.gpu_ids,
+        "auto_scale_lr": settings.train.auto_scale_lr,
+        "learning_rate": settings.train.learning_rate,
+        "batch_size": settings.train.batch_size,
+    })
+    
+    model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
+
     logging.info("Setting up optimizer and scheduler...")
-    optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
-    logging.info(f"Optimizer: Adam(lr={settings.train.learning_rate})")
+    optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
+    logging.info(f"Optimizer: Adam(lr={effective_lr:.6f})")
+    logging.info(f"Effective batch size: {effective_batch_size} (per-GPU: {settings.train.batch_size})")
 
     scheduler = None
     if settings.train.use_scheduler:

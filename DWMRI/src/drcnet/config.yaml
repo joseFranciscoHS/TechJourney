@@ -2,11 +2,16 @@ dbrain:
   train:
     num_epochs: 120  # Increased for better convergence
     device: cuda
-    learning_rate: 0.0005  # Reduced for more stable training
-    batch_size: 8  # Reduced to fit larger model in memory
+    learning_rate: 0.0005  # Base learning rate for single GPU
+    batch_size: 16  # Per-GPU batch size
     use_scheduler: True
     scheduler_type: "cosine"  # Better for denoising tasks
     checkpoint_dir: "drcnet/checkpoints/dbrain"
+    
+    # Multi-GPU settings
+    multi_gpu: true  # Set to false to disable multi-GPU
+    gpu_ids: [0, 1, 2]  # Specify which GPUs to use
+    auto_scale_lr: true  # Automatically scale LR based on GPU count
     ## cosine annealing warm restarts
     scheduler_T_0: 20  # More frequent restarts
     eta_min_lr: 0.00001  # Lower minimum LR

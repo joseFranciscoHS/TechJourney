@@ -6,6 +6,18 @@ import logging
 import os
 from datetime import datetime
 
+# Import multi-GPU utilities
+from .multi_gpu import (
+    MultiGPUConfig,
+    create_multi_gpu_config,
+    create_multi_gpu_config_from_dict,
+    create_single_gpu_config,
+    get_gpu_info,
+    log_gpu_info,
+    setup_multi_gpu,
+    validate_multi_gpu_setup,
+)
+
 
 def setup_logging(log_level=logging.INFO, log_file=None):
     """

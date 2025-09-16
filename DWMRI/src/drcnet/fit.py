@@ -45,7 +45,7 @@ def fit_model(
     logging.info(f"Best loss so far: {best_loss:.6f}")
     loss_fn = L1Loss()
 
-    for epoch in tqdm(range(start_epoch, num_epochs), desc=f"Training DRCnet", total=num_epochs):
+    for epoch in tqdm(range(start_epoch, num_epochs), desc="Training DRCnet", total=num_epochs):
         model.train()
         total_loss = 0
         batch_count = 0
