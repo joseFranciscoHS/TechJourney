@@ -11,6 +11,8 @@ dbrain:
     multi_gpu: true  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
     auto_scale_lr: true  # Automatically scale LR based on GPU count
+    auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
+    memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
     ## cosine annealing warm restarts
     scheduler_T_0: 20  # More frequent restarts
     eta_min_lr: 0.00001  # Lower minimum LR

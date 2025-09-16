@@ -7,7 +7,7 @@ rate scaling and fallback support.
 """
 
 import logging
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
@@ -24,6 +24,8 @@ class MultiGPUConfig:
         auto_scale_lr: bool = True,
         base_learning_rate: float = 0.0005,
         batch_size_per_gpu: int = 16,
+        auto_exclude_imbalanced: bool = True,
+        memory_threshold: float = 0.75,
     ):
         """
         Initialize multi-GPU configuration.
@@ -34,18 +36,68 @@ class MultiGPUConfig:
             auto_scale_lr: Automatically scale learning rate based on GPU count
             base_learning_rate: Base learning rate for single GPU
             batch_size_per_gpu: Batch size per GPU
+            auto_exclude_imbalanced: Automatically exclude imbalanced GPUs
+            memory_threshold: Minimum memory ratio to consider balanced (default: 0.75)
         """
         self.multi_gpu = multi_gpu
         self.gpu_ids = gpu_ids or [0, 1, 2]
         self.auto_scale_lr = auto_scale_lr
         self.base_learning_rate = base_learning_rate
         self.batch_size_per_gpu = batch_size_per_gpu
+        self.auto_exclude_imbalanced = auto_exclude_imbalanced
+        self.memory_threshold = memory_threshold
+
+
+def detect_gpu_imbalance(gpu_ids: List[int], memory_threshold: float = 0.75) -> Tuple[List[int], List[int]]:
+    """
+    Detect GPUs with significant memory/compute imbalance.
+    
+    Args:
+        gpu_ids: List of GPU IDs to check
+        memory_threshold: Minimum memory ratio to consider balanced (default: 0.75)
+        
+    Returns:
+        Tuple of (balanced_gpu_ids, imbalanced_gpu_ids)
+    """
+    if len(gpu_ids) <= 1:
+        return gpu_ids, []
+    
+    # Get GPU properties
+    gpu_props = []
+    for gpu_id in gpu_ids:
+        props = torch.cuda.get_device_properties(gpu_id)
+        gpu_props.append({
+            'id': gpu_id,
+            'memory': props.total_memory,
+            'cores': props.multi_processor_count,
+            'name': props.name
+        })
+    
+    # Find reference GPU (usually the first one)
+    ref_gpu = gpu_props[0]
+    balanced_gpus = [ref_gpu['id']]
+    imbalanced_gpus = []
+    
+    for gpu in gpu_props[1:]:
+        memory_ratio = gpu['memory'] / ref_gpu['memory']
+        cores_ratio = gpu['cores'] / ref_gpu['cores']
+        
+        # Check if GPU is significantly imbalanced
+        if memory_ratio < memory_threshold or cores_ratio < memory_threshold:
+            imbalanced_gpus.append(gpu['id'])
+            logging.warning(f"GPU {gpu['id']} ({gpu['name']}) is imbalanced:")
+            logging.warning(f"  Memory: {gpu['memory']/(1024**3):.1f}GB vs {ref_gpu['memory']/(1024**3):.1f}GB (ratio: {memory_ratio:.2f})")
+            logging.warning(f"  Cores: {gpu['cores']} vs {ref_gpu['cores']} (ratio: {cores_ratio:.2f})")
+        else:
+            balanced_gpus.append(gpu['id'])
+    
+    return balanced_gpus, imbalanced_gpus
 
 
 def setup_multi_gpu(
     model: nn.Module,
     config: MultiGPUConfig,
-    verbose: bool = True
+    verbose: bool = True,
 ) -> Tuple[nn.Module, float, int]:
     """
     Setup multi-GPU training with automatic learning rate scaling.
@@ -76,7 +128,23 @@ def setup_multi_gpu(
         actual_gpus = min(available_gpus, requested_gpus)
         gpu_ids = list(range(actual_gpus))
     else:
-        gpu_ids = config.gpu_ids
+        gpu_ids = config.gpu_ids.copy()
+    
+    # Detect and handle GPU imbalance
+    if config.auto_exclude_imbalanced and len(gpu_ids) > 1:
+        balanced_gpus, imbalanced_gpus = detect_gpu_imbalance(gpu_ids, config.memory_threshold)
+        
+        if imbalanced_gpus:
+            if verbose:
+                logging.warning(f"Excluding imbalanced GPUs: {imbalanced_gpus}")
+                logging.warning(f"Using balanced GPUs: {balanced_gpus}")
+            gpu_ids = balanced_gpus
+    
+    # Ensure we have at least one GPU
+    if not gpu_ids:
+        if verbose:
+            logging.error("No suitable GPUs found, falling back to single GPU")
+        return model, config.base_learning_rate, config.batch_size_per_gpu
     
     # Wrap model with DataParallel
     if len(gpu_ids) > 1:
@@ -104,7 +172,7 @@ def setup_multi_gpu(
             return model, config.base_learning_rate, effective_batch_size
     else:
         if verbose:
-            logging.info("Single GPU training (multi_gpu enabled but only 1 GPU available)")
+            logging.info("Single GPU training (multi_gpu enabled but only 1 suitable GPU available)")
         return model, config.base_learning_rate, config.batch_size_per_gpu
 
 
@@ -137,7 +205,7 @@ def get_gpu_info() -> dict:
 def log_gpu_info():
     """Log detailed GPU information."""
     gpu_info = get_gpu_info()
-    logging.info(f"GPU Information:")
+    logging.info("GPU Information:")
     logging.info(f"  Total GPUs: {gpu_info['count']}")
     
     for device in gpu_info["devices"]:

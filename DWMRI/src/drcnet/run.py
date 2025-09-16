@@ -128,6 +128,8 @@ def main(
         "auto_scale_lr": settings.train.auto_scale_lr,
         "learning_rate": settings.train.learning_rate,
         "batch_size": settings.train.batch_size,
+        "auto_exclude_imbalanced": settings.train.auto_exclude_imbalanced,
+        "memory_threshold": settings.train.memory_threshold,
     })
     
     model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
