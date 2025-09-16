@@ -323,6 +323,18 @@ class GatedBlock(nn.Module):
         return h_t
 
 
+class SpatialAttention(nn.Module):
+    """Spatial attention module for better feature focus"""
+    def __init__(self, in_channels):
+        super(SpatialAttention, self).__init__()
+        self.conv = nn.Conv3d(in_channels, 1, kernel_size=1)
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        attention = self.sigmoid(self.conv(x))
+        return x * attention
+
+
 class DenoiserNet(nn.Module):
     def __init__(
         self,
@@ -400,6 +412,9 @@ class DenoiserNet(nn.Module):
         self.denoising_block = GatedBlock(
             filters_1, filters_1, dense_convs, groups
         )
+        
+        # Add spatial attention for better feature focus
+        self.attention = SpatialAttention(filters_1)
 
         self.output_block = nn.Sequential(
             OrderedDict(
@@ -448,6 +463,9 @@ class DenoiserNet(nn.Module):
             h = self.denoising_block(x, h)
             x += h
 
+        # Apply spatial attention
+        x = self.attention(x)
+        
         up_3 = self.up_block(x)
 
         return self.output_block(torch.cat([up_0, up_3], 1)) + output_image
