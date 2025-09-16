@@ -9,40 +9,46 @@ np.random.seed(91021)
 def sliding_windows(image, patch_size, step):
     """
     Memory-efficient chunked sliding window generation.
+    Only applies sliding windows to spatial dimensions (x, y, z), not volume dimension.
     """
     logging.info(
         f"Creating sliding windows (memory-efficient): patch_size={patch_size}, step={step}"
     )
     
-    # Calculate number of patches per dimension
-    patches_per_dim = [(image.shape[i] - patch_size[i]) // step + 1 for i in range(len(patch_size))]
-    total_patches = np.prod(patches_per_dim)
+    # Calculate number of patches per SPATIAL dimension only (skip volume dimension)
+    # patch_size format: (volumes, x, y, z)
+    # We only slide over spatial dimensions (x, y, z)
+    spatial_patches_per_dim = []
+    for i in range(1, len(patch_size)):  # Skip volume dimension (i=0)
+        patches = (image.shape[i] - patch_size[i]) // step + 1
+        spatial_patches_per_dim.append(patches)
     
-    logging.info(f"Will generate {total_patches:,} patches with dimensions {patches_per_dim}")
+    total_spatial_patches = np.prod(spatial_patches_per_dim)
+    
+    logging.info(f"Will generate {total_spatial_patches:,} spatial patches with dimensions {spatial_patches_per_dim}")
+    logging.info(f"Each patch will contain all {patch_size[0]} volumes")
     
     # Process in chunks to avoid memory issues
-    chunk_size = min(5000, total_patches)  # Process 5k patches at a time
+    chunk_size = min(5000, total_spatial_patches)  # Process 5k patches at a time
     result_chunks = []
     
     idx = 0
-    while idx < total_patches:
-        end_idx = min(idx + chunk_size, total_patches)
+    while idx < total_spatial_patches:
+        end_idx = min(idx + chunk_size, total_spatial_patches)
         chunk_patches = end_idx - idx
         
         # Pre-allocate chunk
         chunk = np.zeros((chunk_patches, *patch_size), dtype=image.dtype)
         
-        # Fill chunk
+        # Fill chunk - only iterate over spatial dimensions
         chunk_idx = 0
-        for v in range(0, image.shape[0] - patch_size[0] + 1, step):
-            for x in range(0, image.shape[1] - patch_size[1] + 1, step):
-                for y in range(0, image.shape[2] - patch_size[2] + 1, step):
-                    for z in range(0, image.shape[3] - patch_size[3] + 1, step):
-                        if idx <= chunk_idx < end_idx:
-                            chunk[chunk_idx - idx] = image[v:v+patch_size[0], x:x+patch_size[1], y:y+patch_size[2], z:z+patch_size[3]]
-                        chunk_idx += 1
-                        if chunk_idx >= end_idx:
-                            break
+        for x in range(0, image.shape[1] - patch_size[1] + 1, step):
+            for y in range(0, image.shape[2] - patch_size[2] + 1, step):
+                for z in range(0, image.shape[3] - patch_size[3] + 1, step):
+                    if idx <= chunk_idx < end_idx:
+                        # Take all volumes for this spatial location
+                        chunk[chunk_idx - idx] = image[:, x:x+patch_size[1], y:y+patch_size[2], z:z+patch_size[3]]
+                    chunk_idx += 1
                     if chunk_idx >= end_idx:
                         break
                 if chunk_idx >= end_idx:
