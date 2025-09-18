@@ -323,6 +323,57 @@ class GatedBlock(nn.Module):
         return h_t
 
 
+class ChannelAttention3D(nn.Module):
+    """3D Channel Attention Module for DWMRI"""
+    def __init__(self, in_channels, reduction=16):
+        super(ChannelAttention3D, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool3d(1)
+        self.max_pool = nn.AdaptiveMaxPool3d(1)
+        
+        self.fc = nn.Sequential(
+            nn.Conv3d(in_channels, in_channels // reduction, 1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Conv3d(in_channels // reduction, in_channels, 1, bias=False)
+        )
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        avg_out = self.fc(self.avg_pool(x))
+        max_out = self.fc(self.max_pool(x))
+        out = avg_out + max_out
+        return self.sigmoid(out)
+
+
+class SpatialAttention3D(nn.Module):
+    """3D Spatial Attention Module for DWMRI"""
+    def __init__(self, kernel_size=7):
+        super(SpatialAttention3D, self).__init__()
+        self.conv = nn.Conv3d(2, 1, kernel_size, padding=kernel_size//2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+        
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        x_cat = torch.cat([avg_out, max_out], dim=1)
+        out = self.conv(x_cat)
+        return self.sigmoid(out)
+
+
+class CBAM3D(nn.Module):
+    """3D Convolutional Block Attention Module for DWMRI"""
+    def __init__(self, in_channels, reduction=16, kernel_size=7):
+        super(CBAM3D, self).__init__()
+        self.channel_attention = ChannelAttention3D(in_channels, reduction)
+        self.spatial_attention = SpatialAttention3D(kernel_size)
+        
+    def forward(self, x):
+        # Channel attention first
+        x = x * self.channel_attention(x)
+        # Then spatial attention
+        x = x * self.spatial_attention(x)
+        return x
+
+
 class SpatialAttention(nn.Module):
     """Spatial attention module for better feature focus"""
     def __init__(self, in_channels):
@@ -374,6 +425,9 @@ class DenoiserNet(nn.Module):
                 ]
             )
         )
+        
+        # Add CBAM to input block for early volume-specific attention
+        self.input_attention = CBAM3D(filters_0, reduction=8, kernel_size=5)
 
         self.down_block = nn.Sequential(
             OrderedDict(
@@ -413,8 +467,8 @@ class DenoiserNet(nn.Module):
             filters_1, filters_1, dense_convs, groups
         )
         
-        # Add spatial attention for better feature focus
-        self.attention = SpatialAttention(filters_1)
+        # Add CBAM attention for better feature focus and volume-specific adaptation
+        self.attention = CBAM3D(filters_1, reduction=8, kernel_size=7)
 
         self.output_block = nn.Sequential(
             OrderedDict(
@@ -455,6 +509,8 @@ class DenoiserNet(nn.Module):
         # i.e. mean of the X training volumes
         output_image = inputs.mean(dim=1, keepdim=True)
         up_0 = self.input_block(inputs)
+        # Apply CBAM attention to input features for volume-specific adaptation
+        up_0 = self.input_attention(up_0)
         x = self.down_block(up_0)
 
         # x 1
@@ -463,7 +519,7 @@ class DenoiserNet(nn.Module):
             h = self.denoising_block(x, h)
             x += h
 
-        # Apply spatial attention
+        # Apply CBAM attention for volume-specific feature refinement
         x = self.attention(x)
         
         up_3 = self.up_block(x)

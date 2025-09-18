@@ -2,8 +2,8 @@ dbrain:
   train:
     num_epochs: 10  # Increased for better convergence
     device: cuda
-    learning_rate: 0.005  # Base learning rate for single GPU
-    batch_size: 64  # Per-GPU batch size
+    learning_rate: 0.001  # Base learning rate for single GPU
+    batch_size: 8  # Per-GPU batch size
     use_scheduler: false
     scheduler_type: "cosine"  # Better for denoising tasks
     checkpoint_dir: "drcnet/checkpoints/dbrain"
@@ -34,10 +34,10 @@ dbrain:
     groups: 4  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: true
-    base_filters: 64  # Doubled for more model capacity
+    base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 48  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    patch_size: 16  # Larger patches for better context
+    step: 8  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
