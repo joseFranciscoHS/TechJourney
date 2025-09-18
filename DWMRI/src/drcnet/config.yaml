@@ -1,14 +1,14 @@
 dbrain:
   train:
-    num_epochs: 120  # Increased for better convergence
+    num_epochs: 10  # Increased for better convergence
     device: cuda
-    learning_rate: 0.0005  # Base learning rate for single GPU
-    batch_size: 16  # Per-GPU batch size
-    use_scheduler: True
+    learning_rate: 0.005  # Base learning rate for single GPU
+    batch_size: 64  # Per-GPU batch size
+    use_scheduler: false
     scheduler_type: "cosine"  # Better for denoising tasks
     checkpoint_dir: "drcnet/checkpoints/dbrain"
     # Multi-GPU settings
-    multi_gpu: true  # Set to false to disable multi-GPU
+    multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
     auto_scale_lr: true  # Automatically scale LR based on GPU count
     auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
