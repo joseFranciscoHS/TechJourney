@@ -35,7 +35,7 @@ def save_checkpoint(
         raise
 
 
-def load_checkpoint(model, optimizer, filename, device="cuda"):
+def load_checkpoint(model, optimizer, filename, device="cuda", strict=True):
     logging.info(f"Attempting to load checkpoint from: {filename}")
 
     if os.path.isfile(filename):
@@ -43,10 +43,35 @@ def load_checkpoint(model, optimizer, filename, device="cuda"):
             checkpoint = torch.load(
                 filename, map_location=torch.device(device)
             )
+            
             if model is not None:
-                model.load_state_dict(checkpoint["model_state_dict"])
+                model_state_dict = checkpoint["model_state_dict"]
+                
+                # Handle DataParallel state dict (remove 'module.' prefix)
+                if any(key.startswith('module.') for key in model_state_dict.keys()):
+                    logging.info("Detected DataParallel checkpoint, removing 'module.' prefix")
+                    model_state_dict = {k.replace('module.', ''): v for k, v in model_state_dict.items()}
+                
+                # Load with strict=False to handle architecture changes gracefully
+                missing_keys, unexpected_keys = model.load_state_dict(model_state_dict, strict=strict)
+                
+                if missing_keys:
+                    logging.warning(f"Missing keys in checkpoint: {len(missing_keys)} keys")
+                    if len(missing_keys) <= 10:  # Log first 10 missing keys
+                        logging.warning(f"Missing keys: {missing_keys}")
+                    else:
+                        logging.warning(f"First 10 missing keys: {missing_keys[:10]}")
+                
+                if unexpected_keys:
+                    logging.warning(f"Unexpected keys in checkpoint: {len(unexpected_keys)} keys")
+                    if len(unexpected_keys) <= 10:  # Log first 10 unexpected keys
+                        logging.warning(f"Unexpected keys: {unexpected_keys}")
+                    else:
+                        logging.warning(f"First 10 unexpected keys: {unexpected_keys[:10]}")
+            
             if optimizer is not None:
                 optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            
             epoch = checkpoint["epoch"]
             loss = checkpoint["loss"]
             best_loss = checkpoint["best_loss"]

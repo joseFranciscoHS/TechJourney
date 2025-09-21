@@ -225,6 +225,7 @@ def main(
             optimizer=optimizer,
             filename=best_loss_checkpoint,
             device=settings.reconstruct.device,
+            strict=False,  # Allow partial loading for architecture changes
         )
         reconstruct_set = ReconstructionDataSet(noisy_data)
         reconstruct_loader = DataLoader(reconstruct_set, batch_size=1, shuffle=False)

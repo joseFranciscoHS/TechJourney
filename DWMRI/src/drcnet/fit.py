@@ -33,7 +33,7 @@ def fit_model(
     # Load the latest checkpoint if it exists
     latest_checkpoint = os.path.join(checkpoint_dir, "latest_checkpoint.pth")
     model, optimizer, start_epoch, scheduler_state_dict, best_loss = load_checkpoint(
-        model, optimizer, latest_checkpoint, device
+        model, optimizer, latest_checkpoint, device, strict=False
     )
 
     # Restore scheduler state if it exists
