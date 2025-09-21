@@ -233,6 +233,7 @@ def main(
             data_loader=reconstruct_loader,
             device=settings.reconstruct.device,
         )
+        reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
         logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
         logging.info(
             f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
@@ -242,8 +243,8 @@ def main(
         logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
         metrics = compute_metrics(
-            np.transpose(original_data, (2, 3, 0, 1)),
-            np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
+            original_data,
+            reconstructed_dwis,
         )
         logging.info(f"Metrics: {metrics}")
         # setting metrics dir taking into account run/model parameters
@@ -271,19 +272,19 @@ def main(
             logging.info(f"Saving images to: {images_dir}")
             compare_volumes(
                 # volumes in b,z,x,y
-                np.transpose(noisy_data, (2, 3, 0, 1)),
-                np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
+                np.transpose(noisy_data, (2,3,0,1)),
+                np.transpose(reconstructed_dwis, (2,3,0,1)),
                 file_name=os.path.join(images_dir, "comparison.png"),
                 volume_idx=0,
             )
             logging.info(f"Saving single volume image to: {images_dir}/single.png")
             visualize_single_volume(
-                np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
+                np.transpose(reconstructed_dwis, (2,3,0,1)),
                 file_name=os.path.join(images_dir, "single.png"),
                 volume_idx=0,
             )
             visualize_single_volume(
-                np.transpose(noisy_data, (2, 3, 0, 1)),
+                np.transpose(noisy_data, (2,3,0,1)),
                 file_name=os.path.join(images_dir, "noisy.png"),
                 volume_idx=0,
             )
