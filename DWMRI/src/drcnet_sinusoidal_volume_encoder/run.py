@@ -3,7 +3,10 @@ import os
 
 import numpy as np
 import torch
-from drcnet_sinusoidal_volume_encoder.data import ReconstructionDataSet, TrainingDataSetMultipleVolumes
+from drcnet_sinusoidal_volume_encoder.data import (
+    ReconstructionDataSet,
+    TrainingDataSetMultipleVolumes,
+)
 from drcnet_sinusoidal_volume_encoder.fit import fit_model
 from drcnet_sinusoidal_volume_encoder.model import DenoiserNet
 from drcnet_sinusoidal_volume_encoder.reconstruction import reconstruct_dwis
@@ -118,8 +121,11 @@ def main(
         ),
         device=settings.train.device,
         num_volumes=settings.data.num_volumes,
-        use_sinusoidal_encoding=getattr(settings.model, 'use_sinusoidal_encoding', True),
-        embedding_dim=getattr(settings.model, 'embedding_dim', 64),
+        use_sinusoidal_encoding=getattr(
+            settings.model, "use_sinusoidal_encoding", True
+        ),
+        embedding_dim=getattr(settings.model, "embedding_dim", 64),
+        encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
     )
     logging.info(
         f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
@@ -129,22 +135,26 @@ def main(
     )
 
     # Setup multi-GPU training
-    multi_gpu_config = create_multi_gpu_config_from_dict({
-        "multi_gpu": settings.train.multi_gpu,
-        "gpu_ids": settings.train.gpu_ids,
-        "auto_scale_lr": settings.train.auto_scale_lr,
-        "learning_rate": settings.train.learning_rate,
-        "batch_size": settings.train.batch_size,
-        "auto_exclude_imbalanced": settings.train.auto_exclude_imbalanced,
-        "memory_threshold": settings.train.memory_threshold,
-    })
-    
+    multi_gpu_config = create_multi_gpu_config_from_dict(
+        {
+            "multi_gpu": settings.train.multi_gpu,
+            "gpu_ids": settings.train.gpu_ids,
+            "auto_scale_lr": settings.train.auto_scale_lr,
+            "learning_rate": settings.train.learning_rate,
+            "batch_size": settings.train.batch_size,
+            "auto_exclude_imbalanced": settings.train.auto_exclude_imbalanced,
+            "memory_threshold": settings.train.memory_threshold,
+        }
+    )
+
     model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
 
     logging.info("Setting up optimizer and scheduler...")
     optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
     logging.info(f"Optimizer: Adam(lr={effective_lr:.6f})")
-    logging.info(f"Effective batch size: {effective_batch_size} (per-GPU: {settings.train.batch_size})")
+    logging.info(
+        f"Effective batch size: {effective_batch_size} (per-GPU: {settings.train.batch_size})"
+    )
 
     scheduler = None
     if settings.train.use_scheduler:
@@ -227,8 +237,11 @@ def main(
             ),
             device=settings.train.device,
             num_volumes=settings.data.num_volumes,
-            use_sinusoidal_encoding=getattr(settings.model, 'use_sinusoidal_encoding', True),
-            embedding_dim=getattr(settings.model, 'embedding_dim', 64),
+            use_sinusoidal_encoding=getattr(
+                settings.model, "use_sinusoidal_encoding", True
+            ),
+            embedding_dim=getattr(settings.model, "embedding_dim", 64),
+            encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
         )
         reconstruct_model, _, _, _, _ = load_checkpoint(
             model=reconstruct_model,
@@ -283,19 +296,19 @@ def main(
             logging.info(f"Saving images to: {images_dir}")
             compare_volumes(
                 # volumes in b,z,x,y
-                np.transpose(noisy_data, (2,3,0,1)),
-                np.transpose(reconstructed_dwis, (2,3,0,1)),
+                np.transpose(noisy_data, (2, 3, 0, 1)),
+                np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
                 file_name=os.path.join(images_dir, "comparison.png"),
                 volume_idx=0,
             )
             logging.info(f"Saving single volume image to: {images_dir}/single.png")
             visualize_single_volume(
-                np.transpose(reconstructed_dwis, (2,3,0,1)),
+                np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
                 file_name=os.path.join(images_dir, "single.png"),
                 volume_idx=0,
             )
             visualize_single_volume(
-                np.transpose(noisy_data, (2,3,0,1)),
+                np.transpose(noisy_data, (2, 3, 0, 1)),
                 file_name=os.path.join(images_dir, "noisy.png"),
                 volume_idx=0,
             )

@@ -393,14 +393,17 @@ class SinusoidalVolumeEncoder(nn.Module):
     Creates unique positional encodings for each volume position using sine and cosine waves.
     """
 
-    def __init__(self, num_volumes=10, embedding_dim=64, max_freq=10000.0):
+    def __init__(
+        self, num_volumes=10, embedding_dim=64, max_freq=10000.0, encoding_scale=0.1
+    ):
         super(SinusoidalVolumeEncoder, self).__init__()
         logging.info(
-            f"Initializing SinusoidalVolumeEncoder: num_volumes={num_volumes}, embedding_dim={embedding_dim}, max_freq={max_freq}"
+            f"Initializing SinusoidalVolumeEncoder: num_volumes={num_volumes}, embedding_dim={embedding_dim}, max_freq={max_freq}, encoding_scale={encoding_scale}"
         )
 
         self.num_volumes = num_volumes
         self.embedding_dim = embedding_dim
+        self.encoding_scale = encoding_scale
 
         # Create sinusoidal encodings for all possible volume positions
         pe = torch.zeros(num_volumes, embedding_dim)
@@ -454,13 +457,16 @@ class SinusoidalVolumeEncoder(nn.Module):
         batch_size, channels, x, y, z = volume_features.shape
 
         if channels >= self.embedding_dim:
-            # Add positional encoding to first embedding_dim channels
+            # Add scaled positional encoding to first embedding_dim channels
+            # Scale encoding to be smaller to avoid breaking [0,1] range
+            scaled_encoding = pos_encoding * self.encoding_scale
             encoded_features = volume_features.clone()
-            encoded_features[:, : self.embedding_dim] += pos_encoding
+            encoded_features[:, : self.embedding_dim] += scaled_encoding
         else:
             # If we have fewer channels than embedding_dim, we need to project
-            # For simplicity, we'll just add to all channels
-            encoded_features = volume_features + pos_encoding[:, :channels]
+            # Scale encoding to be smaller to avoid breaking [0,1] range
+            scaled_encoding = pos_encoding[:, :channels] * self.encoding_scale
+            encoded_features = volume_features + scaled_encoding
 
         logging.debug(
             f"SinusoidalVolumeEncoder forward: output.shape={encoded_features.shape}"
@@ -482,6 +488,7 @@ class DenoiserNet(nn.Module):
         num_volumes=10,
         use_sinusoidal_encoding=True,
         embedding_dim=64,
+        encoding_scale=0.1,
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
@@ -499,7 +506,9 @@ class DenoiserNet(nn.Module):
         # Add sinusoidal volume encoder
         if self.use_sinusoidal_encoding:
             self.volume_encoder = SinusoidalVolumeEncoder(
-                num_volumes=num_volumes, embedding_dim=embedding_dim
+                num_volumes=num_volumes,
+                embedding_dim=embedding_dim,
+                encoding_scale=encoding_scale,
             )
             logging.info(
                 f"Added SinusoidalVolumeEncoder with {num_volumes} volumes and {embedding_dim} embedding dimensions"
@@ -657,7 +666,7 @@ class DenoiserNet(nn.Module):
             output_image = inputs.mean(dim=1, keepdim=True)
         up_0 = self.input_block(inputs)
         # Apply CBAM attention to input features for volume-specific adaptation
-        up_0 = self.input_attention(up_0)
+        # up_0 = self.input_attention(up_0)
         x = self.down_block(up_0)
 
         # x 1
@@ -667,7 +676,7 @@ class DenoiserNet(nn.Module):
             x += h
 
         # Apply CBAM attention for volume-specific feature refinement
-        x = self.attention(x)
+        # x = self.attention(x)
 
         up_3 = self.up_block(x)
 
