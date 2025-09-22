@@ -120,9 +120,7 @@ class DenoisingBlock(nn.Module):
                 [
                     (
                         "conv",
-                        nn.Conv3d(
-                            in_channels, inner_channels, kernel_size=(1, 1, 1)
-                        ),
+                        nn.Conv3d(in_channels, inner_channels, kernel_size=(1, 1, 1)),
                     ),
                     ("act", nn.PReLU(inner_channels)),
                 ]
@@ -306,9 +304,7 @@ class GatedBlock(nn.Module):
 
     def forward(self, x, h):
         if h is None:
-            h = torch.zeros(
-                x.size(), dtype=x.dtype, layout=x.layout, device=x.device
-            )
+            h = torch.zeros(x.size(), dtype=x.dtype, layout=x.layout, device=x.device)
 
         concat = torch.cat([h, x], dim=1)
         z_t = self.z_t(concat)
@@ -326,18 +322,19 @@ class GatedBlock(nn.Module):
 
 class ChannelAttention3D(nn.Module):
     """3D Channel Attention Module for DWMRI"""
+
     def __init__(self, in_channels, reduction=16):
         super(ChannelAttention3D, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool3d(1)
         self.max_pool = nn.AdaptiveMaxPool3d(1)
-        
+
         self.fc = nn.Sequential(
             nn.Conv3d(in_channels, in_channels // reduction, 1, bias=False),
             nn.ReLU(inplace=True),
-            nn.Conv3d(in_channels // reduction, in_channels, 1, bias=False)
+            nn.Conv3d(in_channels // reduction, in_channels, 1, bias=False),
         )
         self.sigmoid = nn.Sigmoid()
-        
+
     def forward(self, x):
         avg_out = self.fc(self.avg_pool(x))
         max_out = self.fc(self.max_pool(x))
@@ -347,11 +344,12 @@ class ChannelAttention3D(nn.Module):
 
 class SpatialAttention3D(nn.Module):
     """3D Spatial Attention Module for DWMRI"""
+
     def __init__(self, kernel_size=7):
         super(SpatialAttention3D, self).__init__()
-        self.conv = nn.Conv3d(2, 1, kernel_size, padding=kernel_size//2, bias=False)
+        self.conv = nn.Conv3d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
         self.sigmoid = nn.Sigmoid()
-        
+
     def forward(self, x):
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
@@ -362,11 +360,12 @@ class SpatialAttention3D(nn.Module):
 
 class CBAM3D(nn.Module):
     """3D Convolutional Block Attention Module for DWMRI"""
+
     def __init__(self, in_channels, reduction=16, kernel_size=7):
         super(CBAM3D, self).__init__()
         self.channel_attention = ChannelAttention3D(in_channels, reduction)
         self.spatial_attention = SpatialAttention3D(kernel_size)
-        
+
     def forward(self, x):
         # Channel attention first
         x = x * self.channel_attention(x)
@@ -377,11 +376,12 @@ class CBAM3D(nn.Module):
 
 class SpatialAttention(nn.Module):
     """Spatial attention module for better feature focus"""
+
     def __init__(self, in_channels):
         super(SpatialAttention, self).__init__()
         self.conv = nn.Conv3d(in_channels, 1, kernel_size=1)
         self.sigmoid = nn.Sigmoid()
-        
+
     def forward(self, x):
         attention = self.sigmoid(self.conv(x))
         return x * attention
@@ -392,72 +392,85 @@ class SinusoidalVolumeEncoder(nn.Module):
     Sinusoidal positional encoding for DWMRI volumes.
     Creates unique positional encodings for each volume position using sine and cosine waves.
     """
-    def __init__(self, num_volumes=10, embedding_dim=64, max_freq=10000.0):
+
+    def __init__(
+        self, num_volumes=10, embedding_dim=64, max_freq=10000.0, encoding_scale=0.1
+    ):
         super(SinusoidalVolumeEncoder, self).__init__()
         logging.info(
-            f"Initializing SinusoidalVolumeEncoder: num_volumes={num_volumes}, embedding_dim={embedding_dim}, max_freq={max_freq}"
+            f"Initializing SinusoidalVolumeEncoder: num_volumes={num_volumes}, embedding_dim={embedding_dim}, max_freq={max_freq}, encoding_scale={encoding_scale}"
         )
-        
+
         self.num_volumes = num_volumes
         self.embedding_dim = embedding_dim
-        
+        self.encoding_scale = encoding_scale
+
         # Create sinusoidal encodings for all possible volume positions
         pe = torch.zeros(num_volumes, embedding_dim)
         position = torch.arange(0, num_volumes).unsqueeze(1).float()
-        
+
         # Calculate frequency terms using logarithmic spacing
-        div_term = torch.exp(torch.arange(0, embedding_dim, 2).float() * 
-                           -(math.log(max_freq) / embedding_dim))
-        
+        div_term = torch.exp(
+            torch.arange(0, embedding_dim, 2).float()
+            * -(math.log(max_freq) / embedding_dim)
+        )
+
         # Apply sinusoidal functions
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        
+
         # Store as buffer (not trainable parameter)
-        self.register_buffer('pe', pe)
-        
+        self.register_buffer("pe", pe)
+
         logging.info(f"SinusoidalVolumeEncoder created with shape: {pe.shape}")
         logging.info(f"Volume 0 encoding sample: {pe[0, :8].tolist()}")
         logging.info(f"Volume 1 encoding sample: {pe[1, :8].tolist()}")
-        
+
     def forward(self, volume_features, volume_indices):
         """
         Apply sinusoidal positional encoding to volume features.
-        
+
         Args:
             volume_features: [batch, channels, x, y, z] - single volume features
             volume_indices: [batch] - which volume each sample represents
-            
+
         Returns:
             encoded_features: [batch, channels, x, y, z] - features with positional encoding
         """
-        logging.debug(f"SinusoidalVolumeEncoder forward: volume_features.shape={volume_features.shape}, volume_indices.shape={volume_indices.shape}")
-        
+        logging.debug(
+            f"SinusoidalVolumeEncoder forward: volume_features.shape={volume_features.shape}, volume_indices.shape={volume_indices.shape}"
+        )
+
         # Get positional encoding for each volume in the batch
         pos_encoding = self.pe[volume_indices]  # [batch, embedding_dim]
-        
+
         # Reshape to match spatial dimensions
         # pos_encoding: [batch, embedding_dim] -> [batch, embedding_dim, 1, 1, 1]
         pos_encoding = pos_encoding.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        
+
         # Expand to match spatial dimensions
         pos_encoding = pos_encoding.expand(-1, -1, *volume_features.shape[2:])
-        
+
         # Project positional encoding to match feature channels
         # For now, we'll add the encoding to the first embedding_dim channels
         # and pad with zeros for remaining channels
         batch_size, channels, x, y, z = volume_features.shape
-        
+
         if channels >= self.embedding_dim:
-            # Add positional encoding to first embedding_dim channels
+            # Add scaled positional encoding to first embedding_dim channels
+            # Scale encoding to be smaller to avoid breaking [0,1] range
+            scaled_encoding = pos_encoding * self.encoding_scale
             encoded_features = volume_features.clone()
-            encoded_features[:, :self.embedding_dim] += pos_encoding
+            encoded_features[:, : self.embedding_dim] += scaled_encoding
         else:
             # If we have fewer channels than embedding_dim, we need to project
-            # For simplicity, we'll just add to all channels
-            encoded_features = volume_features + pos_encoding[:, :channels]
-        
-        logging.debug(f"SinusoidalVolumeEncoder forward: output.shape={encoded_features.shape}")
+            # Scale encoding to be smaller to avoid breaking [0,1] range
+            scaled_encoding = pos_encoding[:, :channels] * self.encoding_scale
+            encoded_features = volume_features + scaled_encoding
+
+        logging.debug(
+            f"SinusoidalVolumeEncoder forward: output.shape={encoded_features.shape}"
+        )
         return encoded_features
 
 
@@ -475,6 +488,7 @@ class DenoiserNet(nn.Module):
         num_volumes=10,
         use_sinusoidal_encoding=True,
         embedding_dim=64,
+        encoding_scale=0.1,
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
@@ -488,14 +502,17 @@ class DenoiserNet(nn.Module):
         self.num_volumes = num_volumes
         filters_0 = base_filters
         filters_1 = filters_0
-        
+
         # Add sinusoidal volume encoder
         if self.use_sinusoidal_encoding:
             self.volume_encoder = SinusoidalVolumeEncoder(
                 num_volumes=num_volumes,
-                embedding_dim=embedding_dim
+                embedding_dim=embedding_dim,
+                encoding_scale=encoding_scale,
             )
-            logging.info(f"Added SinusoidalVolumeEncoder with {num_volumes} volumes and {embedding_dim} embedding dimensions")
+            logging.info(
+                f"Added SinusoidalVolumeEncoder with {num_volumes} volumes and {embedding_dim} embedding dimensions"
+            )
 
         self.input_block = nn.Sequential(
             OrderedDict(
@@ -513,7 +530,7 @@ class DenoiserNet(nn.Module):
                 ]
             )
         )
-        
+
         # Add CBAM to input block for early volume-specific attention
         self.input_attention = CBAM3D(filters_0, reduction=8, kernel_size=5)
 
@@ -551,10 +568,8 @@ class DenoiserNet(nn.Module):
             )
         )
 
-        self.denoising_block = GatedBlock(
-            filters_1, filters_1, dense_convs, groups
-        )
-        
+        self.denoising_block = GatedBlock(filters_1, filters_1, dense_convs, groups)
+
         # Add CBAM attention for better feature focus and volume-specific adaptation
         self.attention = CBAM3D(filters_1, reduction=8, kernel_size=7)
 
@@ -563,9 +578,7 @@ class DenoiserNet(nn.Module):
                 [
                     (
                         "conv 0",
-                        nn.Conv3d(
-                            2 * filters_0, filters_0, kernel_size=(1, 1, 1)
-                        ),
+                        nn.Conv3d(2 * filters_0, filters_0, kernel_size=(1, 1, 1)),
                     ),
                     ("act 0", nn.PReLU(filters_0)),
                     (
@@ -584,9 +597,7 @@ class DenoiserNet(nn.Module):
 
         # Log model parameters
         total_params = sum(p.numel() for p in self.parameters())
-        trainable_params = sum(
-            p.numel() for p in self.parameters() if p.requires_grad
-        )
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         logging.info(
             f"DenoiserNet model created - Total parameters: {total_params:,}, Trainable parameters: {trainable_params:,}"
         )
@@ -594,46 +605,68 @@ class DenoiserNet(nn.Module):
     def forward(self, inputs, volume_indices=None):
         """
         Forward pass with sinusoidal volume encoding.
-        
+
         Args:
             inputs: [batch, num_input_volumes, x, y, z] - input volumes
             volume_indices: [batch, num_input_volumes] - volume indices for each input volume
-            
+
         Returns:
             output: [batch, output_channels, x, y, z] - reconstructed volume
         """
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
-        
+
         # Apply sinusoidal volume encoding if enabled
         if self.use_sinusoidal_encoding and volume_indices is not None:
-            logging.debug(f"Applying sinusoidal encoding with volume_indices shape={volume_indices.shape}")
-            
+            logging.debug(
+                f"Applying sinusoidal encoding with volume_indices shape={volume_indices.shape}"
+            )
+
             # Process each volume individually with its positional encoding
             encoded_volumes = []
             batch_size, num_volumes, x, y, z = inputs.shape
-            
+
             for vol_idx in range(num_volumes):
                 # Get single volume: [batch, 1, x, y, z]
-                single_volume = inputs[:, vol_idx:vol_idx+1]
-                
+                single_volume = inputs[:, vol_idx : vol_idx + 1]
+
                 # Get volume indices for this volume: [batch]
                 vol_indices = volume_indices[:, vol_idx]
-                
+
                 # Apply sinusoidal encoding
                 encoded_vol = self.volume_encoder(single_volume, vol_indices)
                 encoded_volumes.append(encoded_vol)
-            
+
             # Combine encoded volumes
             inputs = torch.cat(encoded_volumes, dim=1)
             logging.debug(f"After sinusoidal encoding: inputs shape={inputs.shape}")
-        
+
         # Continue with existing architecture
-        # taking as base output image the mean of the inputs over volumes
-        # i.e. mean of the X training volumes
-        output_image = inputs.mean(dim=1, keepdim=True)
+        # Use volume-weighted average instead of simple mean
+        if self.use_sinusoidal_encoding and volume_indices is not None:
+            # Create volume-specific weights based on positional encoding
+            batch_size, num_volumes, x, y, z = inputs.shape
+            volume_weights = torch.ones_like(inputs[:, :1])  # [batch, 1, x, y, z]
+
+            # Apply sinusoidal encoding to create volume-specific weights
+            for vol_idx in range(num_volumes):
+                vol_indices = volume_indices[:, vol_idx]
+                pos_encoding = self.volume_encoder.pe[
+                    vol_indices
+                ]  # [batch, embedding_dim]
+
+                # Create weight from positional encoding (use first few dimensions)
+                weight = torch.sigmoid(pos_encoding[:, :4].mean(dim=1))  # [batch]
+                weight = weight.view(batch_size, 1, 1, 1, 1).expand(-1, 1, x, y, z)
+                volume_weights += weight * inputs[:, vol_idx : vol_idx + 1]
+
+            # Normalize weights
+            output_image = volume_weights / (num_volumes + 1)
+        else:
+            # Fallback to simple mean
+            output_image = inputs.mean(dim=1, keepdim=True)
         up_0 = self.input_block(inputs)
         # Apply CBAM attention to input features for volume-specific adaptation
-        up_0 = self.input_attention(up_0)
+        # up_0 = self.input_attention(up_0)
         x = self.down_block(up_0)
 
         # x 1
@@ -643,8 +676,8 @@ class DenoiserNet(nn.Module):
             x += h
 
         # Apply CBAM attention for volume-specific feature refinement
-        x = self.attention(x)
-        
+        # x = self.attention(x)
+
         up_3 = self.up_block(x)
 
         return self.output_block(torch.cat([up_0, up_3], 1)) + output_image
