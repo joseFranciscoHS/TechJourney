@@ -3,10 +3,10 @@ import os
 
 import numpy as np
 import torch
-from drcnet.data import ReconstructionDataSet, TrainingDataSetMultipleVolumes
-from drcnet.fit import fit_model
-from drcnet.model import DenoiserNet
-from drcnet.reconstruction import reconstruct_dwis
+from drcnet_sinusoidal_volume_encoder.data import ReconstructionDataSet, TrainingDataSetMultipleVolumes
+from drcnet_sinusoidal_volume_encoder.fit import fit_model
+from drcnet_sinusoidal_volume_encoder.model import DenoiserNet
+from drcnet_sinusoidal_volume_encoder.reconstruction import reconstruct_dwis
 from torch.utils.data import DataLoader
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
