@@ -2,7 +2,7 @@ dbrain:
   train:
     num_epochs: 1  # Increased for better convergence
     device: cuda
-    learning_rate: 0.001  # Base learning rate for single GPU
+    learning_rate: 0.0009  # Base learning rate for single GPU
     batch_size: 8  # Per-GPU batch size
     use_scheduler: false
     scheduler_type: "cosine"  # Better for denoising tasks
