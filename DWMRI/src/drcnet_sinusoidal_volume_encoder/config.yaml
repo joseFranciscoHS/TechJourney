@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 1  # Increased for better convergence
+    num_epochs: 10  # Increased for better convergence
     device: cuda
     learning_rate: 0.001  # Base learning rate for single GPU
     batch_size: 8  # Per-GPU batch size
@@ -31,7 +31,7 @@ dbrain:
   model:
     in_channel: 9 # is the number of volumes taking one out to be predicted
     out_channel: 1 # is the predicted volume
-    groups: 1  # Increased for better feature separation
+    groups: 4  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
@@ -39,8 +39,8 @@ dbrain:
     use_sinusoidal_encoding: true  # Enable sinusoidal positional encoding
     embedding_dim: 64  # Dimension of positional encoding
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    patch_size: 16  # Larger patches for better context
+    step: 8  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
