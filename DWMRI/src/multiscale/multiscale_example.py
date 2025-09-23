@@ -7,7 +7,7 @@ This script demonstrates how to use the new multi-scale architecture for detail 
 import logging
 import torch
 import torch.nn as nn
-from model import MultiScaleDetailNet, EdgeAwareLoss
+from multiscale.model import MultiScaleDetailNet, EdgeAwareLoss
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -93,21 +93,11 @@ def test_forward_pass():
     logger.info(f"Training step completed. Loss: {loss.item():.6f}")
 
 
-def compare_with_original():
-    """Compare MultiScaleDetailNet with original DenoiserNet"""
+def test_model_parameters():
+    """Test MultiScaleDetailNet parameters and functionality"""
 
-    from model import DenoiserNet
-
-    # Create both models
-    multiscale_model = MultiScaleDetailNet(
-        input_channels=9,
-        output_channels=1,
-        base_filters=32,
-        num_volumes=10,
-        use_sinusoidal_encoding=True,
-    )
-
-    original_model = DenoiserNet(
+    # Create model
+    model = MultiScaleDetailNet(
         input_channels=9,
         output_channels=1,
         base_filters=32,
@@ -116,25 +106,20 @@ def compare_with_original():
     )
 
     # Count parameters
-    multiscale_params = sum(p.numel() for p in multiscale_model.parameters())
-    original_params = sum(p.numel() for p in original_model.parameters())
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    logger.info(f"MultiScaleDetailNet parameters: {multiscale_params:,}")
-    logger.info(f"Original DenoiserNet parameters: {original_params:,}")
-    logger.info(
-        f"Parameter increase: {((multiscale_params - original_params) / original_params * 100):.1f}%"
-    )
+    logger.info(f"MultiScaleDetailNet parameters: {total_params:,}")
+    logger.info(f"Trainable parameters: {trainable_params:,}")
 
-    # Test with same input
+    # Test with sample input
     inputs = torch.randn(1, 9, 32, 32, 32)
     volume_indices = torch.randint(0, 10, (1, 9))
 
     with torch.no_grad():
-        multiscale_output = multiscale_model(inputs, volume_indices)
-        original_output = original_model(inputs, volume_indices)
-
-        logger.info(f"MultiScale output shape: {multiscale_output.shape}")
-        logger.info(f"Original output shape: {original_output.shape}")
+        output = model(inputs, volume_indices)
+        logger.info(f"Model output shape: {output.shape}")
+        logger.info(f"Model test completed successfully")
 
 
 def training_example():
@@ -192,8 +177,8 @@ if __name__ == "__main__":
     # Test basic functionality
     test_forward_pass()
 
-    logger.info("\n=== Model Comparison ===")
-    compare_with_original()
+    logger.info("\n=== Model Parameters ===")
+    test_model_parameters()
 
     logger.info("\n=== Training Example ===")
     training_example()

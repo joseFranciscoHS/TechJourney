@@ -3,13 +3,13 @@ import os
 
 import numpy as np
 import torch
-from data import (
+from multiscale.data import (
     ReconstructionDataSet,
     TrainingDataSetMultipleVolumes,
 )
-from fit import fit_model
-from model import MultiScaleDetailNet, DenoiserNet
-from reconstruction import reconstruct_dwis
+from multiscale.fit import fit_model
+from multiscale.model import MultiScaleDetailNet
+from multiscale.reconstruction import reconstruct_dwis
 from torch.utils.data import DataLoader
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
@@ -29,7 +29,6 @@ def main(
     train: bool = True,
     reconstruct: bool = True,
     generate_images: bool = True,
-    use_multiscale_model: bool = True,
     use_edge_aware_loss: bool = True,
     use_mixed_precision: bool = True,
     accumulation_steps: int = 1,
@@ -37,9 +36,7 @@ def main(
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting training with dataset: {dataset}")
-    logging.info(
-        f"Model architecture: {'MultiScaleDetailNet' if use_multiscale_model else 'DenoiserNet'}"
-    )
+    logging.info("Model architecture: MultiScaleDetailNet")
     logging.info(
         f"Loss function: {'EdgeAwareLoss' if use_edge_aware_loss else 'L1Loss'}"
     )
@@ -117,55 +114,30 @@ def main(
     logging.info(
         f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
     )
-    # Choose model architecture
-    if use_multiscale_model:
-        logging.info("Initializing MultiScaleDetailNet model...")
-        model = MultiScaleDetailNet(
-            input_channels=settings.model.in_channel,
-            output_channels=settings.model.out_channel,
-            groups=settings.model.groups,
-            dense_convs=settings.model.dense_convs,
-            residual=settings.model.residual,
-            base_filters=settings.model.base_filters,
-            output_shape=(
-                settings.model.out_channel,
-                settings.data.patch_size,
-                settings.data.patch_size,
-                settings.data.patch_size,
-            ),
-            device=settings.train.device,
-            num_volumes=settings.data.num_volumes,
-            use_sinusoidal_encoding=getattr(
-                settings.model, "use_sinusoidal_encoding", True
-            ),
-            embedding_dim=getattr(settings.model, "embedding_dim", 64),
-            encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
-        )
-        logging.info("Using MultiScaleDetailNet for detail preservation")
-    else:
-        logging.info("Initializing DenoiserNet model...")
-        model = DenoiserNet(
-            input_channels=settings.model.in_channel,
-            output_channels=settings.model.out_channel,
-            groups=settings.model.groups,
-            dense_convs=settings.model.dense_convs,
-            residual=settings.model.residual,
-            base_filters=settings.model.base_filters,
-            output_shape=(
-                settings.model.out_channel,
-                settings.data.patch_size,
-                settings.data.patch_size,
-                settings.data.patch_size,
-            ),
-            device=settings.train.device,
-            num_volumes=settings.data.num_volumes,
-            use_sinusoidal_encoding=getattr(
-                settings.model, "use_sinusoidal_encoding", True
-            ),
-            embedding_dim=getattr(settings.model, "embedding_dim", 64),
-            encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
-        )
-        logging.info("Using original DenoiserNet")
+    # Initialize MultiScaleDetailNet model
+    logging.info("Initializing MultiScaleDetailNet model...")
+    model = MultiScaleDetailNet(
+        input_channels=settings.model.in_channel,
+        output_channels=settings.model.out_channel,
+        groups=settings.model.groups,
+        dense_convs=settings.model.dense_convs,
+        residual=settings.model.residual,
+        base_filters=settings.model.base_filters,
+        output_shape=(
+            settings.model.out_channel,
+            settings.data.patch_size,
+            settings.data.patch_size,
+            settings.data.patch_size,
+        ),
+        device=settings.train.device,
+        num_volumes=settings.data.num_volumes,
+        use_sinusoidal_encoding=getattr(
+            settings.model, "use_sinusoidal_encoding", True
+        ),
+        embedding_dim=getattr(settings.model, "embedding_dim", 64),
+        encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
+    )
+    logging.info("Using MultiScaleDetailNet for detail preservation")
     logging.info(
         f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
     )
@@ -265,53 +237,29 @@ def main(
         best_loss_checkpoint = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
         del model
 
-        # Use the same model architecture for reconstruction
-        if use_multiscale_model:
-            logging.info("Creating MultiScaleDetailNet for reconstruction...")
-            reconstruct_model = MultiScaleDetailNet(
-                input_channels=settings.model.in_channel,
-                output_channels=settings.model.out_channel,
-                groups=settings.model.groups,
-                dense_convs=settings.model.dense_convs,
-                residual=settings.model.residual,
-                base_filters=settings.model.base_filters,
-                output_shape=(
-                    settings.model.out_channel,
-                    settings.data.take_x,
-                    settings.data.take_y,
-                    settings.data.take_z,
-                ),
-                device=settings.train.device,
-                num_volumes=settings.data.num_volumes,
-                use_sinusoidal_encoding=getattr(
-                    settings.model, "use_sinusoidal_encoding", True
-                ),
-                embedding_dim=getattr(settings.model, "embedding_dim", 64),
-                encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
-            )
-        else:
-            logging.info("Creating DenoiserNet for reconstruction...")
-            reconstruct_model = DenoiserNet(
-                input_channels=settings.model.in_channel,
-                output_channels=settings.model.out_channel,
-                groups=settings.model.groups,
-                dense_convs=settings.model.dense_convs,
-                residual=settings.model.residual,
-                base_filters=settings.model.base_filters,
-                output_shape=(
-                    settings.model.out_channel,
-                    settings.data.take_x,
-                    settings.data.take_y,
-                    settings.data.take_z,
-                ),
-                device=settings.train.device,
-                num_volumes=settings.data.num_volumes,
-                use_sinusoidal_encoding=getattr(
-                    settings.model, "use_sinusoidal_encoding", True
-                ),
-                embedding_dim=getattr(settings.model, "embedding_dim", 64),
-                encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
-            )
+        # Create MultiScaleDetailNet for reconstruction
+        logging.info("Creating MultiScaleDetailNet for reconstruction...")
+        reconstruct_model = MultiScaleDetailNet(
+            input_channels=settings.model.in_channel,
+            output_channels=settings.model.out_channel,
+            groups=settings.model.groups,
+            dense_convs=settings.model.dense_convs,
+            residual=settings.model.residual,
+            base_filters=settings.model.base_filters,
+            output_shape=(
+                settings.model.out_channel,
+                settings.data.take_x,
+                settings.data.take_y,
+                settings.data.take_z,
+            ),
+            device=settings.train.device,
+            num_volumes=settings.data.num_volumes,
+            use_sinusoidal_encoding=getattr(
+                settings.model, "use_sinusoidal_encoding", True
+            ),
+            embedding_dim=getattr(settings.model, "embedding_dim", 64),
+            encoding_scale=getattr(settings.model, "encoding_scale", 0.1),
+        )
         reconstruct_model, _, _, _, _ = load_checkpoint(
             model=reconstruct_model,
             optimizer=optimizer,
@@ -384,13 +332,12 @@ def main(
 
 
 if __name__ == "__main__":
-    # Run with MultiScaleDetailNet and edge-aware loss by default
+    # Run with MultiScaleDetailNet and edge-aware loss
     main(
         dataset="dbrain",
         train=True,
         reconstruct=True,
         generate_images=True,
-        use_multiscale_model=True,
         use_edge_aware_loss=True,
         use_mixed_precision=True,
         accumulation_steps=1,

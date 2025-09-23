@@ -38,13 +38,13 @@ new_model/
 
 ## 🎯 Key Improvements
 
-| Aspect | Original DenoiserNet | MultiScaleDetailNet |
-|--------|---------------------|-------------------|
-| **Detail Preservation** | Single resolution path | Dual resolution paths |
-| **Skip Connections** | Limited | Multiple skip connections |
-| **Loss Function** | Basic MSE | Edge-aware loss |
-| **Training Speed** | Standard | Mixed precision + optimizations |
-| **Blurriness** | Common issue | Significantly reduced |
+| Aspect | MultiScaleDetailNet |
+|--------|-------------------|
+| **Detail Preservation** | Dual resolution paths |
+| **Skip Connections** | Multiple skip connections |
+| **Loss Function** | Edge-aware loss |
+| **Training Speed** | Mixed precision + optimizations |
+| **Blurriness** | Significantly reduced |
 
 ## 🚀 Quick Start
 
@@ -70,10 +70,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 ### Running Training
 ```bash
-# Run with MultiScaleDetailNet (default)
+# Run with MultiScaleDetailNet
 python run.py
 
-# Run comparison between models
+# Run loss function comparison
 python compare_models.py --mode comparison
 
 # Run single configuration
@@ -81,10 +81,6 @@ python compare_models.py --mode single
 ```
 
 ## ⚙️ Configuration Options
-
-### Model Selection
-- `use_multiscale_model=True`: Use MultiScaleDetailNet (default)
-- `use_multiscale_model=False`: Use original DenoiserNet
 
 ### Loss Function
 - `use_edge_aware_loss=True`: Use EdgeAwareLoss (default)

@@ -1,0 +1,119 @@
+# MultiScaleDetailNet Configuration
+# This configuration file is optimized for the MultiScaleDetailNet architecture
+# which provides improved detail preservation and faster training compared to the original DenoiserNet.
+#
+# Key features:
+# - Multi-scale architecture for detail preservation
+# - Edge-aware loss function for sharp boundaries
+# - Mixed precision training for speed
+# - Sinusoidal volume encoding for positional awareness
+#
+# Update the data paths below to match your local setup.
+
+dbrain:
+  train:
+    num_epochs: 50  # Increased for better convergence with MultiScaleDetailNet
+    device: cuda
+    learning_rate: 0.001  # Base learning rate for single GPU
+    batch_size: 8  # Per-GPU batch size
+    use_scheduler: true  # Enable scheduler for better convergence
+    scheduler_type: "cosine"  # Better for denoising tasks
+    checkpoint_dir: "multiscale_detail_net/checkpoints/dbrain"
+    # Multi-GPU settings (optimized for MultiScaleDetailNet)
+    multi_gpu: true  # Set to false to disable multi-GPU
+    gpu_ids: [0, 1, 2]  # Specify which GPUs to use
+    auto_scale_lr: true  # Automatically scale LR based on GPU count
+    auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
+    memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
+    
+    # MultiScaleDetailNet training optimizations
+    gradient_clipping: 1.0  # Gradient clipping for stable training
+    weight_decay: 1e-4  # L2 regularization
+    warmup_epochs: 5  # Learning rate warmup epochs
+    ## cosine annealing warm restarts (optimized for MultiScaleDetailNet)
+    scheduler_T_0: 10  # Faster restarts for detail preservation
+    eta_min_lr: 0.00001  # Lower minimum LR
+    scheduler_T_mult: 2
+    ## stepLR
+    scheduler_step_size: 20  # More frequent steps for detail learning
+    scheduler_gamma: 0.1
+    ## reduceLROnPlateau
+    scheduler_patience: 10  # More responsive to convergence
+    scheduler_factor: 0.5  # Balanced reduction
+    min_lr: 0.00001
+  reconstruct:
+    device: cuda
+    metrics_dir: "multiscale_detail_net/metrics/dbrain"
+    images_dir: "multiscale_detail_net/images/dbrain"
+  model:
+    # MultiScaleDetailNet configuration
+    in_channel: 9  # Number of input volumes (taking one out to be predicted)
+    out_channel: 1  # Number of predicted volumes
+    groups: 1  # Optimized for MultiScaleDetailNet architecture
+    dense_convs: 2  # Reduced for faster training while maintaining quality
+    residual: true  # Enable residual connections for better gradient flow
+    base_filters: 32  # Base number of filters for MultiScaleDetailNet
+    
+    # Sinusoidal volume encoding parameters (optimized for MultiScaleDetailNet)
+    use_sinusoidal_encoding: true  # Enable sinusoidal positional encoding
+    embedding_dim: 64  # Dimension of positional encoding
+    encoding_scale: 0.1  # Scale factor to keep data in [0,1] range
+    
+    # MultiScaleDetailNet specific parameters
+    use_edge_aware_loss: true  # Enable edge-aware loss for detail preservation
+    use_mixed_precision: true  # Enable mixed precision training
+    accumulation_steps: 1  # Gradient accumulation steps
+    
+    # EdgeAwareLoss parameters
+    edge_loss_alpha: 0.5  # Weight for edge preservation loss
+    edge_loss_beta: 0.1   # Weight for gradient loss
+  data:
+    # Data configuration optimized for MultiScaleDetailNet
+    patch_size: 32  # Optimized patch size for MultiScaleDetailNet
+    step: 16  # Balanced step size for efficient training
+    num_b0s: 6
+    num_volumes: 10
+    noise_sigma: 0.1
+    bvalue: 2500
+    take_x: 128
+    take_y: 128
+    take_z: 96
+    
+    # Data paths (update these to your local paths)
+    nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+stanford:
+  train:
+    num_epochs: 100
+    device: cuda  # Updated to use CUDA for MultiScaleDetailNet
+    learning_rate: 0.001  # Updated learning rate for MultiScaleDetailNet
+    batch_size: 8
+    use_scheduler: true
+    scheduler_type: "cosine"
+    checkpoint_dir: "multiscale_detail_net/checkpoints/stanford"
+  model:
+    # MultiScaleDetailNet configuration for Stanford dataset
+    in_channel: 9
+    out_channel: 1  # Single output volume
+    groups: 1
+    dense_convs: 2
+    residual: true
+    base_filters: 32
+    use_sinusoidal_encoding: true
+    embedding_dim: 64
+    encoding_scale: 0.1
+    use_edge_aware_loss: true
+    use_mixed_precision: true
+    accumulation_steps: 1
+    
+    # EdgeAwareLoss parameters
+    edge_loss_alpha: 0.5  # Weight for edge preservation loss
+    edge_loss_beta: 0.1   # Weight for gradient loss
+  data:
+    patch_size: 32
+    step: 16
+    num_volumes: 10
+    noise_sigma: 0.01
+    bvalue: 2500

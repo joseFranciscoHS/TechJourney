@@ -7,7 +7,7 @@ from torch.nn import L1Loss
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
 from utils.checkpoint import load_checkpoint, save_checkpoint
-from model import EdgeAwareLoss
+from multiscale.model import EdgeAwareLoss
 
 
 def fit_model(
