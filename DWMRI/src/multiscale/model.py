@@ -809,9 +809,14 @@ class EdgeAwareLoss(nn.Module):
         if x.dim() == 4:  # [batch, channels, x, y, z]
             x = x.mean(dim=1, keepdim=True)  # Average across channels
 
-        edges_x = F.conv3d(x, self.sobel_x, padding=1)
-        edges_y = F.conv3d(x, self.sobel_y, padding=1)
-        edges_z = F.conv3d(x, self.sobel_z, padding=1)
+        # Convert Sobel kernels to match input dtype for mixed precision compatibility
+        sobel_x = self.sobel_x.to(dtype=x.dtype)
+        sobel_y = self.sobel_y.to(dtype=x.dtype)
+        sobel_z = self.sobel_z.to(dtype=x.dtype)
+
+        edges_x = F.conv3d(x, sobel_x, padding=1)
+        edges_y = F.conv3d(x, sobel_y, padding=1)
+        edges_z = F.conv3d(x, sobel_z, padding=1)
 
         # Compute magnitude of gradient
         edge_magnitude = torch.sqrt(edges_x**2 + edges_y**2 + edges_z**2 + 1e-8)
