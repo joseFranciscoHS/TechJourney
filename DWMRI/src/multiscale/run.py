@@ -3,25 +3,25 @@ import os
 
 import numpy as np
 import torch
-from multiscale.data import (
+from .data import (
     ReconstructionDataSet,
     TrainingDataSetMultipleVolumes,
 )
-from multiscale.fit import fit_model
-from multiscale.model import MultiScaleDetailNet
-from multiscale.reconstruction import reconstruct_dwis
+from .fit import fit_model
+from .model import MultiScaleDetailNet
+from .reconstruction import reconstruct_dwis
 from torch.utils.data import DataLoader
-from utils import setup_logging
-from utils.checkpoint import load_checkpoint
-from utils.data import DBrainDataLoader, StanfordDataLoader
-from utils.metrics import (
+from ..utils import setup_logging
+from ..utils.checkpoint import load_checkpoint
+from ..utils.data import DBrainDataLoader, StanfordDataLoader
+from ..utils.metrics import (
     compare_volumes,
     compute_metrics,
     save_metrics,
     visualize_single_volume,
 )
-from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
-from utils.utils import load_config
+from ..utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
+from ..utils.utils import load_config
 
 
 def main(

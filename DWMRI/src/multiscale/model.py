@@ -809,10 +809,23 @@ class EdgeAwareLoss(nn.Module):
         if x.dim() == 4:  # [batch, channels, x, y, z]
             x = x.mean(dim=1, keepdim=True)  # Average across channels
 
-        # Convert Sobel kernels to match input dtype for mixed precision compatibility
-        sobel_x = self.sobel_x.to(dtype=x.dtype)
-        sobel_y = self.sobel_y.to(dtype=x.dtype)
-        sobel_z = self.sobel_z.to(dtype=x.dtype)
+        # Create Sobel kernels dynamically to match input dtype and device
+        sobel_x_2d = torch.tensor(
+            [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=x.dtype, device=x.device
+        )
+        sobel_y_2d = torch.tensor(
+            [[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=x.dtype, device=x.device
+        )
+
+        # Create 3D kernels by stacking 2D kernels
+        sobel_x_3d = sobel_x_2d.unsqueeze(0).repeat(3, 1, 1)  # [3, 3, 3]
+        sobel_y_3d = sobel_y_2d.unsqueeze(0).repeat(3, 1, 1)  # [3, 3, 3]
+        sobel_z_3d = sobel_y_2d.unsqueeze(0).repeat(3, 1, 1)  # [3, 3, 3]
+
+        # Reshape for convolution
+        sobel_x = sobel_x_3d.view(1, 1, 3, 3, 3)
+        sobel_y = sobel_y_3d.view(1, 1, 3, 3, 3)
+        sobel_z = sobel_z_3d.view(1, 1, 3, 3, 3)
 
         edges_x = F.conv3d(x, sobel_x, padding=1)
         edges_y = F.conv3d(x, sobel_y, padding=1)
