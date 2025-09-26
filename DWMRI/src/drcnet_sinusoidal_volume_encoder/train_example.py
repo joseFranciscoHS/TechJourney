@@ -10,7 +10,8 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
 from model import DenoiserNet
-from fit import fit_model, create_training_config
+
+# from fit import fit_model  # Uncomment when ready to train
 
 # Configure logging
 logging.basicConfig(
@@ -25,14 +26,18 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device: {device}")
 
-    # Create training configuration
-    config = create_training_config(
-        use_edge_aware_loss=True,
-        edge_loss_alpha=0.5,  # Balance between MSE and edge preservation
-        num_epochs=50,
-        device=device,
-        checkpoint_dir="./checkpoints_edge_aware",
-    )
+    # Training configuration
+    use_edge_aware_loss = True
+    edge_loss_alpha = 0.5  # Balance between MSE and edge preservation
+    num_epochs = 50
+    checkpoint_dir = "./checkpoints_edge_aware"
+
+    logging.info("Training Configuration:")
+    logging.info(f"  Edge-aware loss: {use_edge_aware_loss}")
+    logging.info(f"  Edge loss alpha: {edge_loss_alpha}")
+    logging.info(f"  Epochs: {num_epochs}")
+    logging.info(f"  Device: {device}")
+    logging.info(f"  Checkpoint dir: {checkpoint_dir}")
 
     # Model parameters
     model_params = {
@@ -70,16 +75,17 @@ def main():
     # train_loader = create_dataloader(...)
 
     # Example training call (uncomment when you have data)
+    # from fit import fit_model  # Uncomment this line too
     # fit_model(
     #     model=model,
     #     optimizer=optimizer,
     #     scheduler=scheduler,
     #     train_loader=train_loader,
-    #     num_epochs=config["num_epochs"],
-    #     device=config["device"],
-    #     checkpoint_dir=config["checkpoint_dir"],
-    #     use_edge_aware_loss=config["use_edge_aware_loss"],
-    #     edge_loss_alpha=config["edge_loss_alpha"],
+    #     num_epochs=num_epochs,
+    #     device=device,
+    #     checkpoint_dir=checkpoint_dir,
+    #     use_edge_aware_loss=use_edge_aware_loss,
+    #     edge_loss_alpha=edge_loss_alpha,
     # )
 
     logging.info("Training setup completed!")

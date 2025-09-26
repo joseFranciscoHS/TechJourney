@@ -387,19 +387,28 @@ class EdgeAwareLoss(nn.Module):
         self.alpha = alpha
 
         # Sobel edge detection kernels for 3D
-        # X-direction kernel
-        self.sobel_x = torch.tensor([[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]]).float()
-        # Y-direction kernel
-        self.sobel_y = torch.tensor([[[-1, -2, -1], [0, 0, 0], [1, 2, 1]]]).float()
-        # Z-direction kernel
-        self.sobel_z = torch.tensor(
-            [[[-1, -2, -1], [-2, -4, -2], [-1, -2, -1]]]
-        ).float()
+        # X-direction kernel (3D extension of 2D Sobel)
+        sobel_x_2d = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float()
+        self.sobel_x = sobel_x_2d.unsqueeze(0).repeat(3, 1, 1)  # [3, 3, 3]
+
+        # Y-direction kernel (3D extension of 2D Sobel)
+        sobel_y_2d = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float()
+        self.sobel_y = sobel_y_2d.unsqueeze(1).repeat(1, 3, 1)  # [3, 3, 3]
+
+        # Z-direction kernel (3D extension of 2D Sobel)
+        sobel_z_2d = torch.tensor([[-1, -2, -1], [-2, -4, -2], [-1, -2, -1]]).float()
+        self.sobel_z = sobel_z_2d.unsqueeze(2).repeat(1, 1, 3)  # [3, 3, 3]
 
         # Register as buffers so they move with the model to the correct device
-        self.register_buffer("sobel_x_buffer", self.sobel_x.view(1, 1, 3, 3, 3))
-        self.register_buffer("sobel_y_buffer", self.sobel_y.view(1, 1, 3, 3, 3))
-        self.register_buffer("sobel_z_buffer", self.sobel_z.view(1, 1, 3, 3, 3))
+        self.register_buffer(
+            "sobel_x_buffer", self.sobel_x.unsqueeze(0).unsqueeze(0)
+        )  # [1, 1, 3, 3, 3]
+        self.register_buffer(
+            "sobel_y_buffer", self.sobel_y.unsqueeze(0).unsqueeze(0)
+        )  # [1, 1, 3, 3, 3]
+        self.register_buffer(
+            "sobel_z_buffer", self.sobel_z.unsqueeze(0).unsqueeze(0)
+        )  # [1, 1, 3, 3, 3]
 
     def detect_edges(self, x):
         """
