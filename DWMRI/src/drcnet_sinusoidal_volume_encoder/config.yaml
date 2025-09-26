@@ -2,7 +2,7 @@ dbrain:
   train:
     num_epochs: 20  # Increased for better convergence
     device: cuda
-    learning_rate: 0.0009  # Base learning rate for single GPU
+    learning_rate: 0.002  # Base learning rate for single GPU
     batch_size: 8  # Per-GPU batch size
     use_scheduler: false
     scheduler_type: "cosine"  # Better for denoising tasks
@@ -37,7 +37,7 @@ dbrain:
     base_filters: 32  # Doubled for more model capacity
     # Sinusoidal volume encoding parameters
     use_sinusoidal_encoding: true  # Enable sinusoidal positional encoding
-    embedding_dim: 64  # Dimension of positional encoding
+    embedding_dim: 10  # Dimension of positional encoding
     encoding_scale: 0.1  # Scale factor to keep data in [0,1] range
   data:
     patch_size: 8  # Larger patches for better context
