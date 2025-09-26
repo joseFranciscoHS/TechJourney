@@ -7,7 +7,6 @@ from torch.nn import L1Loss
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
 from utils.checkpoint import load_checkpoint, save_checkpoint
-from drcnet_sinusoidal_volume_encoder.model import EdgeAwareLoss
 
 
 def fit_model(
@@ -18,8 +17,6 @@ def fit_model(
     num_epochs=10,
     device="cuda",
     checkpoint_dir=".",
-    use_edge_aware_loss=True,
-    edge_loss_alpha=0.5,
 ):
     logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
@@ -48,12 +45,7 @@ def fit_model(
     logging.info(f"Best loss so far: {best_loss:.6f}")
 
     # Initialize loss function
-    if use_edge_aware_loss:
-        loss_fn = EdgeAwareLoss(alpha=edge_loss_alpha)
-        logging.info(f"Using EdgeAwareLoss with alpha={edge_loss_alpha}")
-    else:
-        loss_fn = L1Loss()
-        logging.info("Using L1Loss")
+    loss_fn = L1Loss()
 
     # Move loss function to device
     loss_fn.to(device)
@@ -65,11 +57,6 @@ def fit_model(
         total_loss = 0
         batch_count = 0
         epoch_losses = []
-
-        # Track loss components for EdgeAwareLoss
-        if use_edge_aware_loss:
-            total_mse_loss = 0
-            total_edge_loss = 0
 
         logging.info(f"Starting epoch {epoch+1}/{num_epochs}")
         current_lr = optimizer.param_groups[0]["lr"]
@@ -94,18 +81,6 @@ def fit_model(
             # loss
             loss = loss_fn(x_recon, y)
 
-            # Track loss components for EdgeAwareLoss
-            if use_edge_aware_loss:
-                # Extract individual loss components for logging
-                with torch.no_grad():
-                    mse_loss = torch.nn.functional.mse_loss(x_recon, y)
-                    pred_edges = loss_fn.detect_edges(x_recon)
-                    target_edges = loss_fn.detect_edges(y)
-                    edge_loss = torch.nn.functional.mse_loss(pred_edges, target_edges)
-
-                    total_mse_loss += mse_loss.item()
-                    total_edge_loss += edge_loss.item()
-
             # zero grad
             optimizer.zero_grad()
             # backward pass
@@ -128,15 +103,6 @@ def fit_model(
 
         logging.info(f"Epoch {epoch+1}/{num_epochs} completed")
         logging.info(f"Average Loss: {avg_loss:.6f}")
-
-        # Log detailed loss components for EdgeAwareLoss
-        if use_edge_aware_loss:
-            avg_mse_loss = total_mse_loss / len(train_loader)
-            avg_edge_loss = total_edge_loss / len(train_loader)
-            logging.info(
-                f"Loss Components - MSE: {avg_mse_loss:.6f}, Edge: {avg_edge_loss:.6f}"
-            )
-            logging.info(f"Edge loss ratio: {avg_edge_loss/avg_mse_loss:.4f}")
 
         logging.info(
             (
