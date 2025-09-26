@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class FactorizedBlock(nn.Module):
@@ -374,6 +375,90 @@ class CBAM3D(nn.Module):
         return x
 
 
+class EdgeAwareLoss(nn.Module):
+    """
+    Edge-aware loss function for DWMRI reconstruction.
+    Combines MSE loss with edge preservation loss to maintain structural details.
+    """
+
+    def __init__(self, alpha=0.5):
+        super(EdgeAwareLoss, self).__init__()
+        logging.info(f"Initializing EdgeAwareLoss with alpha={alpha}")
+        self.alpha = alpha
+
+        # Sobel edge detection kernels for 3D
+        # X-direction kernel
+        self.sobel_x = torch.tensor([[[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]]).float()
+        # Y-direction kernel
+        self.sobel_y = torch.tensor([[[-1, -2, -1], [0, 0, 0], [1, 2, 1]]]).float()
+        # Z-direction kernel
+        self.sobel_z = torch.tensor(
+            [[[-1, -2, -1], [-2, -4, -2], [-1, -2, -1]]]
+        ).float()
+
+        # Register as buffers so they move with the model to the correct device
+        self.register_buffer("sobel_x_buffer", self.sobel_x.view(1, 1, 3, 3, 3))
+        self.register_buffer("sobel_y_buffer", self.sobel_y.view(1, 1, 3, 3, 3))
+        self.register_buffer("sobel_z_buffer", self.sobel_z.view(1, 1, 3, 3, 3))
+
+    def detect_edges(self, x):
+        """
+        Detect edges in 3D volume using Sobel operators.
+
+        Args:
+            x: Input tensor [batch, channels, x, y, z]
+
+        Returns:
+            edge_magnitude: Edge magnitude tensor [batch, channels, x, y, z]
+        """
+        logging.debug(f"EdgeAwareLoss.detect_edges: input shape={x.shape}")
+
+        # Apply Sobel operators in each direction
+        edges_x = F.conv3d(x, self.sobel_x_buffer, padding=1)
+        edges_y = F.conv3d(x, self.sobel_y_buffer, padding=1)
+        edges_z = F.conv3d(x, self.sobel_z_buffer, padding=1)
+
+        # Calculate edge magnitude
+        edge_magnitude = torch.sqrt(edges_x**2 + edges_y**2 + edges_z**2 + 1e-8)
+
+        logging.debug(
+            f"EdgeAwareLoss.detect_edges: output shape={edge_magnitude.shape}"
+        )
+        return edge_magnitude
+
+    def forward(self, pred, target):
+        """
+        Compute edge-aware loss.
+
+        Args:
+            pred: Predicted tensor [batch, channels, x, y, z]
+            target: Target tensor [batch, channels, x, y, z]
+
+        Returns:
+            total_loss: Combined MSE and edge preservation loss
+        """
+        logging.debug(
+            f"EdgeAwareLoss forward: pred shape={pred.shape}, target shape={target.shape}"
+        )
+
+        # Standard MSE loss
+        mse_loss = F.mse_loss(pred, target)
+
+        # Edge preservation loss
+        pred_edges = self.detect_edges(pred)
+        target_edges = self.detect_edges(target)
+        edge_loss = F.mse_loss(pred_edges, target_edges)
+
+        # Combine losses
+        total_loss = mse_loss + self.alpha * edge_loss
+
+        logging.debug(
+            f"EdgeAwareLoss: mse_loss={mse_loss.item():.6f}, edge_loss={edge_loss.item():.6f}, total_loss={total_loss.item():.6f}"
+        )
+
+        return total_loss
+
+
 class SpatialAttention(nn.Module):
     """Spatial attention module for better feature focus"""
 
@@ -681,3 +766,16 @@ class DenoiserNet(nn.Module):
         up_3 = self.up_block(x)
 
         return self.output_block(torch.cat([up_0, up_3], 1)) + output_image
+
+    def create_edge_aware_loss(self, alpha=0.5):
+        """
+        Create an EdgeAwareLoss instance for training.
+
+        Args:
+            alpha: Weight for edge preservation loss (default: 0.5)
+
+        Returns:
+            EdgeAwareLoss: Loss function instance
+        """
+        logging.info(f"Creating EdgeAwareLoss with alpha={alpha}")
+        return EdgeAwareLoss(alpha=alpha)

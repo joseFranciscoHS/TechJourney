@@ -7,6 +7,46 @@ from torch.nn import L1Loss
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
 from utils.checkpoint import load_checkpoint, save_checkpoint
+from model import EdgeAwareLoss
+
+
+def create_training_config(
+    use_edge_aware_loss=True,
+    edge_loss_alpha=0.5,
+    num_epochs=10,
+    device="cuda",
+    checkpoint_dir="./checkpoints",
+):
+    """
+    Create a training configuration dictionary for easy parameter management.
+
+    Args:
+        use_edge_aware_loss: Whether to use EdgeAwareLoss instead of L1Loss
+        edge_loss_alpha: Weight for edge preservation loss (0.0-1.0)
+        num_epochs: Number of training epochs
+        device: Training device
+        checkpoint_dir: Directory for saving checkpoints
+
+    Returns:
+        dict: Training configuration
+    """
+    config = {
+        "use_edge_aware_loss": use_edge_aware_loss,
+        "edge_loss_alpha": edge_loss_alpha,
+        "num_epochs": num_epochs,
+        "device": device,
+        "checkpoint_dir": checkpoint_dir,
+    }
+
+    logging.info("Training Configuration:")
+    logging.info(f"  Edge-aware loss: {use_edge_aware_loss}")
+    if use_edge_aware_loss:
+        logging.info(f"  Edge loss alpha: {edge_loss_alpha}")
+    logging.info(f"  Epochs: {num_epochs}")
+    logging.info(f"  Device: {device}")
+    logging.info(f"  Checkpoint dir: {checkpoint_dir}")
+
+    return config
 
 
 def fit_model(
@@ -17,6 +57,8 @@ def fit_model(
     num_epochs=10,
     device="cuda",
     checkpoint_dir=".",
+    use_edge_aware_loss=True,
+    edge_loss_alpha=0.5,
 ):
     logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
@@ -43,13 +85,30 @@ def fit_model(
 
     logging.info(f"Training starting from epoch: {start_epoch}")
     logging.info(f"Best loss so far: {best_loss:.6f}")
-    loss_fn = L1Loss()
 
-    for epoch in tqdm(range(start_epoch, num_epochs), desc="Training DRCnet", total=num_epochs):
+    # Initialize loss function
+    if use_edge_aware_loss:
+        loss_fn = EdgeAwareLoss(alpha=edge_loss_alpha)
+        logging.info(f"Using EdgeAwareLoss with alpha={edge_loss_alpha}")
+    else:
+        loss_fn = L1Loss()
+        logging.info("Using L1Loss")
+
+    # Move loss function to device
+    loss_fn.to(device)
+
+    for epoch in tqdm(
+        range(start_epoch, num_epochs), desc="Training DRCnet", total=num_epochs
+    ):
         model.train()
         total_loss = 0
         batch_count = 0
         epoch_losses = []
+
+        # Track loss components for EdgeAwareLoss
+        if use_edge_aware_loss:
+            total_mse_loss = 0
+            total_edge_loss = 0
 
         logging.info(f"Starting epoch {epoch+1}/{num_epochs}")
         current_lr = optimizer.param_groups[0]["lr"]
@@ -73,6 +132,19 @@ def fit_model(
             x_recon = model(x, volume_indices)
             # loss
             loss = loss_fn(x_recon, y)
+
+            # Track loss components for EdgeAwareLoss
+            if use_edge_aware_loss:
+                # Extract individual loss components for logging
+                with torch.no_grad():
+                    mse_loss = torch.nn.functional.mse_loss(x_recon, y)
+                    pred_edges = loss_fn.detect_edges(x_recon)
+                    target_edges = loss_fn.detect_edges(y)
+                    edge_loss = torch.nn.functional.mse_loss(pred_edges, target_edges)
+
+                    total_mse_loss += mse_loss.item()
+                    total_edge_loss += edge_loss.item()
+
             # zero grad
             optimizer.zero_grad()
             # backward pass
@@ -95,6 +167,16 @@ def fit_model(
 
         logging.info(f"Epoch {epoch+1}/{num_epochs} completed")
         logging.info(f"Average Loss: {avg_loss:.6f}")
+
+        # Log detailed loss components for EdgeAwareLoss
+        if use_edge_aware_loss:
+            avg_mse_loss = total_mse_loss / len(train_loader)
+            avg_edge_loss = total_edge_loss / len(train_loader)
+            logging.info(
+                f"Loss Components - MSE: {avg_mse_loss:.6f}, Edge: {avg_edge_loss:.6f}"
+            )
+            logging.info(f"Edge loss ratio: {avg_edge_loss/avg_mse_loss:.4f}")
+
         logging.info(
             (
                 f"Loss stats - Min: {min_loss:.6f}, "
