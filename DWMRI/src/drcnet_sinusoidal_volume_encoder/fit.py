@@ -10,45 +10,6 @@ from utils.checkpoint import load_checkpoint, save_checkpoint
 from model import EdgeAwareLoss
 
 
-def create_training_config(
-    use_edge_aware_loss=True,
-    edge_loss_alpha=0.5,
-    num_epochs=10,
-    device="cuda",
-    checkpoint_dir="./checkpoints",
-):
-    """
-    Create a training configuration dictionary for easy parameter management.
-
-    Args:
-        use_edge_aware_loss: Whether to use EdgeAwareLoss instead of L1Loss
-        edge_loss_alpha: Weight for edge preservation loss (0.0-1.0)
-        num_epochs: Number of training epochs
-        device: Training device
-        checkpoint_dir: Directory for saving checkpoints
-
-    Returns:
-        dict: Training configuration
-    """
-    config = {
-        "use_edge_aware_loss": use_edge_aware_loss,
-        "edge_loss_alpha": edge_loss_alpha,
-        "num_epochs": num_epochs,
-        "device": device,
-        "checkpoint_dir": checkpoint_dir,
-    }
-
-    logging.info("Training Configuration:")
-    logging.info(f"  Edge-aware loss: {use_edge_aware_loss}")
-    if use_edge_aware_loss:
-        logging.info(f"  Edge loss alpha: {edge_loss_alpha}")
-    logging.info(f"  Epochs: {num_epochs}")
-    logging.info(f"  Device: {device}")
-    logging.info(f"  Checkpoint dir: {checkpoint_dir}")
-
-    return config
-
-
 def fit_model(
     model,
     optimizer: torch.optim.Optimizer,
