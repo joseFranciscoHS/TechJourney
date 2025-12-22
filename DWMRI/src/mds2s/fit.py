@@ -7,6 +7,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from tqdm import tqdm
 
 from utils.checkpoint import load_checkpoint, save_checkpoint
+from utils.training_tracker import TrainingLossTracker
 
 
 def fit_model(
@@ -18,6 +19,7 @@ def fit_model(
     device="cuda",
     mask_p=0.25,
     checkpoint_dir=".",
+    loss_dir=None,
 ):
     logging.info(
         (
@@ -49,6 +51,16 @@ def fit_model(
 
     logging.info(f"Training starting from epoch: {start_epoch}")
     logging.info(f"Best loss so far: {best_loss:.6f}")
+
+    # Initialize loss tracker if loss_dir is provided
+    loss_tracker = None
+    if loss_dir is not None:
+        loss_tracker = TrainingLossTracker(loss_dir)
+        # Sync best loss from checkpoint if available
+        tracker_best_loss, tracker_best_epoch = loss_tracker.get_best_loss()
+        if tracker_best_loss < best_loss:
+            best_loss = tracker_best_loss
+            logging.info(f"Updated best loss from tracker: {best_loss:.6f} at epoch {tracker_best_epoch}")
 
     for epoch in tqdm(range(start_epoch, num_epochs), desc="Training"):
         model.train()
@@ -119,6 +131,17 @@ def fit_model(
             )
         )
         logging.info(f"Learning rate: {current_lr:.6f} -> {new_lr:.6f}")
+
+        # Record epoch in loss tracker
+        if loss_tracker is not None:
+            loss_tracker.record_epoch(
+                epoch=epoch + 1,
+                avg_loss=avg_loss,
+                min_loss=min_loss,
+                max_loss=max_loss,
+                std_loss=std_loss,
+                learning_rate=new_lr,
+            )
 
         # Update best loss
         if avg_loss < best_loss:

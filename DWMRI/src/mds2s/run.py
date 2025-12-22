@@ -143,6 +143,17 @@ def main(
     )
     os.makedirs(checkpoint_dir, exist_ok=True)
 
+    # setting loss dir taking into account run/model parameters
+    loss_dir = os.path.join(
+        "mds2s/losses",
+        dataset,
+        f"bvalue_{settings.data.bvalue}",
+        f"num_volumes_{settings.data.num_volumes}",
+        f"noise_sigma_{settings.data.noise_sigma}",
+        f"learning_rate_{settings.train.learning_rate}",
+    )
+    os.makedirs(loss_dir, exist_ok=True)
+
     # Training
     if train:
         fit_model(
@@ -154,6 +165,7 @@ def main(
             device=settings.train.device,
             mask_p=settings.train.mask_p,
             checkpoint_dir=checkpoint_dir,
+            loss_dir=loss_dir,
         )
 
         logging.info("Training setup completed successfully")
