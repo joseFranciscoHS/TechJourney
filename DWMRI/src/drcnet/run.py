@@ -67,9 +67,12 @@ def main(
     wandb_run = None
     try:
         wandb_run = wandb.init(
-            entity="dwmri-reconstruction",
-            project="drcnet",
-            config=settings.toDict(),
+            project="DWMRI-Denoising",
+            config={
+                "dataset": dataset,
+                "model": "DRCNet-by-volume",
+                **settings.toDict(),
+            },
         )
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
