@@ -67,7 +67,7 @@ def main(
         wandb_run = wandb.init(
             entity="dwmri-reconstruction",
             project="mds2s",
-            config=settings.to_dict(),
+            config=settings.toDict(),
         )
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()

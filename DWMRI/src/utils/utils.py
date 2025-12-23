@@ -10,9 +10,7 @@ def load_config(config_path):
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
         logging.info("Configuration file loaded successfully")
-        logging.debug(
-            f"Raw config keys: {list(config.keys()) if config else 'None'}"
-        )
+        logging.debug(f"Raw config keys: {list(config.keys()) if config else 'None'}")
 
         munchified_config = munchify(config)
         logging.info("Configuration converted to Munch object")
@@ -25,5 +23,4 @@ def load_config(config_path):
         raise
     except Exception as e:
         logging.error(f"Unexpected error loading configuration: {e}")
-        raise
         raise
