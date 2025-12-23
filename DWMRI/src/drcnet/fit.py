@@ -55,9 +55,13 @@ def fit_model(
         tracker_best_loss, tracker_best_epoch = loss_tracker.get_best_loss()
         if tracker_best_loss < best_loss:
             best_loss = tracker_best_loss
-            logging.info(f"Updated best loss from tracker: {best_loss:.6f} at epoch {tracker_best_epoch}")
+            logging.info(
+                f"Updated best loss from tracker: {best_loss:.6f} at epoch {tracker_best_epoch}"
+            )
 
-    for epoch in tqdm(range(start_epoch, num_epochs), desc="Training DRCnet", total=num_epochs):
+    for epoch in tqdm(
+        range(start_epoch, num_epochs), desc="Training DRCnet", total=num_epochs
+    ):
         model.train()
         total_loss = 0
         batch_count = 0
@@ -125,6 +129,9 @@ def fit_model(
                 learning_rate=new_lr,
             )
 
+        # Get scheduler state dict for checkpoint saving
+        scheduler_state_dict = scheduler.state_dict() if scheduler is not None else None
+
         # Update best loss
         if avg_loss < best_loss:
             best_loss = avg_loss
@@ -132,9 +139,6 @@ def fit_model(
             logging.info(f"Saving checkpoint with best loss: {best_loss:.6f}")
             best_loss_checkpoint = os.path.join(
                 checkpoint_dir, "best_loss_checkpoint.pth"
-            )
-            scheduler_state_dict = (
-                scheduler.state_dict() if scheduler is not None else None
             )
             save_checkpoint(
                 model_state_dict=model.state_dict(),

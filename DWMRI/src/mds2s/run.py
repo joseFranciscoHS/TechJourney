@@ -17,6 +17,7 @@ from utils.metrics import (
     visualize_single_volume,
 )
 from utils.utils import load_config
+import wandb
 
 
 def main(
@@ -58,197 +59,207 @@ def main(
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
 
-    logging.info("Loading data...")
-    original_data, noisy_data = data_loader.load_data()
-    logging.info(f"Noisy data shape: {noisy_data.shape}")
+    logging.info("Setting up wandb...")
+    # Start a new wandb run to track this script.
+    # Initialize wandb_run to None in case wandb.init() raises an exception
+    wandb_run = None
+    try:
+        wandb_run = wandb.init(
+            entity="dwmri-reconstruction",
+            project="mds2s",
+            config=settings.to_dict(),
+        )
+        logging.info("Loading data...")
+        original_data, noisy_data = data_loader.load_data()
+        logging.info(f"Noisy data shape: {noisy_data.shape}")
 
-    # Permute from (X, Y, Z, Bvalues) to (Z, Bvalues, X, Y)
-    # taking Z as different data points for training
-    # taking B values as channels
-    # taking X and Y as spatial dimensions to predict
-    logging.info(
-        f"Transposing data with num_volumes={settings.data.num_volumes}"
-    )
-    # omitting the b0s from the data
-    take_volumes = settings.data.num_b0s + settings.data.num_volumes
-    noisy_data = np.transpose(
-        noisy_data[..., settings.data.num_b0s : take_volumes],
-        (2, 3, 0, 1),
-    )
-    original_data = np.transpose(
-        original_data[..., settings.data.num_b0s : take_volumes],
-        (2, 3, 0, 1),
-    )
-    logging.info(f"Transposed data shape: {noisy_data.shape}")
-    logging.info(
-        f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
-    )
+        # Permute from (X, Y, Z, Bvalues) to (Z, Bvalues, X, Y)
+        # taking Z as different data points for training
+        # taking B values as channels
+        # taking X and Y as spatial dimensions to predict
+        logging.info(f"Transposing data with num_volumes={settings.data.num_volumes}")
+        # omitting the b0s from the data
+        take_volumes = settings.data.num_b0s + settings.data.num_volumes
+        noisy_data = np.transpose(
+            noisy_data[..., settings.data.num_b0s : take_volumes],
+            (2, 3, 0, 1),
+        )
+        original_data = np.transpose(
+            original_data[..., settings.data.num_b0s : take_volumes],
+            (2, 3, 0, 1),
+        )
+        logging.info(f"Transposed data shape: {noisy_data.shape}")
+        logging.info(
+            f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
+        )
 
-    x_train = torch.from_numpy(noisy_data).type(torch.float)
-    logging.info(
-        f"Converted to torch tensor: {x_train.shape}, dtype: {x_train.dtype}"
-    )
+        x_train = torch.from_numpy(noisy_data).type(torch.float)
+        logging.info(
+            f"Converted to torch tensor: {x_train.shape}, dtype: {x_train.dtype}"
+        )
 
-    train_set = TensorDataset(x_train)
-    train_loader = DataLoader(
-        train_set, batch_size=settings.train.batch_size, shuffle=True
-    )
-    logging.info(
-        f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
-    )
-
-    logging.info("Initializing Self2self model...")
-    model = Self2self(
-        in_channel=settings.model.in_channel,
-        out_channel=settings.model.out_channel,
-        p=settings.train.dropout_p,
-    )
-    logging.info(
-        f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}, dropout_p: {settings.train.dropout_p}"
-    )
-    logging.info(
-        f"Total model parameters: {sum(p.numel() for p in model.parameters()):,}"
-    )
-
-    logging.info("Setting up optimizer and scheduler...")
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=settings.train.learning_rate
-    )
-    logging.info(f"Optimizer: Adam(lr={settings.train.learning_rate})")
-
-    scheduler = None
-    if settings.train.use_scheduler:
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer,
-            step_size=settings.train.scheduler_step_size,
-            gamma=settings.train.scheduler_gamma,
+        train_set = TensorDataset(x_train)
+        train_loader = DataLoader(
+            train_set, batch_size=settings.train.batch_size, shuffle=True
         )
         logging.info(
-            f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
-            f"gamma={settings.train.scheduler_gamma})"
+            f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
         )
 
-    logging.info(f"Training device: {settings.train.device}")
-    logging.info(f"Number of epochs: {settings.train.num_epochs}")
-    logging.info(f"Mask probability: {settings.train.mask_p}")
-    logging.info(f"Checkpoint directory: {settings.train.checkpoint_dir}")
-
-    # setting checkpoint dir taking into account run/model parameters
-    checkpoint_dir = os.path.join(
-        settings.train.checkpoint_dir,
-        f"bvalue_{settings.data.bvalue}",
-        f"num_volumes_{settings.data.num_volumes}",
-        f"noise_sigma_{settings.data.noise_sigma}",
-        f"learning_rate_{settings.train.learning_rate}",
-    )
-    os.makedirs(checkpoint_dir, exist_ok=True)
-
-    # setting loss dir taking into account run/model parameters
-    loss_dir = os.path.join(
-        "mds2s/losses",
-        dataset,
-        f"bvalue_{settings.data.bvalue}",
-        f"num_volumes_{settings.data.num_volumes}",
-        f"noise_sigma_{settings.data.noise_sigma}",
-        f"learning_rate_{settings.train.learning_rate}",
-    )
-    os.makedirs(loss_dir, exist_ok=True)
-
-    # Training
-    if train:
-        fit_model(
-            model=model,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            train_loader=train_loader,
-            num_epochs=settings.train.num_epochs,
-            device=settings.train.device,
-            mask_p=settings.train.mask_p,
-            checkpoint_dir=checkpoint_dir,
-            loss_dir=loss_dir,
-        )
-
-        logging.info("Training setup completed successfully")
-        logging.info(f"Training completed. Log file: {log_file}")
-
-    if reconstruct:
-        logging.info("Reconstructing DWIs...")
-        best_loss_checkpoint = os.path.join(
-            checkpoint_dir, "best_loss_checkpoint.pth"
-        )
-        del model
-        reconstruct_model = Self2self(
+        logging.info("Initializing Self2self model...")
+        model = Self2self(
             in_channel=settings.model.in_channel,
             out_channel=settings.model.out_channel,
             p=settings.train.dropout_p,
         )
-        reconstruct_model, _, _, _, _ = load_checkpoint(
-            model=reconstruct_model,
-            optimizer=optimizer,
-            filename=best_loss_checkpoint,
-            device=settings.reconstruct.device,
-        )
-        reconstruct_loader = DataLoader(train_set, batch_size=1, shuffle=False)
-        reconstructed_dwis = reconstruct_dwis(
-            model=reconstruct_model,
-            data_loader=reconstruct_loader,
-            device=settings.reconstruct.device,
-            data_shape=x_train.shape,
-            mask_p=settings.reconstruct.mask_p,
-            n_preds=settings.reconstruct.n_preds,
-        )
-        logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
         logging.info(
-            f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
-            f"max: {reconstructed_dwis.max():.4f}, "
-            f"mean: {reconstructed_dwis.mean():.4f}"
+            f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}, dropout_p: {settings.train.dropout_p}"
         )
-        logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
+        logging.info(
+            f"Total model parameters: {sum(p.numel() for p in model.parameters()):,}"
+        )
 
-        metrics = compute_metrics(original_data, reconstructed_dwis)
-        logging.info(f"Metrics: {metrics}")
-        # setting metrics dir taking into account run/model parameters
-        metrics_dir = os.path.join(
-            settings.reconstruct.metrics_dir,
+        logging.info("Setting up optimizer and scheduler...")
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=settings.train.learning_rate
+        )
+        logging.info(f"Optimizer: Adam(lr={settings.train.learning_rate})")
+
+        scheduler = None
+        if settings.train.use_scheduler:
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=settings.train.scheduler_step_size,
+                gamma=settings.train.scheduler_gamma,
+            )
+            logging.info(
+                f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
+                f"gamma={settings.train.scheduler_gamma})"
+            )
+
+        logging.info(f"Training device: {settings.train.device}")
+        logging.info(f"Number of epochs: {settings.train.num_epochs}")
+        logging.info(f"Mask probability: {settings.train.mask_p}")
+        logging.info(f"Checkpoint directory: {settings.train.checkpoint_dir}")
+
+        # setting checkpoint dir taking into account run/model parameters
+        checkpoint_dir = os.path.join(
+            settings.train.checkpoint_dir,
             f"bvalue_{settings.data.bvalue}",
             f"num_volumes_{settings.data.num_volumes}",
             f"noise_sigma_{settings.data.noise_sigma}",
             f"learning_rate_{settings.train.learning_rate}",
         )
-        os.makedirs(metrics_dir, exist_ok=True)
-        save_metrics(metrics, metrics_dir)
+        os.makedirs(checkpoint_dir, exist_ok=True)
 
-        if generate_images:
-            logging.info("Generating images...")
-            # setting images dir taking into account run/model parameters
-            images_dir = os.path.join(
-                settings.reconstruct.images_dir,
+        # setting loss dir taking into account run/model parameters
+        loss_dir = os.path.join(
+            "mds2s/losses",
+            dataset,
+            f"bvalue_{settings.data.bvalue}",
+            f"num_volumes_{settings.data.num_volumes}",
+            f"noise_sigma_{settings.data.noise_sigma}",
+            f"learning_rate_{settings.train.learning_rate}",
+        )
+        os.makedirs(loss_dir, exist_ok=True)
+
+        # Training
+        if train:
+            fit_model(
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                train_loader=train_loader,
+                num_epochs=settings.train.num_epochs,
+                device=settings.train.device,
+                mask_p=settings.train.mask_p,
+                checkpoint_dir=checkpoint_dir,
+                loss_dir=loss_dir,
+            )
+
+            logging.info("Training setup completed successfully")
+            logging.info(f"Training completed. Log file: {log_file}")
+
+        if reconstruct:
+            logging.info("Reconstructing DWIs...")
+            best_loss_checkpoint = os.path.join(
+                checkpoint_dir, "best_loss_checkpoint.pth"
+            )
+            del model
+            reconstruct_model = Self2self(
+                in_channel=settings.model.in_channel,
+                out_channel=settings.model.out_channel,
+                p=settings.train.dropout_p,
+            )
+            reconstruct_model, _, _, _, _ = load_checkpoint(
+                model=reconstruct_model,
+                optimizer=optimizer,
+                filename=best_loss_checkpoint,
+                device=settings.reconstruct.device,
+            )
+            reconstruct_loader = DataLoader(train_set, batch_size=1, shuffle=False)
+            reconstructed_dwis = reconstruct_dwis(
+                model=reconstruct_model,
+                data_loader=reconstruct_loader,
+                device=settings.reconstruct.device,
+                data_shape=x_train.shape,
+                mask_p=settings.reconstruct.mask_p,
+                n_preds=settings.reconstruct.n_preds,
+            )
+            logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
+            logging.info(
+                f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
+                f"max: {reconstructed_dwis.max():.4f}, "
+                f"mean: {reconstructed_dwis.mean():.4f}"
+            )
+            logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
+
+            metrics = compute_metrics(original_data, reconstructed_dwis)
+            logging.info(f"Metrics: {metrics}")
+            # setting metrics dir taking into account run/model parameters
+            metrics_dir = os.path.join(
+                settings.reconstruct.metrics_dir,
                 f"bvalue_{settings.data.bvalue}",
                 f"num_volumes_{settings.data.num_volumes}",
                 f"noise_sigma_{settings.data.noise_sigma}",
                 f"learning_rate_{settings.train.learning_rate}",
             )
-            os.makedirs(images_dir, exist_ok=True)
-            logging.info(f"Saving images to: {images_dir}")
-            compare_volumes(
-                noisy_data,
-                reconstructed_dwis,
-                file_name=os.path.join(images_dir, "comparison.png"),
-                volume_idx=0,
-            )
-            logging.info(
-                f"Saving single volume image to: {images_dir}/single.png"
-            )
-            visualize_single_volume(
-                reconstructed_dwis,
-                file_name=os.path.join(images_dir, "single.png"),
-                volume_idx=0,
-            )
-            visualize_single_volume(
-                noisy_data,
-                file_name=os.path.join(images_dir, "noisy.png"),
-                volume_idx=0,
-            )
+            os.makedirs(metrics_dir, exist_ok=True)
+            save_metrics(metrics, metrics_dir)
+
+            if generate_images:
+                logging.info("Generating images...")
+                # setting images dir taking into account run/model parameters
+                images_dir = os.path.join(
+                    settings.reconstruct.images_dir,
+                    f"bvalue_{settings.data.bvalue}",
+                    f"num_volumes_{settings.data.num_volumes}",
+                    f"noise_sigma_{settings.data.noise_sigma}",
+                    f"learning_rate_{settings.train.learning_rate}",
+                )
+                os.makedirs(images_dir, exist_ok=True)
+                logging.info(f"Saving images to: {images_dir}")
+                compare_volumes(
+                    noisy_data,
+                    reconstructed_dwis,
+                    file_name=os.path.join(images_dir, "comparison.png"),
+                    volume_idx=0,
+                )
+                logging.info(f"Saving single volume image to: {images_dir}/single.png")
+                visualize_single_volume(
+                    reconstructed_dwis,
+                    file_name=os.path.join(images_dir, "single.png"),
+                    volume_idx=0,
+                )
+                visualize_single_volume(
+                    noisy_data,
+                    file_name=os.path.join(images_dir, "noisy.png"),
+                    volume_idx=0,
+                )
+    finally:
+        # Ensure wandb run is always finished, even if an exception occurs
+        if wandb_run is not None:
+            wandb_run.finish()
 
 
 if __name__ == "__main__":
