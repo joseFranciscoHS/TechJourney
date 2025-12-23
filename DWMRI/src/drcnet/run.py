@@ -70,7 +70,7 @@ def main(
             project="DWMRI-Denoising",
             config={
                 "dataset": dataset,
-                "model": "DRCNet-by-volume",
+                "model_name": "DRCNet-by-volume",
                 **settings.toDict(),
             },
         )

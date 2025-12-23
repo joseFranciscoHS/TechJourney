@@ -68,7 +68,7 @@ def main(
             project="DWMRI-Denoising",
             config={
                 "dataset": dataset,
-                "model": "MDS2S",
+                "model_name": "MDS2S",
                 **settings.toDict(),
             },
         )
