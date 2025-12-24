@@ -60,8 +60,6 @@ def main(
         raise ValueError(f"Invalid dataset: {dataset}")
 
     logging.info("Setting up wandb...")
-    # Start a new wandb run to track this script.
-    # Initialize wandb_run to None in case wandb.init() raises an exception
     wandb_run = None
     try:
         wandb_run = wandb.init(

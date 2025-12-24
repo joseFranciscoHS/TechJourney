@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 500
+    num_epochs: 50
     device: cuda
     mask_p: 0.3
     dropout_p: 0.3

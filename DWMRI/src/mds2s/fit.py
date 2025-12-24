@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.optim.lr_scheduler import LRScheduler
 from tqdm import tqdm
+import wandb
 
 from utils.checkpoint import load_checkpoint, save_checkpoint
 from utils.training_tracker import TrainingLossTracker
@@ -133,6 +134,20 @@ def fit_model(
             )
         )
         logging.info(f"Learning rate: {current_lr:.6f} -> {new_lr:.6f}")
+
+        # Log metrics to wandb
+        if wandb.run is not None:
+            wandb.log(
+                {
+                    "epoch": epoch + 1,
+                    "train/loss": avg_loss,
+                    "train/loss_min": min_loss,
+                    "train/loss_max": max_loss,
+                    "train/loss_std": std_loss,
+                    "train/learning_rate": new_lr,
+                    "train/best_loss": best_loss,
+                }
+            )
 
         # Record epoch in loss tracker
         if loss_tracker is not None:
