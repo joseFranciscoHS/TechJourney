@@ -76,20 +76,23 @@ def save_metrics(metrics, metrics_dir):
 
 
 def compare_volumes(
-    original_volume,
+    source_volume,
     denoised_volume,
     volume_idx=0,
     slice_idx=None,
+    source_title="Original",
     file_name="",
 ):
     if slice_idx is None:
-        slice_idx = original_volume.shape[0] // 2  # Middle slice by default
+        slice_idx = source_volume.shape[0] // 2  # Middle slice by default
 
     fig, axes = plt.subplots(1, 3, figsize=(12, 6))
-    fig.suptitle(f"Original vs Denoised Volume (Slice {slice_idx})")
+    fig.suptitle(
+        f"{source_title} vs Denoised Volume (Slice: {slice_idx} | Volume Index: {volume_idx})"
+    )
 
-    axes[0].imshow(original_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    axes[0].set_title("Original")
+    axes[0].imshow(source_volume[slice_idx, volume_idx, :, :], cmap="gray")
+    axes[0].set_title(source_title)
     axes[0].axis("off")
 
     axes[1].imshow(denoised_volume[slice_idx, volume_idx, :, :], cmap="gray")
@@ -98,7 +101,7 @@ def compare_volumes(
 
     rms_diff = np.sqrt(
         (
-            original_volume[slice_idx, volume_idx, :, :]
+            source_volume[slice_idx, volume_idx, :, :]
             - denoised_volume[slice_idx, volume_idx, :, :]
         )
         ** 2
@@ -113,17 +116,62 @@ def compare_volumes(
     plt.show()
 
 
-def visualize_single_volume(
+def fully_compare_volumes(
     original_volume,
+    noisy_volume,
+    denoised_volume,
     volume_idx=0,
     slice_idx=None,
     file_name="",
 ):
     if slice_idx is None:
-        print(original_volume.shape)
         slice_idx = original_volume.shape[0] // 2  # Middle slice by default
 
-    plt.imshow(original_volume[slice_idx, volume_idx, :, :], cmap="gray")
+    fig, axes = plt.subplots(1, 4, figsize=(12, 6))
+    fig.suptitle(
+        f"Ground Truth vs Noisy vs Denoised Volume (Slice: {slice_idx} | Volume Index: {volume_idx})"
+    )
+
+    axes[0].imshow(original_volume[slice_idx, volume_idx, :, :], cmap="gray")
+    axes[0].set_title("Ground Truth")
+    axes[0].axis("off")
+
+    axes[1].imshow(noisy_volume[slice_idx, volume_idx, :, :], cmap="gray")
+    axes[1].set_title("Noisy")
+    axes[1].axis("off")
+
+    axes[2].imshow(denoised_volume[slice_idx, volume_idx, :, :], cmap="gray")
+    axes[2].set_title("Denoised")
+    axes[2].axis("off")
+
+    rms_diff = np.sqrt(
+        (
+            original_volume[slice_idx, volume_idx, :, :]
+            - denoised_volume[slice_idx, volume_idx, :, :]
+        )
+        ** 2
+    )
+    axes[2].imshow(rms_diff, cmap="gray")
+    axes[2].set_title("RMS Diff Ground Truth vs Denoised")
+    axes[2].axis("off")
+
+    plt.tight_layout()
+    if file_name:
+        plt.savefig(file_name, bbox_inches="tight")
+    plt.show()
+
+
+def visualize_single_volume(
+    source_volume,
+    volume_idx=0,
+    slice_idx=None,
+    file_name="",
+):
+    if slice_idx is None:
+        print(source_volume.shape)
+        slice_idx = source_volume.shape[0] // 2  # Middle slice by default
+
+    plt.imshow(source_volume[slice_idx, volume_idx, :, :], cmap="gray")
     plt.axis("off")
 
     plt.tight_layout()

@@ -12,6 +12,7 @@ from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
 from utils.metrics import (
     compare_volumes,
+    fully_compare_volumes,
     compute_metrics,
     save_metrics,
     visualize_single_volume,
@@ -252,9 +253,10 @@ def main(
 
                 # Generate comparison image
                 comparison_path = os.path.join(images_dir, "comparison.png")
-                compare_volumes(
-                    noisy_data,
-                    reconstructed_dwis,
+                fully_compare_volumes(
+                    original_volume=original_data,
+                    noisy_volume=noisy_data,
+                    denoised_volume=reconstructed_dwis,
                     file_name=comparison_path,
                     volume_idx=0,
                 )
@@ -279,8 +281,6 @@ def main(
                     wandb.log(
                         {
                             "reconstruct/comparison": wandb.Image(comparison_path),
-                            "reconstruct/reconstructed": wandb.Image(single_path),
-                            "reconstruct/noisy": wandb.Image(noisy_path),
                         }
                     )
     finally:

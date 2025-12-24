@@ -14,6 +14,7 @@ from utils.data import DBrainDataLoader, StanfordDataLoader
 from utils.metrics import (
     compare_volumes,
     compute_metrics,
+    fully_compare_volumes,
     save_metrics,
     visualize_single_volume,
 )
@@ -317,10 +318,10 @@ def main(
 
                 # Generate comparison image
                 comparison_path = os.path.join(images_dir, "comparison.png")
-                compare_volumes(
-                    # volumes in b,z,x,y
-                    np.transpose(noisy_data, (2, 3, 0, 1)),
-                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                fully_compare_volumes(
+                    original_volume=np.transpose(original_data, (2, 3, 0, 1)),
+                    noisy_volume=np.transpose(noisy_data, (2, 3, 0, 1)),
+                    denoised_volume=np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
                     file_name=comparison_path,
                     volume_idx=0,
                 )
@@ -345,8 +346,6 @@ def main(
                     wandb.log(
                         {
                             "reconstruct/comparison": wandb.Image(comparison_path),
-                            "reconstruct/reconstructed": wandb.Image(single_path),
-                            "reconstruct/noisy": wandb.Image(noisy_path),
                         }
                     )
     finally:
