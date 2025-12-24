@@ -151,9 +151,9 @@ def fully_compare_volumes(
         )
         ** 2
     )
-    axes[2].imshow(rms_diff, cmap="gray")
-    axes[2].set_title("RMS Diff Ground Truth vs Denoised")
-    axes[2].axis("off")
+    axes[3].imshow(rms_diff, cmap="gray")
+    axes[3].set_title("RMS Diff Ground Truth vs Denoised")
+    axes[3].axis("off")
 
     plt.tight_layout()
     if file_name:
