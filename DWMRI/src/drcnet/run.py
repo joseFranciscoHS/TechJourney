@@ -282,6 +282,15 @@ def main(
                 reconstructed_dwis,
             )
             logging.info(f"Metrics: {metrics}")
+            # Log metrics to wandb
+            if wandb_run is not None:
+                wandb.log(
+                    {
+                        "reconstruct/metrics_mse": metrics["mse"],
+                        "reconstruct/metrics_ssim": metrics["ssim"],
+                        "reconstruct/metrics_psnr": metrics["psnr"],
+                    }
+                )
             # setting metrics dir taking into account run/model parameters
             metrics_dir = os.path.join(
                 settings.reconstruct.metrics_dir,
