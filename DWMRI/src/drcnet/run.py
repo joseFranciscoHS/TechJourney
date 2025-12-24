@@ -314,24 +314,41 @@ def main(
                 )
                 os.makedirs(images_dir, exist_ok=True)
                 logging.info(f"Saving images to: {images_dir}")
+
+                # Generate comparison image
+                comparison_path = os.path.join(images_dir, "comparison.png")
                 compare_volumes(
                     # volumes in b,z,x,y
                     np.transpose(noisy_data, (2, 3, 0, 1)),
                     np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
-                    file_name=os.path.join(images_dir, "comparison.png"),
+                    file_name=comparison_path,
                     volume_idx=0,
                 )
-                logging.info(f"Saving single volume image to: {images_dir}/single.png")
+
+                # Generate single volume images
+                single_path = os.path.join(images_dir, "single.png")
                 visualize_single_volume(
                     np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
-                    file_name=os.path.join(images_dir, "single.png"),
+                    file_name=single_path,
                     volume_idx=0,
                 )
+
+                noisy_path = os.path.join(images_dir, "noisy.png")
                 visualize_single_volume(
                     np.transpose(noisy_data, (2, 3, 0, 1)),
-                    file_name=os.path.join(images_dir, "noisy.png"),
+                    file_name=noisy_path,
                     volume_idx=0,
                 )
+
+                # Log images to wandb
+                if wandb_run is not None:
+                    wandb.log(
+                        {
+                            "reconstruct/comparison": wandb.Image(comparison_path),
+                            "reconstruct/reconstructed": wandb.Image(single_path),
+                            "reconstruct/noisy": wandb.Image(noisy_path),
+                        }
+                    )
     finally:
         # Ensure wandb run is always finished, even if an exception occurs
         if wandb_run is not None:
