@@ -1,11 +1,11 @@
 dbrain:
   train:
-    num_epochs: 500  # Increased for better convergence
+    num_epochs: 2000  # Increased for better convergence
     device: cuda
     learning_rate: 0.0001  # Base learning rate for single GPU
-    batch_size: 8  # Per-GPU batch size
-    use_scheduler: false
-    scheduler_type: "cosine"  # Better for denoising tasks
+    batch_size: 12  # Per-GPU batch size
+    use_scheduler: true
+    scheduler_type: "step" # step, cosine, reduceLROnPlateau
     checkpoint_dir: "drcnet/checkpoints/dbrain"
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
@@ -18,8 +18,8 @@ dbrain:
     eta_min_lr: 0.00001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
-    scheduler_step_size: 40
-    scheduler_gamma: 0.1
+    scheduler_step_size: 500
+    scheduler_gamma: 0.5
     ## reduceLROnPlateau
     scheduler_patience: 15  # More aggressive reduction
     scheduler_factor: 0.5  # Less aggressive reduction

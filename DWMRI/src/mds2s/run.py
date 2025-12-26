@@ -252,14 +252,28 @@ def main(
                 logging.info(f"Saving images to: {images_dir}")
 
                 # Generate comparison image
-                comparison_path = os.path.join(images_dir, "comparison.png")
-                fully_compare_volumes(
-                    original_volume=original_data,
-                    noisy_volume=noisy_data,
-                    denoised_volume=reconstructed_dwis,
-                    file_name=comparison_path,
-                    volume_idx=0,
-                )
+                wandb_images = []
+                for i in range(settings.data.num_volumes):
+                    comparison_path = os.path.join(
+                        images_dir, f"comparison_volume_{i}.png"
+                    )
+                    fully_compare_volumes(
+                        original_volume=original_data,
+                        noisy_volume=noisy_data,
+                        denoised_volume=reconstructed_dwis,
+                        file_name=comparison_path,
+                        volume_idx=i,
+                    )
+                    wandb_images.append(
+                        wandb.Image(comparison_path, caption=f"Volume index {i}")
+                    )
+                # Log images to wandb
+                if wandb_run is not None:
+                    wandb.log(
+                        {
+                            "reconstruct/comparison": wandb_images,
+                        }
+                    )
 
                 # Generate single volume images
                 single_path = os.path.join(images_dir, "single.png")
@@ -276,13 +290,6 @@ def main(
                     volume_idx=0,
                 )
 
-                # Log images to wandb
-                if wandb_run is not None:
-                    wandb.log(
-                        {
-                            "reconstruct/comparison": wandb.Image(comparison_path),
-                        }
-                    )
     finally:
         # Ensure wandb run is always finished, even if an exception occurs
         if wandb_run is not None:
