@@ -6,9 +6,9 @@ dbrain:
     dropout_p: 0.3
     learning_rate: 0.0001
     batch_size: 12
-    use_scheduler: False
-    scheduler_step_size: 1000
-    scheduler_gamma: 0.1
+    use_scheduler: True
+    scheduler_step_size: 500
+    scheduler_gamma: 0.5
     checkpoint_dir: "mds2s/checkpoints/dbrain"
   reconstruct:
     n_preds: 10
