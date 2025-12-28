@@ -255,7 +255,7 @@ def main(
             )
             reconstruct_model, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,
-                optimizer=optimizer,
+                optimizer=None,
                 filename=best_loss_checkpoint,
                 device=settings.reconstruct.device,
                 strict=False,  # Allow partial loading for architecture changes
