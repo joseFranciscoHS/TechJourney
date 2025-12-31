@@ -135,20 +135,6 @@ def fit_model(
         )
         logging.info(f"Learning rate: {current_lr:.6f} -> {new_lr:.6f}")
 
-        # Log metrics to wandb
-        if wandb.run is not None:
-            wandb.log(
-                {
-                    "epoch": epoch + 1,
-                    "train/loss": avg_loss,
-                    "train/loss_min": min_loss,
-                    "train/loss_max": max_loss,
-                    "train/loss_std": std_loss,
-                    "train/learning_rate": new_lr,
-                    "train/best_loss": best_loss,
-                }
-            )
-
         # Record epoch in loss tracker
         if loss_tracker is not None:
             loss_tracker.record_epoch(
@@ -191,6 +177,20 @@ def fit_model(
             filename=latest_checkpoint,
             scheduler_state_dict=scheduler_state_dict,
         )
+
+        # Log metrics to wandb
+        if wandb.run is not None:
+            wandb.log(
+                {
+                    "epoch": epoch + 1,
+                    "train/loss": avg_loss,
+                    "train/loss_min": min_loss,
+                    "train/loss_max": max_loss,
+                    "train/loss_std": std_loss,
+                    "train/learning_rate": new_lr,
+                    "train/best_loss": best_loss,
+                }
+            )
 
     logging.info("Training completed successfully.")
     logging.info(f"Final best loss: {best_loss:.6f}")
