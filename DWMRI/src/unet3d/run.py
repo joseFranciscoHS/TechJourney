@@ -252,7 +252,6 @@ def main(
                 model=reconstruct_model,
                 data=x_reconstruct,
                 device=settings.reconstruct.device,
-                data_shape=noisy_data.shape,
                 mask_p=settings.reconstruct.mask_p,
                 n_preds=settings.reconstruct.n_preds,
             )
