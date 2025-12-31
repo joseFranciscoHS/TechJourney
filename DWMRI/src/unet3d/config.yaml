@@ -37,7 +37,7 @@ dbrain:
   model:
     in_channel: 10 # is the number of volumes taking one out to be predicted
     out_channel: 1 # is the predicted volume
-    groups: 4  # Increased for better feature separation
+    groups: 1  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: false
     base_filters: 32  # Doubled for more model capacity
