@@ -11,9 +11,13 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     model.eval()
     with torch.inference_mode():
         sum_preds = np.zeros(data.shape)
+        logging.info(f"Sum preds shape: {sum_preds.shape}")
         x = data.to(device)
-        num_vols = x.shape[1]
-        spatial_dims = x.shape[2:]
+        logging.info(f"X shape: {x.shape}")
+        num_vols = x.shape[0]
+        logging.info(f"Num vols: {num_vols}")
+        spatial_dims = x.shape[1:]
+        logging.info(f"Spatial dims: {spatial_dims}")
         for i in tqdm(range(num_vols), desc="Reconstructing"):
             idxs = list(range(i, (i + 1)))
             for j in range(n_preds):
