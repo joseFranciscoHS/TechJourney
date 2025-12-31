@@ -37,7 +37,7 @@ dbrain:
     base_filters: 32  # Doubled for more model capacity
   data:
     patch_size: 32  # Larger patches for better context
-    step: 8  # Larger step for more diverse training data
+    step: 16  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
