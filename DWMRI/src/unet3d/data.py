@@ -112,7 +112,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         mask = mask.unsqueeze(0)
 
         # Create input by taking all volumes except the target
-        x_masked = self.windows[window_idx]
+        x_masked = self.windows[window_idx].clone()
         # only mask the target volume
         volume_masked = x_masked[target_volume_idx] * mask
         x_masked[target_volume_idx] = volume_masked
