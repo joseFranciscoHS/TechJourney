@@ -254,6 +254,9 @@ def main(
                 device=settings.reconstruct.device,
                 mask_p=settings.reconstruct.mask_p,
                 n_preds=settings.reconstruct.n_preds,
+                patch_size=settings.data.patch_size,
+                step=settings.data.step,
+                use_sliding_window=settings.reconstruct.use_sliding_window,
             )
             reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")

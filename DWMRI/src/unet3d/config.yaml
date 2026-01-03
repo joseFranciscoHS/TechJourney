@@ -6,7 +6,7 @@ dbrain:
     depth: 4
     groups: 1
     residual: false
-    learning_rate: 0.00001  # Base learning rate for single GPU
+    learning_rate: 0.0001  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
@@ -32,6 +32,7 @@ dbrain:
     device: cuda
     n_preds: 10
     mask_p: 0.3
+    use_sliding_window: false  # Set to false for direct full-size inference (faster but requires more memory)
     metrics_dir: "unet3d/metrics/dbrain"
     images_dir: "unet3d/images/dbrain"
   model:

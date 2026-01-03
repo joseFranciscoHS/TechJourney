@@ -91,19 +91,42 @@ class UpBlock3D(nn.Module):
     def forward(self, x, skip):
         x = self.up(x)
         # Handle potential size mismatch due to odd dimensions
-        diff = [skip.size(i) - x.size(i) for i in range(2, 5)]
-        if any(d != 0 for d in diff):
-            x = nn.functional.pad(
-                x,
-                (
-                    0,
-                    diff[2],
-                    0,
-                    diff[1],
-                    0,
-                    diff[0],
-                ),
-            )
+        # ConvTranspose3d with stride=2 can produce slightly different sizes
+        # Match skip connection size exactly
+        target_size = skip.shape[2:]
+        current_size = x.shape[2:]
+
+        if current_size != target_size:
+            # Calculate differences
+            diff_d = target_size[0] - current_size[0]
+            diff_h = target_size[1] - current_size[1]
+            diff_w = target_size[2] - current_size[2]
+
+            # Crop if larger, pad if smaller
+            if diff_d < 0:
+                # Crop depth dimension
+                crop_start = (-diff_d) // 2
+                x = x[:, :, crop_start : crop_start + target_size[0], :, :]
+            elif diff_d > 0:
+                # Pad depth dimension
+                x = nn.functional.pad(x, (0, 0, 0, 0, 0, diff_d))
+
+            if diff_h < 0:
+                # Crop height dimension
+                crop_start = (-diff_h) // 2
+                x = x[:, :, :, crop_start : crop_start + target_size[1], :]
+            elif diff_h > 0:
+                # Pad height dimension
+                x = nn.functional.pad(x, (0, 0, 0, diff_h, 0, 0))
+
+            if diff_w < 0:
+                # Crop width dimension
+                crop_start = (-diff_w) // 2
+                x = x[:, :, :, :, crop_start : crop_start + target_size[2]]
+            elif diff_w > 0:
+                # Pad width dimension
+                x = nn.functional.pad(x, (0, diff_w, 0, 0, 0, 0))
+
         x = torch.cat([skip, x], dim=1)
         return self.conv(x)
 
@@ -247,20 +270,34 @@ class Unet3D(nn.Module):
         # Final skip connection (from input_conv) - concatenate at output level
         final_skip = skip_connections.pop()
         # Handle potential size mismatch due to odd dimensions
-        if x.shape[2:] != final_skip.shape[2:]:
-            diff = [final_skip.size(i) - x.size(i) for i in range(2, 5)]
-            if any(d != 0 for d in diff):
-                x = nn.functional.pad(
-                    x,
-                    (
-                        0,
-                        diff[2],
-                        0,
-                        diff[1],
-                        0,
-                        diff[0],
-                    ),
-                )
+        target_size = final_skip.shape[2:]
+        current_size = x.shape[2:]
+
+        if current_size != target_size:
+            # Calculate differences
+            diff_d = target_size[0] - current_size[0]
+            diff_h = target_size[1] - current_size[1]
+            diff_w = target_size[2] - current_size[2]
+
+            # Crop if larger, pad if smaller
+            if diff_d < 0:
+                crop_start = (-diff_d) // 2
+                x = x[:, :, crop_start : crop_start + target_size[0], :, :]
+            elif diff_d > 0:
+                x = nn.functional.pad(x, (0, 0, 0, 0, 0, diff_d))
+
+            if diff_h < 0:
+                crop_start = (-diff_h) // 2
+                x = x[:, :, :, crop_start : crop_start + target_size[1], :]
+            elif diff_h > 0:
+                x = nn.functional.pad(x, (0, 0, 0, diff_h, 0, 0))
+
+            if diff_w < 0:
+                crop_start = (-diff_w) // 2
+                x = x[:, :, :, :, crop_start : crop_start + target_size[2]]
+            elif diff_w > 0:
+                x = nn.functional.pad(x, (0, diff_w, 0, 0, 0, 0))
+
         x = torch.cat([final_skip, x], dim=1)
 
         # Output
