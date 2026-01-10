@@ -1,9 +1,9 @@
 dbrain:
   train:
-    num_epochs: 100  # Increased for better convergence
+    num_epochs: 20  # Increased for better convergence
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0001  # Base learning rate for single GPU
+    learning_rate: 0.001  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
@@ -19,7 +19,7 @@ dbrain:
     eta_min_lr: 0.00001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
-    scheduler_step_size: 40
+    scheduler_step_size: 15
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
     scheduler_patience: 15  # More aggressive reduction
@@ -40,7 +40,7 @@ dbrain:
     base_filters: 32  # Doubled for more model capacity
   data:
     patch_size: 32  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    step: 8  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
