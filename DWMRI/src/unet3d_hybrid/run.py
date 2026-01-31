@@ -199,7 +199,7 @@ def main(
 
         # setting loss dir taking into account run/model parameters
         loss_dir = os.path.join(
-            "unet3d/losses",
+            "unet3d_hybrid/losses",
             dataset,
             f"bvalue_{settings.data.bvalue}",
             f"num_volumes_{settings.data.num_volumes}",
