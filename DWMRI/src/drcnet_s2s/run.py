@@ -28,6 +28,7 @@ def main(
     reconstruct: bool = True,
     generate_images: bool = True,
 ):
+    """Train and/or reconstruct with DRCNet-S2S: single volume with masked pixels, denoise by volume. Data layout: (Z, Vols, X, Y)."""
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting training with dataset: {dataset}")
@@ -97,8 +98,8 @@ def main(
         train_set = TrainingDataSet(
             data=noisy_data,
             patch_size=(
-                settings.data.num_volumes,
                 settings.data.patch_size,
+                settings.data.num_volumes,
                 settings.data.patch_size,
                 settings.data.patch_size,
             ),
@@ -260,9 +261,9 @@ def main(
                 device=settings.reconstruct.device,
                 strict=False,  # Allow partial loading for architecture changes
             )
-            # Prepare data for reconstruction: transpose from (X, Y, Z, Vols) to (Vols, X, Y, Z)
+            # Prepare data for reconstruction: transpose from (X, Y, Z, Vols) to (Z, Vols, X, Y)
             x_reconstruct = torch.from_numpy(
-                np.transpose(noisy_data, (3, 0, 1, 2))
+                np.transpose(noisy_data, (2, 3, 0, 1))
             ).type(torch.float)
 
             reconstructed_dwis = reconstruct_dwis(
@@ -272,8 +273,7 @@ def main(
                 mask_p=settings.reconstruct.mask_p,
                 n_preds=settings.reconstruct.n_preds,
             )
-            # Transpose back to (X, Y, Z, Vols) for metrics and visualization
-            reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
+            # reconstructed_dwis is (Z, Vols, X, Y); for compute_metrics we transpose to (X, Y, Z, Vols)
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
             logging.info(
                 f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
@@ -284,7 +284,7 @@ def main(
 
             metrics = compute_metrics(
                 original_data,
-                reconstructed_dwis,
+                np.transpose(reconstructed_dwis, (2, 3, 0, 1)),  # (Z, Vols, X, Y) -> (X, Y, Z, Vols)
             )
             logging.info(f"Metrics: {metrics}")
             # Log metrics to wandb
@@ -329,7 +329,7 @@ def main(
                     fully_compare_volumes(
                         original_volume=np.transpose(original_data, (2, 3, 0, 1)),
                         noisy_volume=np.transpose(noisy_data, (2, 3, 0, 1)),
-                        denoised_volume=np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                        denoised_volume=reconstructed_dwis,
                         file_name=comparison_path,
                         volume_idx=i,
                     )
@@ -344,10 +344,10 @@ def main(
                         }
                     )
 
-                # Generate single volume images
+                # Generate single volume images (fully_compare_volumes/visualize expect (Z, Vols, X, Y))
                 single_path = os.path.join(images_dir, "single.png")
                 visualize_single_volume(
-                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    reconstructed_dwis,
                     file_name=single_path,
                     volume_idx=0,
                 )

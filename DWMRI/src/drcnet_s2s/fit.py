@@ -4,7 +4,7 @@ import os
 import numpy as np
 import torch
 
-# L1Loss removed - using masked MSE loss for J-invariant training
+# S2S training: masked MSE on the single target volume
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
 import wandb
@@ -47,7 +47,7 @@ def fit_model(
 
     logging.info(f"Training starting from epoch: {start_epoch}")
     logging.info(f"Best loss so far: {best_loss:.6f}")
-    # Note: Using masked MSE loss instead of L1Loss for J-invariant training
+    # S2S training: masked MSE on the single target volume
 
     # Initialize loss tracker if loss_dir is provided
     loss_tracker = None
@@ -62,7 +62,7 @@ def fit_model(
             )
 
     for epoch in tqdm(
-        range(start_epoch, num_epochs), desc="Training DRCnet-s2s", total=num_epochs
+        range(start_epoch, num_epochs), desc="Training DRCNet-S2S", total=num_epochs
     ):
         model.train()
         total_loss = 0
@@ -73,31 +73,27 @@ def fit_model(
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
-        for batch_idx, (x, mask, noisy_target_volume) in enumerate(train_loader):
+        for batch_idx, (x, mask) in enumerate(train_loader):
             # x: training data is the noisy data containing all volumes
             # with a single masked volume for the target volume
             x = x.to(device)
             mask = mask.to(device)
-            # noisy_target_volume: the original noisy target volume
-            noisy_target_volume = noisy_target_volume.to(device)
 
             # Log batch information occasionally
             if batch_idx % 10 == 0:
                 logging.debug(
                     (
                         f"Batch {batch_idx}/{len(train_loader)} - "
-                        f"input shape: {x.shape}, mask shape: {mask.shape}, noisy_target_volume shape: {noisy_target_volume.shape}"
+                        f"input shape: {x.shape}, mask shape: {mask.shape}"
                     )
                 )
 
             # forward pass
             x_recon = model(x)
             # loss: compute only on masked pixels (J-invariant loss)
-            loss = torch.sum(
-                (x_recon - noisy_target_volume)
-                * (x_recon - noisy_target_volume)
-                * (1 - mask)
-            ) / torch.sum(1 - mask)
+            loss = torch.sum((x_recon - x) * (x_recon - x) * (1 - mask)) / torch.sum(
+                1 - mask
+            )
             # zero grad
             optimizer.zero_grad()
             # backward pass

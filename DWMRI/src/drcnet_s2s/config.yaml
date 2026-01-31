@@ -2,7 +2,7 @@ dbrain:
   train:
     num_epochs: 20  # Increased for better convergence
     device: cuda
-    mask_p: 0.3  # Mask probability for s2s MD-S2S training
+    mask_p: 0.3  # Mask probability for S2S training (Bernoulli mask on target volume)
     learning_rate: 0.001  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
@@ -27,12 +27,12 @@ dbrain:
     min_lr: 0.00001
   reconstruct:
     device: cuda
-    mask_p: 0.3  # Mask probability (same as training)
+    mask_p: 0.3  # Mask probability for S2S (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
     metrics_dir: "drcnet_s2s/metrics/dbrain"
     images_dir: "drcnet_s2s/images/dbrain"
   model:
-    in_channel: 10 # is the number of volumes (all volumes including masked target)
+    in_channel: 10 # S2S: 1 (single masked volume); set to 1 if using S2S single-volume input
     out_channel: 1 # is the predicted volume
     groups: 4  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
