@@ -43,7 +43,7 @@ dbrain:
     residual: false
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 32  # Larger patches for better context
+    patch_size: 16  # Larger patches for better context
     step: 6
     num_b0s: 6
     num_volumes: 10

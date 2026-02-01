@@ -3,10 +3,10 @@ import os
 
 import numpy as np
 import torch
-from unet3d.data import TrainingDataSet
-from unet3d.fit import fit_model
-from unet3d.model import Unet3D
-from unet3d.reconstruction import reconstruct_dwis
+from unet3d_hybrid.data import TrainingDataSet
+from unet3d_hybrid.fit import fit_model
+from unet3d_hybrid.model import Unet3D
+from unet3d_hybrid.reconstruction import reconstruct_dwis
 from torch.utils.data import DataLoader
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
