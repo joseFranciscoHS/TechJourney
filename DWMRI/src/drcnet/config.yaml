@@ -1,11 +1,11 @@
 dbrain:
   train:
-    num_epochs: 50  # Increased for better convergence
+    num_epochs: 10  # Increased for better convergence
     device: cuda
     learning_rate: 0.001  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
-    scheduler_type: "step" # step, cosine, reduceLROnPlateau
+    scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
     checkpoint_dir: "drcnet/checkpoints/dbrain"
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
@@ -21,8 +21,8 @@ dbrain:
     scheduler_step_size: 20
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 15  # More aggressive reduction
-    scheduler_factor: 0.5  # Less aggressive reduction
+    scheduler_patience: 4  # More aggressive reduction
+    scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.00001
   reconstruct:
     device: cuda
@@ -31,13 +31,13 @@ dbrain:
   model:
     in_channel: 9 # is the number of volumes taking one out to be predicted
     out_channel: 1 # is the predicted volume
-    groups: 4  # Increased for better feature separation
-    dense_convs: 3  # More dense connections for better feature learning
+    groups: 1  # Increased for better feature separation
+    dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    patch_size: 16  # Larger patches for better context
+    step: 6  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
