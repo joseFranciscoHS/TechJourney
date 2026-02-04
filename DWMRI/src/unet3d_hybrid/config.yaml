@@ -1,7 +1,7 @@
 dbrain:
   train:
     num_epochs: 300  # Increased for better convergence
-    device: cuda:1
+    device: cuda:0
     mask_p: 0.3
     depth: 4
     groups: 1
