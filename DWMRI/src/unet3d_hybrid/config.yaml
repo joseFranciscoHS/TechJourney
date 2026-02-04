@@ -6,7 +6,7 @@ dbrain:
     depth: 4
     groups: 1
     residual: false
-    learning_rate: 0.0005  # Base learning rate for single GPU
+    learning_rate: 0.005  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
@@ -19,7 +19,7 @@ dbrain:
     memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
     ## cosine annealing warm restarts
     scheduler_T_0: 20  # More frequent restarts
-    eta_min_lr: 0.00001  # Lower minimum LR
+    eta_min_lr: 0.0001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
     scheduler_step_size: 40
@@ -27,7 +27,7 @@ dbrain:
     ## reduceLROnPlateau
     scheduler_patience: 30  # More aggressive reduction
     scheduler_factor: 0.75  # Less aggressive reduction
-    min_lr: 0.00001
+    min_lr: 0.0001
   reconstruct:
     device: cuda
     n_preds: 10
