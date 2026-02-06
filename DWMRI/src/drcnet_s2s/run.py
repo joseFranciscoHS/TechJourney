@@ -284,7 +284,9 @@ def main(
 
             metrics = compute_metrics(
                 original_data,
-                np.transpose(reconstructed_dwis, (2, 3, 0, 1)),  # (Z, Vols, X, Y) -> (X, Y, Z, Vols)
+                np.transpose(
+                    reconstructed_dwis, (2, 3, 0, 1)
+                ),  # (Z, Vols, X, Y) -> (X, Y, Z, Vols)
             )
             logging.info(f"Metrics: {metrics}")
             # Log metrics to wandb
