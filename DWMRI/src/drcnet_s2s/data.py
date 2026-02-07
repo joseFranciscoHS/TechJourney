@@ -141,8 +141,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
             f"x_masked.shape={x_masked.shape}"
         )
 
-        # the values (data, x_masked) are passed as inputs to the model
-        return (data, x_masked), mask
+        return x_masked, mask
 
     def __len__(self):
         """Total number of training samples (windows × volumes)"""

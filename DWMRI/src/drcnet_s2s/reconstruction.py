@@ -59,7 +59,7 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
             data_masked = data_masked.unsqueeze(0) * mask_tensor  # (1, Vols, X, Y, Z)
 
             # Forward pass: model expects (B, Vols, X, Y, Z)
-            reconstructed = model((data_device, data_masked))
+            reconstructed = model(data_masked)
 
             # reconstructed shape: (1, 1, Vols, X, Y, Z)
             pred_volume = reconstructed.squeeze(0).squeeze(0).detach().cpu().numpy()

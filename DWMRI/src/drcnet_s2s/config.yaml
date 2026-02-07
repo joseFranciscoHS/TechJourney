@@ -34,13 +34,13 @@ dbrain:
   model:
     in_channel: 10 # S2S: 1 (single masked volume); set to 1 if using S2S single-volume input
     out_channel: 10 # is the predicted volume
-    groups: 4  # Increased for better feature separation
-    dense_convs: 3  # More dense connections for better feature learning
+    groups: 2  # Increased for better feature separation
+    dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 16  # Larger patches for better context
-    step: 6  # Larger step for more diverse training data
+    patch_size: 32  # Larger patches for better context
+    step: 4  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1

@@ -88,11 +88,10 @@ def fit_model(
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
-        for batch_idx, ((original, x), mask) in enumerate(train_loader):
+        for batch_idx, (x, mask) in enumerate(train_loader):
             # x: training data is the noisy data containing all volumes
             # with a masked volume for the target volumes
             x = x.to(device)
-            original = original.to(device)
             mask = mask.to(device)
 
             # Log batch information occasionally
@@ -105,7 +104,7 @@ def fit_model(
                 )
 
             # forward pass
-            x_recon = model((original, x))
+            x_recon = model(x)
             # loss: compute only on masked pixels (J-invariant loss)
             loss = torch.sum((x_recon - x) * (x_recon - x) * (1 - mask)) / torch.sum(
                 1 - mask
