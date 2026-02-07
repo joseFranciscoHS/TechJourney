@@ -1,13 +1,15 @@
 dbrain:
   train:
-    num_epochs: 100  # Increased for better convergence
-    device: cuda
-    mask_p: 0.3  # Mask probability for S2S training (Bernoulli mask on target volume)
-    learning_rate: 0.001  # Base learning rate for single GPU
+    num_epochs: 300  # Increased for better convergence
+    device: cuda:0
+    depth: 4
+    groups: 1
+    residual: false
+    learning_rate: 0.005  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
-    scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
-    checkpoint_dir: "drcnet_s2s/checkpoints/dbrain"
+    scheduler_type: "step" # step, cosine, reduceLROnPlateau
+    checkpoint_dir: "unet3d_by_volume/checkpoints/dbrain"
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
@@ -16,31 +18,28 @@ dbrain:
     memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
     ## cosine annealing warm restarts
     scheduler_T_0: 20  # More frequent restarts
-    eta_min_lr: 0.00001  # Lower minimum LR
+    eta_min_lr: 0.0001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
-    scheduler_step_size: 15
+    scheduler_step_size: 40
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 15  # More aggressive reduction
-    scheduler_factor: 0.8  # Less aggressive reduction
+    scheduler_patience: 30  # More aggressive reduction
+    scheduler_factor: 0.75  # Less aggressive reduction
     min_lr: 0.0001
   reconstruct:
     device: cuda
-    mask_p: 0.3  # Mask probability for S2S (same as training)
-    n_preds: 10  # Number of predictions per volume for averaging
-    metrics_dir: "drcnet_s2s/metrics/dbrain"
-    images_dir: "drcnet_s2s/images/dbrain"
+    metrics_dir: "unet3d_by_volume/metrics/dbrain"
+    images_dir: "unet3d_by_volume/images/dbrain"
   model:
-    in_channel: 10 # S2S: 1 (single masked volume); set to 1 if using S2S single-volume input
-    out_channel: 10 # is the predicted volume
-    groups: 2  # Increased for better feature separation
-    dense_convs: 3  # More dense connections for better feature learning
-    residual: true
-    base_filters: 32  # Doubled for more model capacity
+    # in_channel derived as num_volumes - 1 in run.py
+    out_channel: 1  # predicted denoised volume
+    groups: 1
+    residual: false
+    base_filters: 32
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 8  # Larger step for more diverse training data
+    patch_size: 16  # Larger patches for better context
+    step: 6
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
@@ -57,14 +56,12 @@ stanford:
     num_epochs: 100
     num_volumes: 6
     device: cpu
-    mask_p: 0.3
     dropout_p: 0.3
     checkpoint_dir: "checkpoints"
     learning_rate: 0.00001
     batch_size: 8
   model:
-    in_channel: 9
-    out_channel: 9
+    out_channel: 1
   data:
     num_volumes: 10
     noise_sigma: 0.01

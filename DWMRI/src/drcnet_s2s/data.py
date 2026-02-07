@@ -88,39 +88,37 @@ class TrainingDataSet(torch.utils.data.Dataset):
         )
         self.n_volumes = self.windows.shape[2]  # Vols is axis 2 in (N, Z, Vols, X, Y)
 
-        # Each window will be analyzed n_vols times (once for each target volume)
-        self.total_samples = len(self.windows) * self.n_volumes
+        # Each window will be analyzed once
+        self.total_samples = len(self.windows)
         logging.info(
-            f"Total training samples: {self.total_samples:,} (windows: {len(self.windows):,} × volumes: {self.n_volumes})"
+            f"Total training samples: {self.total_samples:,} (windows: {len(self.windows):,})"
         )
         # config params
         self.mask_p = mask_p
 
     def __getitem__(self, index: int):
-        # Calculate which window and which volume to use as target
-        window_idx = index // self.n_volumes
-        target_volume_idx = index % self.n_volumes
+        # Calculate which window to use as target
+        window_idx = index
 
-        # S2S: single target volume with Bernoulli mask; model learns to denoise that volume.
-        # One patch shape (Z, Vols, X, Y); take target volume -> (Z, X, Y)
+        # S2S: target volumes with Bernoulli mask; model learns to denoise those volumes.
+        # One patch shape (Z, Vols, X, Y); take target volumes -> (Z, Vols, X, Y)
         window_shape = (
             self.windows.shape[1],
+            self.windows.shape[2],
             self.windows.shape[3],
             self.windows.shape[4],
-        )  # (Z, X, Y)
+        )  # (Z, Vols, X, Y)
         p_mtx = np.random.uniform(size=window_shape)
         mask = (p_mtx > self.mask_p).astype(np.double)
         mask = torch.tensor(mask, dtype=torch.float32)
-        mask = mask.unsqueeze(0)  # (1, Z, X, Y)
+        mask = mask.unsqueeze(0)  # (1, Z, Vols, X, Y)
 
-        # Take target volume: windows[window_idx, :, target_volume_idx, :, :] -> (Z, X, Y)
-        x_masked = self.windows[
-            window_idx, :, target_volume_idx, :, :
-        ].clone()
-        x_masked = x_masked.unsqueeze(0) * mask  # (1, Z, X, Y)
+        # Take all volumes: windows[window_idx, :, :, :, :] -> (Z, Vols, X, Y)
+        x_masked = self.windows[window_idx].clone()
+        x_masked = x_masked.unsqueeze(0) * mask  # (1, Z, Vols, X, Y)
 
         logging.debug(
-            f"__getitem__ index={index}, window_idx={window_idx}, target_vol={target_volume_idx}, "
+            f"__getitem__ index={index}, window_idx={window_idx}, "
             f"x_masked.shape={x_masked.shape}"
         )
         return x_masked, mask

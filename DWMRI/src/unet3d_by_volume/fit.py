@@ -3,8 +3,7 @@ import os
 
 import numpy as np
 import torch
-
-# S2S training: masked MSE on the single target volume
+from torch.nn import L1Loss
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
 import wandb
@@ -47,7 +46,6 @@ def fit_model(
 
     logging.info(f"Training starting from epoch: {start_epoch}")
     logging.info(f"Best loss so far: {best_loss:.6f}")
-    # S2S training: masked MSE on the single target volume
 
     # Initialize loss tracker if loss_dir is provided
     loss_tracker = None
@@ -61,8 +59,10 @@ def fit_model(
                 f"Updated best loss from tracker: {best_loss:.6f} at epoch {tracker_best_epoch}"
             )
 
+    loss_fn = L1Loss()
+
     for epoch in tqdm(
-        range(start_epoch, num_epochs), desc="Training DRCNet-S2S", total=num_epochs
+        range(start_epoch, num_epochs), desc="Training UNet3D-by-volume", total=num_epochs
     ):
         model.train()
         total_loss = 0
@@ -73,27 +73,20 @@ def fit_model(
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
-        for batch_idx, (x, mask) in enumerate(train_loader):
-            # x: training data is the noisy data containing all volumes
-            # with a masked volume for the target volumes
+        for batch_idx, (x, y) in enumerate(train_loader):
             x = x.to(device)
-            mask = mask.to(device)
+            y = y.to(device)
 
-            # Log batch information occasionally
             if batch_idx % 10 == 0:
                 logging.debug(
                     (
                         f"Batch {batch_idx}/{len(train_loader)} - "
-                        f"input shape: {x.shape}, mask shape: {mask.shape}"
+                        f"input shape: {x.shape}"
                     )
                 )
 
-            # forward pass
             x_recon = model(x)
-            # loss: compute only on masked pixels (J-invariant loss)
-            loss = torch.sum((x_recon - x) * (x_recon - x) * (1 - mask)) / torch.sum(
-                1 - mask
-            )
+            loss = loss_fn(x_recon, y)
             # zero grad
             optimizer.zero_grad()
             # backward pass
