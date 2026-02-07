@@ -261,10 +261,8 @@ def main(
                 device=settings.reconstruct.device,
                 strict=False,  # Allow partial loading for architecture changes
             )
-            # Prepare data for reconstruction: transpose from (X, Y, Z, Vols) to (Z, Vols, X, Y)
-            x_reconstruct = torch.from_numpy(
-                np.transpose(noisy_data, (2, 3, 0, 1))
-            ).type(torch.float)
+            # Prepare data for reconstruction
+            x_reconstruct = torch.from_numpy(noisy_data).type(torch.float)
 
             reconstructed_dwis = reconstruct_dwis(
                 model=reconstruct_model,
@@ -273,7 +271,7 @@ def main(
                 mask_p=settings.reconstruct.mask_p,
                 n_preds=settings.reconstruct.n_preds,
             )
-            # reconstructed_dwis is (Z, Vols, X, Y); for compute_metrics we transpose to (X, Y, Z, Vols)
+            # reconstructed_dwis is (Vols, X, Y, Z); for compute_metrics we transpose to (X, Y, Z, Vols)
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
             logging.info(
                 f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "
@@ -285,8 +283,8 @@ def main(
             metrics = compute_metrics(
                 original_data,
                 np.transpose(
-                    reconstructed_dwis, (2, 3, 0, 1)
-                ),  # (Z, Vols, X, Y) -> (X, Y, Z, Vols)
+                    reconstructed_dwis, (1, 2, 3, 0)
+                ),  # (Vols, X, Y, Z) -> (X, Y, Z, Vols)
             )
             logging.info(f"Metrics: {metrics}")
             # Log metrics to wandb
@@ -331,7 +329,9 @@ def main(
                     fully_compare_volumes(
                         original_volume=np.transpose(original_data, (2, 3, 0, 1)),
                         noisy_volume=np.transpose(noisy_data, (2, 3, 0, 1)),
-                        denoised_volume=reconstructed_dwis,
+                        denoised_volume=np.transpose(
+                            reconstructed_dwis, (3, 0, 1, 2)
+                        ),  # (Vols, X, Y, Z) -> (Z, Vols, X, Y)
                         file_name=comparison_path,
                         volume_idx=i,
                     )
@@ -349,14 +349,14 @@ def main(
                 # Generate single volume images (fully_compare_volumes/visualize expect (Z, Vols, X, Y))
                 single_path = os.path.join(images_dir, "single.png")
                 visualize_single_volume(
-                    reconstructed_dwis,
+                    np.transpose(reconstructed_dwis, (3, 0, 1, 2)),
                     file_name=single_path,
                     volume_idx=0,
                 )
 
                 noisy_path = os.path.join(images_dir, "noisy.png")
                 visualize_single_volume(
-                    np.transpose(noisy_data, (2, 3, 0, 1)),
+                    np.transpose(noisy_data, (3, 0, 1, 2)),
                     file_name=noisy_path,
                     volume_idx=0,
                 )

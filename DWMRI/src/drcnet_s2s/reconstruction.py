@@ -14,13 +14,13 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
 
     Args:
         model: Trained DRCNet-S2S model
-        data: Input data of shape (Z, Vols, X, Y) - full-size data
+        data: Input data of shape (Vols, X, Y, Z) - full-size data
         device: Device to run inference on
         mask_p: Mask probability (same as training)
         n_preds: Number of predictions per volume (for averaging with different masks)
 
     Returns:
-        Reconstructed data of shape (Z, Vols, X, Y)
+        Reconstructed data of shape (Vols, X, Y, Z)
     """
     logging.info(f"Starting DWI reconstruction on device: {device}")
     logging.info(f"Input data shape: {data.shape}")
@@ -29,11 +29,10 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     model.to(device)
     model.eval()
 
-    z_size, num_vols, x_size, y_size = data.shape
-    spatial_dims = (z_size, x_size, y_size)
+    num_vols, x_size, y_size, z_size = data.shape
 
-    # Initialize output array (Z, Vols, X, Y)
-    sum_preds = np.zeros((z_size, num_vols, x_size, y_size), dtype=np.float32)
+    # Initialize output array (Vols, X, Y, Z)
+    sum_preds = np.zeros((num_vols, x_size, y_size, z_size), dtype=np.float32)
 
     with torch.inference_mode():
         data_device = data.to(device)
@@ -41,27 +40,27 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
         # Process each target volume separately
         for pred_idx in range(n_preds):
             # Create masked input (same as training approach)
-            # Generate random mask for the target volumes (Z, Vols, X, Y)
-            p_mtx = np.random.uniform(size=(z_size, num_vols, x_size, y_size))
+            # Generate random mask for the target volumes (Vols, X, Y, Z)
+            p_mtx = np.random.uniform(size=(num_vols, x_size, y_size, z_size))
             mask = (p_mtx > mask_p).astype(np.float32)
             mask_tensor = torch.tensor(mask).to(device, dtype=torch.float32)
-            mask_tensor = mask_tensor.unsqueeze(0)  # (1, Z, Vols, X, Y)
+            mask_tensor = mask_tensor.unsqueeze(0)  # (1, Vols, X, Y, Z)
 
-            # data_masked: (Z, Vols, X, Y); add channel and batch -> (1, Z, Vols, X, Y)
+            # data_masked: (Vols, X, Y, Z); add channel and batch -> (1, Vols, X, Y, Z)
             data_masked = data_device.clone()
-            data_masked = data_masked.unsqueeze(0) * mask_tensor  # (1, Z, Vols, X, Y)
+            data_masked = data_masked.unsqueeze(0) * mask_tensor  # (1, Vols, X, Y, Z)
 
-            # Forward pass: model expects (B, Z, Vols, X, Y)
+            # Forward pass: model expects (B, Vols, X, Y, Z)
             reconstructed = model(data_masked)
 
-            # reconstructed shape: (1, 1, Z, Vols, X, Y)
+            # reconstructed shape: (1, 1, Vols, X, Y, Z)
             pred_volume = reconstructed.squeeze(0).squeeze(0).detach().cpu().numpy()
 
             # Accumulate predictions
             sum_preds += pred_volume
 
-        # Average predictions; transpose (num_vols, Z, X, Y) -> (Z, Vols, X, Y)
-        reconstructed = np.transpose(sum_preds / n_preds, (1, 0, 2, 3))
+        # Average predictions
+        reconstructed = sum_preds / n_preds
 
         logging.info(f"Reconstruction completed. Output shape: {reconstructed.shape}")
         logging.info(
