@@ -110,12 +110,11 @@ class TrainingDataSet(torch.utils.data.Dataset):
         )  # (Z, Vols, X, Y)
         p_mtx = np.random.uniform(size=window_shape)
         mask = (p_mtx > self.mask_p).astype(np.double)
-        mask = torch.tensor(mask, dtype=torch.float32)
-        mask = mask.unsqueeze(0)  # (1, Z, Vols, X, Y)
+        mask = torch.tensor(mask, dtype=torch.float32)  # (Z, Vols, X, Y)
 
         # Take all volumes: windows[window_idx, :, :, :, :] -> (Z, Vols, X, Y)
         x_masked = self.windows[window_idx].clone()
-        x_masked = x_masked.unsqueeze(0) * mask  # (1, Z, Vols, X, Y)
+        x_masked = x_masked * mask  # (Z, Vols, X, Y)
 
         logging.debug(
             f"__getitem__ index={index}, window_idx={window_idx}, "

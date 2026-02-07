@@ -32,8 +32,8 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     z_size, num_vols, x_size, y_size = data.shape
     spatial_dims = (z_size, x_size, y_size)
 
-    # Initialize output array (num_vols, Z, X, Y)
-    sum_preds = np.zeros((num_vols, *spatial_dims), dtype=np.float32)
+    # Initialize output array (Z, Vols, X, Y)
+    sum_preds = np.zeros((z_size, num_vols, x_size, y_size), dtype=np.float32)
 
     with torch.inference_mode():
         data_device = data.to(device)
