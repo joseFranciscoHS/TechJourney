@@ -98,8 +98,8 @@ def main(
         train_set = TrainingDataSet(
             data=noisy_data,
             patch_size=(
-                settings.data.patch_size,
                 settings.data.num_volumes,
+                settings.data.patch_size,
                 settings.data.patch_size,
                 settings.data.patch_size,
             ),
