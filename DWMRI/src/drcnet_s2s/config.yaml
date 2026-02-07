@@ -1,13 +1,9 @@
-# DRCNet-S2S config: MD-S2S style (Scheme 2) - spatial–angular hybrid
-# J-invariance: mask_p controls J-set size (bias–variance tradeoff)
-# See ../J_invariance_DWMRI_denoising_report.md
-
 dbrain:
   train:
-    num_epochs: 100  # Increased for better convergence
+    num_epochs: 3  # Increased for better convergence
     device: cuda
-    mask_p: 0.3  # Bernoulli mask: pixels with p>mask_p visible. J-invariant loss on occluded (1-mask)
-    learning_rate: 0.001  # Base learning rate for single GPU
+    mask_p: 0.3  # Mask probability for S2S training (Bernoulli mask on target volume)
+    learning_rate: 0.003  # Base learning rate for single GPU
     batch_size: 12  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
@@ -31,19 +27,19 @@ dbrain:
     min_lr: 0.0001
   reconstruct:
     device: cuda
-    mask_p: 0.3  # Same as training (keep J-invariance consistent)
-    n_preds: 10  # Variance reduction: average n_preds forward passes with different masks
+    mask_p: 0.3  # Mask probability for S2S (same as training)
+    n_preds: 10  # Number of predictions per volume for averaging
     metrics_dir: "drcnet_s2s/metrics/dbrain"
     images_dir: "drcnet_s2s/images/dbrain"
   model:
-    in_channel: 10   # Number of gradient volumes (all used as input; J-invariance via mask)
-    out_channel: 10 # Predicted volumes (typically = in_channel)
-    groups: 2  # Increased for better feature separation
+    in_channel: 10 # S2S: 1 (single masked volume); set to 1 if using S2S single-volume input
+    out_channel: 10 # is the predicted volume
+    groups: 4  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 32  # Larger patches for better context
+    patch_size: 16  # Larger patches for better context
     step: 6  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
