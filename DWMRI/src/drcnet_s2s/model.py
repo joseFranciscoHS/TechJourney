@@ -1,4 +1,11 @@
 # flake8: noqa: E501
+"""
+DRCNet: Gated denoising network with factorized 3D convolutions.
+
+Architecture: input → down → [GatedBlock × 4] → up → output. Uses factorized
+convolutions (3×1×1, 1×3×1, 1×1×3) for efficiency on 3D medical volumes.
+Designed for 4D DWMRI input (Vols, X, Y, Z).
+"""
 import logging
 from collections import OrderedDict
 
@@ -320,6 +327,14 @@ class GatedBlock(nn.Module):
 
 
 class DenoiserNet(nn.Module):
+    """
+    DRCNet denoising model for 4D DWMRI.
+
+    Input: (B, Vols, X, Y, Z) — batch of masked 4D patches.
+    Output: (B, output_channels, X, Y, Z) — typically output_channels == Vols.
+    Uses gated blocks and factorized 3D convolutions for parameter efficiency.
+    """
+
     def __init__(
         self,
         input_channels,

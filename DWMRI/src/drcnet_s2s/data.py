@@ -1,3 +1,11 @@
+"""
+Training data for DRCNet-S2S (MD-S2S style).
+
+Implements J-invariance at the pixel level: Bernoulli masks partition pixels into
+visible (J^c) and occluded (J) sets. The network predicts occluded pixels using
+only visible pixels from all volumes, exploiting both spatial and angular redundancy.
+Data layout: (Vols, X, Y, Z).
+"""
 import logging
 
 import numpy as np
@@ -74,6 +82,14 @@ def sliding_windows(image, patch_size, step):
 
 
 class TrainingDataSet(torch.utils.data.Dataset):
+    """
+    Dataset for MD-S2S style training with Bernoulli pixel masking.
+
+    Applies J-invariance: each sample is a 4D patch (Vols, X, Y, Z) with a random
+    Bernoulli mask. The network receives masked input and learns to predict occluded
+    pixels from visible ones. Loss is computed only on masked pixels (see fit.py).
+    """
+
     def __init__(self, data: np.ndarray, patch_size=32, step=16, mask_p=0.3):
         logging.info(
             f"Initializing DataSet: data.shape={data.shape}, patch_size={patch_size}, step={step}, mask_p={mask_p}"
@@ -98,6 +114,8 @@ class TrainingDataSet(torch.utils.data.Dataset):
         self.mask_p = mask_p
 
     def __getitem__(self, index: int):
+        """Return masked input (x_masked) and mask for J-invariant loss.
+        mask=1 for visible pixels, mask=0 for occluded (J dimensions)."""
         # Calculate which window to use as target
         window_idx = index
 

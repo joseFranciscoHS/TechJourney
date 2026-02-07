@@ -1,8 +1,14 @@
+"""
+Reconstruction for DRCNet-S2S with variance reduction via mask averaging.
+
+Implements the S2S dropout-based ensemble: multiple forward passes with different
+Bernoulli masks are averaged to reduce variance of the final prediction.
+See technical report Section 2 (Variance reduction).
+"""
 import logging
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
 
 def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
@@ -10,7 +16,8 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     Reconstruct full-size DWI data using DRCNet with S2S framework.
 
     All volumes at a time, masked with Bernoulli mask (same as training).
-    Multiple predictions with different masks are averaged for robustness.
+    Multiple predictions with different masks are averaged for robustness
+    (variance reduction per J-invariance / Self2Self).
 
     Args:
         model: Trained DRCNet-S2S model

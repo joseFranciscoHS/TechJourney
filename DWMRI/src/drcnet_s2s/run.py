@@ -1,3 +1,9 @@
+"""
+DRCNet-S2S main entry point: train, reconstruct, and evaluate.
+
+Implements Scheme 2 (MD-S2S spatial–angular hybrid) from the J-invariance
+technical report. See README.md for theoretical background.
+"""
 import logging
 import os
 

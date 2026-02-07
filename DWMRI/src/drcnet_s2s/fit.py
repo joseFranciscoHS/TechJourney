@@ -1,3 +1,12 @@
+"""
+Training loop for DRCNet-S2S with J-invariant masked MSE loss.
+
+Loss is computed exclusively over masked (occluded) pixels:
+  L = sum((x_recon - x)^2 * (1 - mask)) / sum(1 - mask)
+
+This implements the J-invariance principle: we minimize error on dimensions J
+using only predictions that do not depend on the noisy input in J.
+"""
 import logging
 import os
 
@@ -22,6 +31,11 @@ def fit_model(
     checkpoint_dir=".",
     loss_dir=None,
 ):
+    """Train DRCNet-S2S with J-invariant masked MSE loss.
+
+    Expects batches of (x_masked, mask) from TrainingDataSet.
+    Loss is computed only on masked pixels (1 - mask == 1).
+    """
     logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
 
