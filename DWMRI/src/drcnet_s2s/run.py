@@ -262,7 +262,9 @@ def main(
                 strict=False,  # Allow partial loading for architecture changes
             )
             # Prepare data for reconstruction
-            x_reconstruct = torch.from_numpy(noisy_data).type(torch.float)
+            x_reconstruct = torch.from_numpy(
+                np.transpose(noisy_data, (3, 0, 1, 2))
+            ).type(torch.float)
 
             reconstructed_dwis = reconstruct_dwis(
                 model=reconstruct_model,
