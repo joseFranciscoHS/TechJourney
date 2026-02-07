@@ -6,6 +6,7 @@ visible (J^c) and occluded (J) sets. The network predicts occluded pixels using
 only visible pixels from all volumes, exploiting both spatial and angular redundancy.
 Data layout: (Vols, X, Y, Z).
 """
+
 import logging
 
 import numpy as np
@@ -132,14 +133,16 @@ class TrainingDataSet(torch.utils.data.Dataset):
         mask = torch.tensor(mask, dtype=torch.float32)  # (Vols, X, Y, Z)
 
         # Take all volumes: windows[window_idx, :, :, :, :] -> (Vols, X, Y, Z)
-        x_masked = self.windows[window_idx].clone()
-        x_masked = x_masked * mask  # (Vols, X, Y, Z)
+        data = self.windows[window_idx].clone()
+        x_masked = data * mask  # (Vols, X, Y, Z)
 
         logging.debug(
             f"__getitem__ index={index}, window_idx={window_idx}, "
             f"x_masked.shape={x_masked.shape}"
         )
-        return x_masked, mask
+
+        # the values (data, x_masked) are passed as inputs to the model
+        return (data, x_masked), mask
 
     def __len__(self):
         """Total number of training samples (windows × volumes)"""
