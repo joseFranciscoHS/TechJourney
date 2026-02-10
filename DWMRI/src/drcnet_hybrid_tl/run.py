@@ -412,12 +412,15 @@ def main(
                     "Using transfer reconstruction (base for vol 0, wrapper per volume for 1..N-1)"
                 )
                 reconstructed_dwis = np.zeros(
-                    (num_vols, settings.data.take_x, settings.data.take_y, settings.data.take_z),
+                    (
+                        num_vols,
+                        settings.data.take_x,
+                        settings.data.take_y,
+                        settings.data.take_z,
+                    ),
                     dtype=np.float32,
                 )
-                for vol_idx in tqdm(
-                    range(num_vols), desc="Reconstructing volumes"
-                ):
+                for vol_idx in tqdm(range(num_vols), desc="Reconstructing volumes"):
                     if vol_idx == 0:
                         use_model = reconstruct_model
                     else:
@@ -470,9 +473,7 @@ def main(
                         n_preds=settings.reconstruct.n_preds,
                     )
                 # (Vols, X, Y, Z) -> (X, Y, Z, Vols) for metrics
-                reconstructed_dwis = np.transpose(
-                    reconstructed_dwis, (1, 2, 3, 0)
-                )
+                reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
             else:
                 reconstructed_dwis = reconstruct_dwis(
                     model=reconstruct_model,
@@ -482,9 +483,7 @@ def main(
                     n_preds=settings.reconstruct.n_preds,
                 )
                 # Transpose back to (X, Y, Z, Vols) for metrics and visualization
-                reconstructed_dwis = np.transpose(
-                    reconstructed_dwis, (1, 2, 3, 0)
-                )
+                reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
             logging.info(
                 f"Reconstructed DWIs min: {reconstructed_dwis.min():.4f}, "

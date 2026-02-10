@@ -40,13 +40,13 @@ dbrain:
     base_filters: 32  # Doubled for more model capacity
   transfer:
     target_volume_indices: [1, 2, 3, 4, 5, 6, 7, 8, 9]  # or "all" = all except source (0)
-    num_epochs: 10
+    num_epochs: 30
     learning_rate: 0.0005  # Typically smaller than Phase 1
     freeze_base: true
     shared_wrapper: false  # true = one wrapper for all volumes (Option B)
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 8  # Larger step for more diverse training data
+    patch_size: 64  # Larger patches for better context
+    step: 32  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
