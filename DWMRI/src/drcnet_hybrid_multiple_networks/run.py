@@ -239,8 +239,6 @@ def main(
                 dtype=np.float32,
             )
             for vol_idx in tqdm(range(num_vols), desc="Reconstructing volumes"):
-                # TODO: remove after testing
-                vol_idx = 0
                 volume_checkpoint = os.path.join(
                     checkpoint_dir, f"volume_{vol_idx}", "best_loss_checkpoint.pth"
                 )
@@ -282,6 +280,8 @@ def main(
                 del model
                 if settings.reconstruct.device != "cpu":
                     torch.cuda.empty_cache()
+                # TODO: remove after testing
+                break
             # (Vols, X, Y, Z) -> (X, Y, Z, Vols) for metrics and visualization
             reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
@@ -293,8 +293,14 @@ def main(
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
             metrics = compute_metrics(
-                original_data,
-                reconstructed_dwis,
+                original_data[60:71,60:71,60:71,0:1],
+                reconstructed_dwis[60:71,60:71,60:71,0:1],
+            )
+            logging.info(f"Metrics: {metrics}")
+
+            metrics = compute_metrics(
+                original_data[...,0:1],
+                reconstructed_dwis[...,0:1],
             )
             logging.info(f"Metrics: {metrics}")
             # Log metrics to wandb
@@ -356,6 +362,49 @@ def main(
 
                 # Generate single volume images
                 single_path = os.path.join(images_dir, "single.png")
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=single_path,
+                    volume_idx=0,
+                    slice_idx=10,
+                )
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=None,
+                    volume_idx=0,
+                    slice_idx=20,
+                )
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=None,
+                    volume_idx=0,
+                    slice_idx=30,
+                )
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=None,
+                    volume_idx=0,
+                    slice_idx=40,
+                )
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=None,
+                    volume_idx=0,
+                    slice_idx=50,
+                )
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=None,
+                    volume_idx=0,
+                    slice_idx=60,
+                )
+                visualize_single_volume(
+                    np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
+                    file_name=None,
+                    volume_idx=0,
+                    slice_idx=70,
+                )
+
                 visualize_single_volume(
                     np.transpose(reconstructed_dwis, (2, 3, 0, 1)),
                     file_name=single_path,
