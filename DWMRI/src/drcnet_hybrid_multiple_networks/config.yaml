@@ -7,7 +7,7 @@ dbrain:
     batch_size: 8  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
-    checkpoint_dir: "drcnet_hybrid_tl/checkpoints/dbrain"
+    checkpoint_dir: "drcnet_hybrid_multiple_networks/checkpoints/dbrain"
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
@@ -29,8 +29,8 @@ dbrain:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
-    metrics_dir: "drcnet_hybrid_tl/metrics/dbrain"
-    images_dir: "drcnet_hybrid_tl/images/dbrain"
+    metrics_dir: "drcnet_hybrid_multiple_networks/metrics/dbrain"
+    images_dir: "drcnet_hybrid_multiple_networks/images/dbrain"
   model:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
@@ -38,12 +38,6 @@ dbrain:
     dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
-  transfer:
-    target_volume_indices: [1, 2, 3, 4, 5, 6, 7, 8, 9]  # or "all" = all except source (0)
-    num_epochs: 5
-    learning_rate: 0.0015  # Typically smaller than Phase 1
-    freeze_base: true
-    shared_wrapper: false  # true = one wrapper for all volumes (Option B)
   data:
     patch_size: 64  # Larger patches for better context
     step: 16  # Larger step for more diverse training data
