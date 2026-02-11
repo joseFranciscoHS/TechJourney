@@ -183,11 +183,13 @@ def main(
                             gamma=settings.train.scheduler_gamma,
                         )
                     elif settings.train.scheduler_type == "cosine":
-                        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                            optimizer,
-                            T_0=settings.train.scheduler_T_0,
-                            T_mult=settings.train.scheduler_T_mult,
-                            eta_min=settings.train.eta_min_lr,
+                        scheduler = (
+                            torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                                optimizer,
+                                T_0=settings.train.scheduler_T_0,
+                                T_mult=settings.train.scheduler_T_mult,
+                                eta_min=settings.train.eta_min_lr,
+                            )
                         )
                     elif settings.train.scheduler_type == "reduceLROnPlateau":
                         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -216,6 +218,9 @@ def main(
                 if settings.train.device != "cpu":
                     torch.cuda.empty_cache()
                 logging.info(f"Completed training for volume {volume_idx}")
+
+                # TODO: remove break after testing
+                break
             logging.info(f"Training completed. Log file: {log_file}")
 
         if reconstruct:
@@ -234,6 +239,8 @@ def main(
                 dtype=np.float32,
             )
             for vol_idx in tqdm(range(num_vols), desc="Reconstructing volumes"):
+                # TODO: remove after testing
+                vol_idx = 0
                 volume_checkpoint = os.path.join(
                     checkpoint_dir, f"volume_{vol_idx}", "best_loss_checkpoint.pth"
                 )

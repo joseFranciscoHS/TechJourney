@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 10  # Increased for better convergence
+    num_epochs: 3  # Increased for better convergence
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.0015  # Base learning rate for single GPU
@@ -34,13 +34,13 @@ dbrain:
   model:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
-    groups: 8  # Increased for better feature separation
+    groups: 2  # Increased for better feature separation
     dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 64  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    patch_size: 32  # Larger patches for better context
+    step: 8  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
