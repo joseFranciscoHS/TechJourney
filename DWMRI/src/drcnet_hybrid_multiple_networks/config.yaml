@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 5  # Increased for better convergence
+    num_epochs: 1  # Increased for better convergence
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.0015  # Base learning rate for single GPU
@@ -38,6 +38,10 @@ dbrain:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 5  # Number of predictions per volume for averaging
+    # Positive bias: model predicts noisy target, so background (true 0) is learned as small positive.
+    # subtract_background_estimate: subtract median(recon) in voxels where original <= threshold, then clip.
+    subtract_background_estimate: false
+    subtract_background_threshold: 0.02  # voxels where original max across vols <= this are "background"
     clip_to_range: true  # Clip reconstruction to [0, 1] before metrics (matches original range)
     metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
     metrics_dir: "drcnet_hybrid_multiple_networks/metrics/dbrain"
@@ -45,13 +49,14 @@ dbrain:
   model:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
+    output_activation: "sigmoid"  # or "sigmoid" to bound output to (0,1); reduces background bias (retrain required)
     groups: 1  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
     patch_size: 8  # Larger patches for better context
-    step: 3  # Larger step for more diverse training data
+    step: 6  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1

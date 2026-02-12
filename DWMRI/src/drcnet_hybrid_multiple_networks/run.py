@@ -169,6 +169,9 @@ def main(
                         settings.data.patch_size,
                     ),
                     device=settings.train.device,
+                    output_activation=getattr(
+                        settings.model, "output_activation", "prelu"
+                    ),
                 )
                 model, effective_lr, effective_batch_size = setup_multi_gpu(
                     model, multi_gpu_config
@@ -261,6 +264,9 @@ def main(
                         settings.data.take_z,
                     ),
                     device=settings.train.device,
+                    output_activation=getattr(
+                        settings.model, "output_activation", "prelu"
+                    ),
                 )
                 load_checkpoint(
                     model=model,
@@ -292,9 +298,32 @@ def main(
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-            # Optional: clip to [0, 1] so metrics match original range (avoids background lift)
+            # Optional: subtract estimated background level (shift left) then clip to [0, 1]
+            # Model predicts noisy target, so background (true 0) is learned as small positive; this corrects it.
+            if getattr(settings.reconstruct, "subtract_background_estimate", False):
+                thresh = getattr(
+                    settings.reconstruct, "subtract_background_threshold", 0.02
+                )
+                # background = voxels where original is below threshold in all volumes
+                bg_mask = (original_data <= thresh).all(axis=-1)
+                if np.any(bg_mask):
+                    # estimate bias as median of recon in those voxels (one value per voxel, then median)
+                    bg_vals = reconstructed_dwis[bg_mask]
+                    shift = float(np.median(bg_vals))
+                    reconstructed_dwis = reconstructed_dwis.astype(np.float64) - shift
+                    logging.info(
+                        f"Subtracted background estimate: median(recon|original<={thresh}) = {shift:.4f}. "
+                        f"Reconstructed min/max/mean after shift: "
+                        f"{reconstructed_dwis.min():.4f}, {reconstructed_dwis.max():.4f}, {reconstructed_dwis.mean():.4f}"
+                    )
+                else:
+                    logging.info(
+                        "subtract_background_estimate: true but no voxels with original <= threshold; skipping."
+                    )
             if getattr(settings.reconstruct, "clip_to_range", False):
-                reconstructed_dwis = np.clip(reconstructed_dwis, 0.0, 1.0)
+                reconstructed_dwis = np.clip(reconstructed_dwis, 0.0, 1.0).astype(
+                    np.float32
+                )
                 logging.info(
                     "Clipped reconstruction to [0, 1]. "
                     "Reconstructed min/max/mean: "
