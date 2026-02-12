@@ -25,10 +25,21 @@ dbrain:
     scheduler_patience: 4  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
+  # --- reconstruct (metrics & viz) ---
+  # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
+  # metrics_roi_threshold: 0.02 → ROI = voxels where original > 0.02 (tissue). Full-image and ROI
+  #   metrics are both computed and saved. run.py: after reconstruction, if clip_to_range then clip
+  #   and log min/max/mean; full-image metrics (unchanged); if metrics_roi_threshold set, mask
+  #   (original_data > threshold).any(axis=-1) and compute ROI metrics; save full → metrics.json,
+  #   ROI → metrics_roi.json; wandb: reconstruct/metrics_* and reconstruct/metrics_roi_*. ROI metrics
+  #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
+  #   or set metrics_roi_threshold to null.
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 5  # Number of predictions per volume for averaging
+    clip_to_range: true  # Clip reconstruction to [0, 1] before metrics (matches original range)
+    metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
     metrics_dir: "drcnet_hybrid_multiple_networks/metrics/dbrain"
     images_dir: "drcnet_hybrid_multiple_networks/images/dbrain"
   model:

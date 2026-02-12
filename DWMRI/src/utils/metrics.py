@@ -59,19 +59,104 @@ def mse(original, reconstructed):
     return float(mse_value)
 
 
-def compute_metrics(original, reconstructed, metrics=["psnr", "ssim", "mse"]):
+def _ensure_4d_mask(mask, shape_4d):
+    """Broadcast 3D mask to (X,Y,Z,V) for 4D volumes."""
+    if mask.ndim == 3:
+        return np.broadcast_to(
+            mask[..., np.newaxis],
+            shape_4d,
+        ).copy()
+    return mask
+
+
+def _bbox_3d(mask):
+    """Return (xmin, xmax, ymin, ymax, zmin, zmax) from 3D mask."""
+    if mask.ndim == 4:
+        mask = np.any(mask, axis=-1)
+    i, j, k = np.where(mask)
+    if i.size == 0:
+        return None
+    return i.min(), i.max() + 1, j.min(), j.max() + 1, k.min(), k.max() + 1
+
+
+def mse_masked(original, reconstructed, mask):
+    """MSE over voxels where mask is True. mask: (X,Y,Z) or (X,Y,Z,V)."""
+    m = _ensure_4d_mask(np.asarray(mask, dtype=bool), original.shape)
+    diff = (original.astype(np.float64) - reconstructed.astype(np.float64)) ** 2
+    n = np.sum(m)
+    if n == 0:
+        return float("nan")
+    return float(np.sum(diff * m) / n)
+
+
+def psnr_masked(original, reconstructed, mask, max_value=None):
+    """PSNR using MSE over masked voxels. max_value defaults to max(original[mask])."""
+    mse_val = mse_masked(original, reconstructed, mask)
+    if mse_val == 0:
+        return float("inf")
+    m = _ensure_4d_mask(np.asarray(mask, dtype=bool), original.shape)
+    if max_value is None:
+        max_value = np.max(original[m])
+    if max_value <= 0:
+        return float("nan")
+    return float(20 * math.log10(max_value / math.sqrt(mse_val)))
+
+
+def ssim_cropped(original, reconstructed, mask, data_range=None):
+    """SSIM on the bounding-box crop of the mask (ROI)."""
+    bbox = _bbox_3d(mask)
+    if bbox is None:
+        return float("nan")
+    x0, x1, y0, y1, z0, z1 = bbox
+    o = original[x0:x1, y0:y1, z0:z1, ...]
+    r = reconstructed[x0:x1, y0:y1, z0:z1, ...]
+    if data_range is None:
+        data_range = float(o.max() - o.min()) or 1.0
+    try:
+        return float(
+            structural_similarity(
+                o,
+                r,
+                data_range=data_range,
+                channel_axis=3,
+            )
+            or 0
+        )
+    except Exception as e:
+        logging.debug(f"SSIM crop failed: {e}")
+        return float("nan")
+
+
+def compute_metrics(original, reconstructed, metrics=None, mask=None):
+    """
+    Compute PSNR, SSIM, MSE. If mask is provided, metrics are computed only over
+    the ROI (MSE/PSNR over masked voxels, SSIM on bounding-box crop). Useful to
+    avoid background/air voxels dominating when original has zeros and
+    reconstruction does not.
+    """
+    if metrics is None:
+        metrics = ["psnr", "ssim", "mse"]
     metrics_values = {}
-    if "psnr" in metrics:
-        metrics_values["psnr"] = psnr(original, reconstructed)
-    if "ssim" in metrics:
-        metrics_values["ssim"] = ssim(original, reconstructed)
-    if "mse" in metrics:
-        metrics_values["mse"] = mse(original, reconstructed)
+    if mask is not None:
+        m = np.asarray(mask, dtype=bool)
+        if "mse" in metrics:
+            metrics_values["mse"] = mse_masked(original, reconstructed, m)
+        if "psnr" in metrics:
+            metrics_values["psnr"] = psnr_masked(original, reconstructed, m)
+        if "ssim" in metrics:
+            metrics_values["ssim"] = ssim_cropped(original, reconstructed, m)
+    else:
+        if "psnr" in metrics:
+            metrics_values["psnr"] = psnr(original, reconstructed)
+        if "ssim" in metrics:
+            metrics_values["ssim"] = ssim(original, reconstructed)
+        if "mse" in metrics:
+            metrics_values["mse"] = mse(original, reconstructed)
     return metrics_values
 
 
-def save_metrics(metrics, metrics_dir):
-    with open(os.path.join(metrics_dir, "metrics.json"), "w") as f:
+def save_metrics(metrics, metrics_dir, filename="metrics.json"):
+    with open(os.path.join(metrics_dir, filename), "w") as f:
         json.dump(metrics, f)
 
 
