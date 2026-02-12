@@ -306,6 +306,13 @@ def main(
                 )
                 logging.info(f"Metrics for volume {i} in range(30:90): {metrics}")
 
+            for i in range(10):
+                metrics = compute_metrics(
+                    original_data[..., i : i + 1],
+                    reconstructed_dwis[..., i : i + 1],
+                )
+                logging.info(f"Metrics for volume {i} in range(all): {metrics}")
+
             metrics = compute_metrics(
                 original_data,
                 reconstructed_dwis,
