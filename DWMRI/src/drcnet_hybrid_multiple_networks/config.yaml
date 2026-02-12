@@ -49,7 +49,7 @@ dbrain:
   model:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
-    output_activation: "sigmoid"  # or "sigmoid" to bound output to (0,1); reduces background bias (retrain required)
+    output_activation: "prelu"  # prelu or "sigmoid" to bound output to (0,1); reduces background bias (retrain required)
     groups: 1  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: true
