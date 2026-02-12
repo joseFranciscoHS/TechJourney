@@ -1,10 +1,10 @@
 dbrain:
   train:
-    num_epochs: 10  # Increased for better convergence
+    num_epochs: 5  # Increased for better convergence
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.0015  # Base learning rate for single GPU
-    batch_size: 16  # Per-GPU batch size
+    batch_size: 128  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
     checkpoint_dir: "drcnet_hybrid_multiple_networks/checkpoints/dbrain"
@@ -22,25 +22,25 @@ dbrain:
     scheduler_step_size: 15
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 30  # More aggressive reduction
+    scheduler_patience: 4  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 10  # Number of predictions per volume for averaging
+    n_preds: 5  # Number of predictions per volume for averaging
     metrics_dir: "drcnet_hybrid_multiple_networks/metrics/dbrain"
     images_dir: "drcnet_hybrid_multiple_networks/images/dbrain"
   model:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
-    groups: 2  # Increased for better feature separation
-    dense_convs: 2  # More dense connections for better feature learning
+    groups: 1  # Increased for better feature separation
+    dense_convs: 3  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 4  # Larger step for more diverse training data
+    patch_size: 8  # Larger patches for better context
+    step: 3  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1

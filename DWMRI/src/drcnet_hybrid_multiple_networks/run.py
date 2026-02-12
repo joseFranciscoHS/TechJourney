@@ -220,7 +220,7 @@ def main(
                 logging.info(f"Completed training for volume {volume_idx}")
 
                 # TODO: remove break after testing
-                break
+                # break
             logging.info(f"Training completed. Log file: {log_file}")
 
         if reconstruct:
@@ -281,7 +281,7 @@ def main(
                 if settings.reconstruct.device != "cpu":
                     torch.cuda.empty_cache()
                 # TODO: remove after testing
-                break
+                # break
             # (Vols, X, Y, Z) -> (X, Y, Z, Vols) for metrics and visualization
             reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")
@@ -292,15 +292,23 @@ def main(
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-            metrics = compute_metrics(
-                original_data[60:71,60:71,60:71,0:1],
-                reconstructed_dwis[60:71,60:71,60:71,0:1],
-            )
-            logging.info(f"Metrics: {metrics}")
+            for i in range(10):
+                metrics = compute_metrics(
+                    original_data[60:71, 60:71, 60:71, i : i + 1],
+                    reconstructed_dwis[60:71, 60:71, 60:71, i : i + 1],
+                )
+                logging.info(f"Metrics for volume {i} in range(60:71): {metrics}")
+
+            for i in range(10):
+                metrics = compute_metrics(
+                    original_data[30:90, 30:90, 30:90, i : i + 1],
+                    reconstructed_dwis[30:90, 30:90, 30:90, i : i + 1],
+                )
+                logging.info(f"Metrics for volume {i} in range(30:90): {metrics}")
 
             metrics = compute_metrics(
-                original_data[...,0:1],
-                reconstructed_dwis[...,0:1],
+                original_data,
+                reconstructed_dwis,
             )
             logging.info(f"Metrics: {metrics}")
             # Log metrics to wandb
