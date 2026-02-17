@@ -1,7 +1,7 @@
 dbrain:
   train:
     num_epochs: 1  # Increased for better convergence
-    device: cuda
+    device: cuda:2
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.0015  # Base learning rate for single GPU
     batch_size: 128  # Per-GPU batch size
@@ -55,8 +55,8 @@ dbrain:
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 8  # Larger patches for better context
-    step: 6  # Larger step for more diverse training data
+    patch_size: 32  # Larger patches for better context
+    step: 30  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
