@@ -216,8 +216,23 @@ def main(
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
+            # Full-image metrics (background voxels can dominate and worsen PSNR/SSIM)
             metrics = compute_metrics(original_data, reconstructed_dwis)
             logging.info(f"Metrics: {metrics}")
+            # ROI metrics: only over voxels where original > threshold (excludes air/background)
+            roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
+            if roi_threshold is not None:
+                roi_mask = (original_data > roi_threshold).any(axis=-1)
+                n_roi = int(np.sum(roi_mask))
+                logging.info(
+                    f"ROI mask: original > {roi_threshold}, {n_roi} voxels ({100.0 * n_roi / roi_mask.size:.1f}%)"
+                )
+                metrics_roi = compute_metrics(
+                    original_data, reconstructed_dwis, mask=roi_mask
+                )
+                logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
+            else:
+                metrics_roi = None
             # Log metrics to wandb
             if wandb_run is not None:
                 wandb.log(
@@ -227,6 +242,14 @@ def main(
                         "reconstruct/metrics_psnr": metrics["psnr"],
                     }
                 )
+                if metrics_roi is not None:
+                    wandb.log(
+                        {
+                            "reconstruct/metrics_roi_mse": metrics_roi["mse"],
+                            "reconstruct/metrics_roi_ssim": metrics_roi["ssim"],
+                            "reconstruct/metrics_roi_psnr": metrics_roi["psnr"],
+                        }
+                    )
             # setting metrics dir taking into account run/model parameters
             metrics_dir = os.path.join(
                 settings.reconstruct.metrics_dir,
