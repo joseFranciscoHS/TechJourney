@@ -1,9 +1,9 @@
 dbrain:
   train:
-    num_epochs: 40  # Increased for better convergence
+    num_epochs: 50  # Increased for better convergence
     device: cuda:2
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0015  # Base learning rate for single GPU
+    learning_rate: 0.001  # Base learning rate for single GPU
     batch_size: 32  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
@@ -22,7 +22,7 @@ dbrain:
     scheduler_step_size: 15
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 4  # More aggressive reduction
+    scheduler_patience: 8  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
   # --- reconstruct (metrics & viz) ---
@@ -37,7 +37,7 @@ dbrain:
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 5  # Number of predictions per volume for averaging
+    n_preds: 10  # Number of predictions per volume for averaging
     # Positive bias: model predicts noisy target, so background (true 0) is learned as small positive.
     # subtract_background_estimate: subtract median(recon) in voxels where original <= threshold, then clip.
     subtract_background_estimate: false
@@ -50,13 +50,13 @@ dbrain:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # prelu or "sigmoid" to bound output to (0,1); reduces background bias (retrain required)
-    groups: 1  # Increased for better feature separation
+    groups: 2  # Increased for better feature separation
     dense_convs: 3  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
     patch_size: 32  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    step: 12  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
