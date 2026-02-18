@@ -16,6 +16,7 @@ dbrain:
     device: cuda
     metrics_dir: "mds2s/metrics/dbrain"
     images_dir: "mds2s/images/dbrain"
+    metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
   model:
     in_channel: 10 # is the same as the number of volumes
     out_channel: 10
