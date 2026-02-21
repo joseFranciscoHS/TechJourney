@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
-from utils.data import DBrainDataLoader, StanfordDataLoader
+from utils.data import DBrainDataLoader, StanfordDataLoader, compute_brain_mask
 from utils.metrics import (
     compute_metrics,
     fully_compare_volumes,
@@ -96,6 +96,27 @@ def main(
             f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
         )
 
+        # Patch filtering configuration (with defaults for backwards compatibility)
+        patch_filter_method = getattr(settings.data, "patch_filter_method", "none")
+        min_signal_threshold = getattr(settings.data, "min_signal_threshold", 0.0)
+        otsu_median_radius = getattr(settings.data, "otsu_median_radius", 2)
+        otsu_numpass = getattr(settings.data, "otsu_numpass", 1)
+        
+        logging.info(
+            f"Patch filtering: method={patch_filter_method}, "
+            f"threshold={min_signal_threshold}, otsu_radius={otsu_median_radius}, otsu_numpass={otsu_numpass}"
+        )
+
+        # Compute brain mask if using otsu method
+        brain_mask = None
+        if patch_filter_method == "otsu":
+            logging.info("Computing brain mask using median_otsu...")
+            brain_mask = compute_brain_mask(
+                original_data,
+                median_radius=otsu_median_radius,
+                numpass=otsu_numpass,
+            )
+
         # Base checkpoint and loss dirs (one subdir per volume: volume_0, volume_1, ...)
         checkpoint_dir = os.path.join(
             settings.train.checkpoint_dir,
@@ -127,6 +148,10 @@ def main(
             step=settings.data.step,
             mask_p=settings.train.mask_p,
             source_volume_index=0,
+            clean_data=original_data,
+            brain_mask=brain_mask,
+            patch_filter_method=patch_filter_method,
+            min_signal_threshold=min_signal_threshold,
         )
 
         multi_gpu_config = create_multi_gpu_config_from_dict(

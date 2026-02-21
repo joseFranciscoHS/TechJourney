@@ -55,8 +55,8 @@ dbrain:
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 16  # Larger step for more diverse training data
+    patch_size: 8  # Larger patches for better context
+    step: 1  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
@@ -68,6 +68,14 @@ dbrain:
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    # Patch filtering to exclude background-only patches (reduces positive bias in empty regions)
+    # "none": keep all patches (original behavior)
+    # "threshold": exclude patches where max(clean_patch) <= min_signal_threshold
+    # "otsu": exclude patches outside brain mask computed via DIPY median_otsu
+    patch_filter_method: "threshold"
+    min_signal_threshold: 0.02  # for "threshold" method; matches metrics_roi_threshold
+    otsu_median_radius: 2       # for "otsu" method: median filter radius
+    otsu_numpass: 1             # for "otsu" method: number of median filter passes
 stanford:
   train:
     num_epochs: 100

@@ -5,6 +5,7 @@ from dipy.core.gradients import gradient_table
 from dipy.data import get_fnames
 from dipy.io.gradients import read_bvals_bvecs
 from dipy.io.image import load_nifti
+from dipy.segment.mask import median_otsu
 
 np.random.seed(91021)
 
@@ -163,4 +164,37 @@ def normalize_spatial_dimensions(data):
     )
     return normalized_data
 
+
+def compute_brain_mask(data, median_radius=2, numpass=1):
+    """
+    Compute brain mask using DIPY's median_otsu on the mean volume.
+    
+    Args:
+        data: 4D array (X, Y, Z, volumes) - clean (non-noisy) normalized data
+        median_radius: radius for median filter (default: 2)
+        numpass: number of median filter passes (default: 1)
+    
+    Returns:
+        mask: 3D boolean array (X, Y, Z) where True = brain tissue
+    """
+    logging.info(
+        f"Computing brain mask with median_otsu (radius={median_radius}, numpass={numpass})"
+    )
+    logging.info(f"Input data shape: {data.shape}")
+    
+    mean_vol = data.mean(axis=-1)
+    logging.info(
+        f"Mean volume stats - min: {mean_vol.min():.4f}, max: {mean_vol.max():.4f}, mean: {mean_vol.mean():.4f}"
+    )
+    
+    _, mask = median_otsu(mean_vol, median_radius=median_radius, numpass=numpass)
+    
+    mask_count = mask.sum()
+    total_voxels = mask.size
+    mask_pct = 100.0 * mask_count / total_voxels
+    logging.info(
+        f"Brain mask computed: {mask_count:,} voxels in mask ({mask_pct:.1f}% of total)"
+    )
+    
+    return mask
 
