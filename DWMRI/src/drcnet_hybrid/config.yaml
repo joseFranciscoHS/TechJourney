@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 1  # Increased for better convergence
+    num_epochs: 10  # Increased for better convergence
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.0015  # Base learning rate for single GPU
@@ -22,32 +22,41 @@ dbrain:
     scheduler_step_size: 15
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 30  # More aggressive reduction
+    scheduler_patience: 10  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
+  # --- reconstruct (metrics & viz) ---
+  # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
+  # metrics_roi_threshold: 0.02 → ROI = voxels where original > 0.02 (tissue). Full-image and ROI
+  #   metrics are both computed and saved. run.py: after reconstruction, if clip_to_range then clip
+  #   and log min/max/mean; full-image metrics (unchanged); if metrics_roi_threshold set, mask
+  #   (original_data > threshold).any(axis=-1) and compute ROI metrics; save full → metrics.json,
+  #   ROI → metrics_roi.json; wandb: reconstruct/metrics_* and reconstruct/metrics_roi_*. ROI metrics
+  #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
+  #   or set metrics_roi_threshold to null.
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
     # Post-reconstruction processing
-    clip_to_range: false  # Clip reconstruction to [0, 1] before metrics
+    clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
     subtract_background_estimate: false  # Subtract median of background voxels
     subtract_background_threshold: 0.02  # Voxels where original <= this are "background"
     # ROI metrics
-    metrics_roi_threshold: null  # Set to 0.02 to compute ROI metrics (original > threshold)
+    metrics_roi_threshold: 0.02  # Set to 0.02 to compute ROI metrics (original > threshold)
     metrics_dir: "drcnet_hybrid/metrics/dbrain"
     images_dir: "drcnet_hybrid/images/dbrain"
   model:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
-    groups: 16  # Increased for better feature separation
+    groups: 2  # Increased for better feature separation
     dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 32  # Larger patches for better context
-    step: 1  # Larger step for more diverse training data
+    patch_size: 16  # Larger patches for better context
+    step: 4  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 10
     noise_sigma: 0.1
@@ -63,7 +72,7 @@ dbrain:
     # "none": keep all patches (original behavior)
     # "threshold": exclude patches where max(clean_patch) <= min_signal_threshold
     # "otsu": exclude patches outside brain mask computed via DIPY median_otsu
-    patch_filter_method: "none"
+    patch_filter_method: "threshold"
     min_signal_threshold: 0.02  # For "threshold" method
     otsu_median_radius: 2       # For "otsu" method: median filter radius
     otsu_numpass: 1             # For "otsu" method: number of median filter passes
