@@ -330,10 +330,13 @@ class DenoiserNet(nn.Module):
         base_filters=32,
         output_shape=(1, 128, 128, 128),
         device="cpu",
+        output_activation="prelu",
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
-            f"Initializing DenoiserNet: input_channels={input_channels}, output_channels={output_channels}, groups={groups}, dense_convs={dense_convs}, residual={residual}, base_filters={base_filters}"
+            f"Initializing DenoiserNet: input_channels={input_channels}, output_channels={output_channels}, "
+            f"groups={groups}, dense_convs={dense_convs}, residual={residual}, base_filters={base_filters}, "
+            f"output_activation={output_activation}"
         )
         groups = groups
 
@@ -395,6 +398,12 @@ class DenoiserNet(nn.Module):
 
         self.denoising_block = GatedBlock(filters_1, filters_1, dense_convs, groups)
 
+        # Output activation: "prelu" (unbounded) or "sigmoid" (0-1) to reduce positive bias in background
+        last_act = (
+            nn.Sigmoid()
+            if (output_activation or "prelu").lower() == "sigmoid"
+            else nn.PReLU(output_channels)
+        )
         self.output_block = nn.Sequential(
             OrderedDict(
                 [
@@ -412,7 +421,7 @@ class DenoiserNet(nn.Module):
                             padding=(1, 1, 1),
                         ),
                     ),
-                    ("act 1", nn.PReLU(output_channels)),
+                    ("act 1", last_act),
                 ]
             )
         )

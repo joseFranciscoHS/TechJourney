@@ -10,7 +10,7 @@ from drcnet_hybrid.reconstruction import reconstruct_dwis
 from torch.utils.data import DataLoader
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
-from utils.data import DBrainDataLoader, StanfordDataLoader
+from utils.data import DBrainDataLoader, StanfordDataLoader, compute_brain_mask
 from utils.metrics import (
     compute_metrics,
     fully_compare_volumes,
@@ -94,6 +94,27 @@ def main(
             f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
         )
 
+        # Patch filtering configuration
+        patch_filter_method = getattr(settings.data, "patch_filter_method", "none")
+        min_signal_threshold = getattr(settings.data, "min_signal_threshold", 0.0)
+        otsu_median_radius = getattr(settings.data, "otsu_median_radius", 2)
+        otsu_numpass = getattr(settings.data, "otsu_numpass", 1)
+
+        logging.info(
+            f"Patch filtering: method={patch_filter_method}, "
+            f"threshold={min_signal_threshold}, otsu_radius={otsu_median_radius}, otsu_numpass={otsu_numpass}"
+        )
+
+        # Compute brain mask if using otsu method
+        brain_mask = None
+        if patch_filter_method == "otsu":
+            logging.info("Computing brain mask using median_otsu...")
+            brain_mask = compute_brain_mask(
+                original_data,
+                median_radius=otsu_median_radius,
+                numpass=otsu_numpass,
+            )
+
         train_set = TrainingDataSet(
             data=noisy_data,
             patch_size=(
@@ -104,6 +125,10 @@ def main(
             ),
             step=settings.data.step,
             mask_p=settings.train.mask_p,
+            clean_data=original_data,
+            brain_mask=brain_mask,
+            patch_filter_method=patch_filter_method,
+            min_signal_threshold=min_signal_threshold,
         )
         train_loader = DataLoader(
             train_set, batch_size=settings.train.batch_size, shuffle=True
@@ -126,6 +151,7 @@ def main(
                 settings.data.patch_size,
             ),
             device=settings.train.device,
+            output_activation=getattr(settings.model, "output_activation", "prelu"),
         )
         logging.info(
             f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
@@ -252,6 +278,7 @@ def main(
                     settings.data.take_z,
                 ),
                 device=settings.train.device,
+                output_activation=getattr(settings.model, "output_activation", "prelu"),
             )
             reconstruct_model, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,
@@ -282,20 +309,29 @@ def main(
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-            metrics = compute_metrics(
-                original_data,
-                reconstructed_dwis,
-            )
-            logging.info(f"Metrics: {metrics}")
-            # Log metrics to wandb
-            if wandb_run is not None:
-                wandb.log(
-                    {
-                        "reconstruct/metrics_mse": metrics["mse"],
-                        "reconstruct/metrics_ssim": metrics["ssim"],
-                        "reconstruct/metrics_psnr": metrics["psnr"],
-                    }
+            # Optional: subtract estimated background level then clip
+            if getattr(settings.reconstruct, "subtract_background_estimate", False):
+                thresh = getattr(
+                    settings.reconstruct, "subtract_background_threshold", 0.02
                 )
+                bg_mask = (original_data <= thresh).all(axis=-1)
+                if np.any(bg_mask):
+                    bg_vals = reconstructed_dwis[bg_mask]
+                    shift = float(np.median(bg_vals))
+                    logging.info(
+                        f"Background subtraction: shift={shift:.6f} from {np.sum(bg_mask):,} voxels"
+                    )
+                    reconstructed_dwis = reconstructed_dwis.astype(np.float64) - shift
+                    reconstructed_dwis = np.clip(reconstructed_dwis, 0, 1)
+
+            # Optional: clip to [0, 1] range
+            if getattr(settings.reconstruct, "clip_to_range", False):
+                reconstructed_dwis = np.clip(reconstructed_dwis, 0, 1)
+                logging.info(
+                    f"Clipped to [0, 1]: min={reconstructed_dwis.min():.4f}, "
+                    f"max={reconstructed_dwis.max():.4f}, mean={reconstructed_dwis.mean():.4f}"
+                )
+
             # setting metrics dir taking into account run/model parameters
             metrics_dir = os.path.join(
                 settings.reconstruct.metrics_dir,
@@ -305,7 +341,47 @@ def main(
                 f"learning_rate_{settings.train.learning_rate}",
             )
             os.makedirs(metrics_dir, exist_ok=True)
+
+            # Full-image metrics
+            metrics = compute_metrics(
+                original_data,
+                reconstructed_dwis,
+            )
+            logging.info(f"Metrics (full image): {metrics}")
             save_metrics(metrics, metrics_dir)
+
+            # Log metrics to wandb
+            if wandb_run is not None:
+                wandb.log(
+                    {
+                        "reconstruct/metrics_mse": metrics["mse"],
+                        "reconstruct/metrics_ssim": metrics["ssim"],
+                        "reconstruct/metrics_psnr": metrics["psnr"],
+                    }
+                )
+
+            # ROI-based metrics (brain/tissue only)
+            roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
+            if roi_threshold is not None:
+                roi_mask = (original_data > roi_threshold).any(axis=-1)
+                n_roi = int(np.sum(roi_mask))
+                logging.info(
+                    f"ROI mask: original > {roi_threshold}, {n_roi:,} voxels ({100.0 * n_roi / roi_mask.size:.1f}%)"
+                )
+                metrics_roi = compute_metrics(
+                    original_data, reconstructed_dwis, mask=roi_mask
+                )
+                logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
+                save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
+
+                if wandb_run is not None:
+                    wandb.log(
+                        {
+                            "reconstruct/metrics_roi_mse": metrics_roi["mse"],
+                            "reconstruct/metrics_roi_ssim": metrics_roi["ssim"],
+                            "reconstruct/metrics_roi_psnr": metrics_roi["psnr"],
+                        }
+                    )
 
             if generate_images:
                 logging.info("Generating images...")
