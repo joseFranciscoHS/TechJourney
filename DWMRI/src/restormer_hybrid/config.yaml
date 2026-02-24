@@ -1,0 +1,104 @@
+dbrain:
+  train:
+    num_epochs: 10  # Increased for better convergence
+    device: cuda
+    mask_p: 0.3  # Mask probability for hybrid MD-S2S training
+    learning_rate: 0.0015  # Base learning rate for single GPU
+    batch_size: 4  # Reduced batch size for 3D transformer memory constraints
+    use_scheduler: true
+    scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
+    checkpoint_dir: "restormer_hybrid/checkpoints/dbrain"
+    # Multi-GPU settings
+    multi_gpu: false  # Set to false to disable multi-GPU
+    gpu_ids: [0, 1, 2]  # Specify which GPUs to use
+    auto_scale_lr: true  # Automatically scale LR based on GPU count
+    auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
+    memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
+    ## cosine annealing warm restarts
+    scheduler_T_0: 20  # More frequent restarts
+    eta_min_lr: 0.0001  # Lower minimum LR
+    scheduler_T_mult: 2
+    ## stepLR
+    scheduler_step_size: 15
+    scheduler_gamma: 0.5
+    ## reduceLROnPlateau
+    scheduler_patience: 10  # More aggressive reduction
+    scheduler_factor: 0.8  # Less aggressive reduction
+    min_lr: 0.0001
+  # --- reconstruct (metrics & viz) ---
+  # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
+  # metrics_roi_threshold: 0.02 → ROI = voxels where original > 0.02 (tissue). Full-image and ROI
+  #   metrics are both computed and saved. run.py: after reconstruction, if clip_to_range then clip
+  #   and log min/max/mean; full-image metrics (unchanged); if metrics_roi_threshold set, mask
+  #   (original_data > threshold).any(axis=-1) and compute ROI metrics; save full → metrics.json,
+  #   ROI → metrics_roi.json; wandb: reconstruct/metrics_* and reconstruct/metrics_roi_*. ROI metrics
+  #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
+  #   or set metrics_roi_threshold to null.
+  reconstruct:
+    device: cuda
+    mask_p: 0.3  # Mask probability (same as training)
+    n_preds: 10  # Number of predictions per volume for averaging
+    # Post-reconstruction processing
+    clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
+    subtract_background_estimate: false  # Subtract median of background voxels
+    subtract_background_threshold: 0.02  # Voxels where original <= this are "background"
+    # ROI metrics
+    metrics_roi_threshold: 0.02  # Set to 0.02 to compute ROI metrics (original > threshold)
+    metrics_dir: "restormer_hybrid/metrics/dbrain"
+    images_dir: "restormer_hybrid/images/dbrain"
+  model:
+    in_channel: 10 # is the number of volumes (all volumes including masked target)
+    out_channel: 1 # is the predicted volume
+    output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
+    # Restormer-specific parameters
+    dim: 32                     # Base feature dimension (reduced for 3D memory constraints)
+    num_blocks: [2, 2, 2, 4]    # Transformer blocks per encoder/decoder level
+    num_refinement_blocks: 2    # Number of refinement blocks after decoder
+    heads: [1, 2, 4, 8]         # Attention heads per level (must match num_blocks length)
+    ffn_expansion_factor: 2.0   # FFN hidden dimension multiplier
+    bias: false                 # Use bias in convolutions
+    LayerNorm_type: "WithBias"  # "WithBias" or "BiasFree"
+  data:
+    patch_size: 16  # Patch size (smaller for 3D transformer memory constraints)
+    step: 4  # Larger step for more diverse training data
+    num_b0s: 6
+    num_volumes: 10
+    noise_sigma: 0.1
+    bvalue: 2500
+    take_x: 128
+    take_y: 128
+    take_z: 96
+    nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    # Patch filtering to exclude background-only patches (reduces positive bias in empty regions)
+    # "none": keep all patches (original behavior)
+    # "threshold": exclude patches where max(clean_patch) <= min_signal_threshold
+    # "otsu": exclude patches outside brain mask computed via DIPY median_otsu
+    patch_filter_method: "threshold"
+    min_signal_threshold: 0.02  # For "threshold" method
+    otsu_median_radius: 2       # For "otsu" method: median filter radius
+    otsu_numpass: 1             # For "otsu" method: number of median filter passes
+stanford:
+  train:
+    num_epochs: 100
+    num_volumes: 6
+    device: cpu
+    mask_p: 0.3
+    dropout_p: 0.3
+    checkpoint_dir: "restormer_hybrid/checkpoints/stanford"
+    learning_rate: 0.00001
+    batch_size: 4
+  model:
+    in_channel: 9
+    out_channel: 1
+    dim: 32
+    num_blocks: [2, 2, 2, 4]
+    num_refinement_blocks: 2
+    heads: [1, 2, 4, 8]
+    ffn_expansion_factor: 2.0
+  data:
+    num_volumes: 10
+    noise_sigma: 0.01
+    bvalue: 2500
