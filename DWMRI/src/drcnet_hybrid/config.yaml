@@ -50,7 +50,7 @@ dbrain:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
-    groups: 2  # Increased for better feature separation
+    groups: 1  # Increased for better feature separation
     dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
