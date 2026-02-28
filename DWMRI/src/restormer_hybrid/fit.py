@@ -22,6 +22,14 @@ def fit_model(
     checkpoint_dir=".",
     loss_dir=None,
 ):
+    # #region agent log
+    _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
+    import json, time
+    # H9: Disable cuDNN benchmark to avoid internal errors with certain tensor sizes
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H9", "location": "fit.py:fit_model", "message": "cuDNN config", "data": {"cudnn_enabled": torch.backends.cudnn.enabled, "cudnn_benchmark": torch.backends.cudnn.benchmark, "cudnn_deterministic": torch.backends.cudnn.deterministic}, "timestamp": int(time.time()*1000)}) + "\n")
+    # #endregion
     logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
 
