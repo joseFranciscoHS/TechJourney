@@ -4,7 +4,7 @@ dbrain:
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.0015  # Base learning rate for single GPU
-    batch_size: 4  # Reduced batch size for 3D transformer memory constraints
+    batch_size: 2  # Reduced batch size for 3D transformer memory constraints (OOM fix)
     use_scheduler: true
     scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
     checkpoint_dir: "restormer_hybrid/checkpoints/dbrain"

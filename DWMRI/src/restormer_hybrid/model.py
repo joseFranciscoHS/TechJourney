@@ -125,13 +125,6 @@ class FeedForward3D(nn.Module):
     def forward(self, x):
         x = self.project_in(x)
         x1, x2 = self.dwconv(x).chunk(2, dim=1)
-        # #region agent log
-        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
-        import json, time
-        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H7", "location": "model.py:FeedForward3D", "message": "After chunk", "data": {"x1_contig": x1.is_contiguous(), "x2_contig": x2.is_contiguous()}, "timestamp": int(time.time()*1000)}) + "\n")
-        # #endregion
-        x1 = x1.contiguous()
-        x2 = x2.contiguous()
         x = F.gelu(x1) * x2
         x = self.project_out(x)
         return x
@@ -173,15 +166,9 @@ class Attention3D(nn.Module):
         qkv = self.qkv_dwconv(self.qkv(x))
         q, k, v = qkv.chunk(3, dim=1)
 
-        # #region agent log
-        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
-        import json, time
-        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H8", "location": "model.py:Attention3D.after_chunk", "message": "After qkv chunk", "data": {"q_contig": q.is_contiguous(), "k_contig": k.is_contiguous(), "v_contig": v.is_contiguous()}, "timestamp": int(time.time()*1000)}) + "\n")
-        # #endregion
-
-        q = rearrange(q, "b (head c) d h w -> b head c (d h w)", head=self.num_heads).contiguous()
-        k = rearrange(k, "b (head c) d h w -> b head c (d h w)", head=self.num_heads).contiguous()
-        v = rearrange(v, "b (head c) d h w -> b head c (d h w)", head=self.num_heads).contiguous()
+        q = rearrange(q, "b (head c) d h w -> b head c (d h w)", head=self.num_heads)
+        k = rearrange(k, "b (head c) d h w -> b head c (d h w)", head=self.num_heads)
+        v = rearrange(v, "b (head c) d h w -> b head c (d h w)", head=self.num_heads)
 
         q = F.normalize(q, dim=-1)
         k = F.normalize(k, dim=-1)
@@ -199,7 +186,7 @@ class Attention3D(nn.Module):
             d=d,
             h=h,
             w=w,
-        ).contiguous()
+        )
 
         out = self.project_out(out)
         return out
@@ -279,7 +266,6 @@ class Upsample3D(nn.Module):
     """
     Upsampling module for 3D data using transposed convolution.
     Increases spatial dimensions by factor of 2 while halving channels.
-    Uses ConvTranspose3d which has stable cuDNN backward pass support.
     """
 
     def __init__(self, n_feat):
@@ -289,48 +275,7 @@ class Upsample3D(nn.Module):
         )
 
     def forward(self, x, target_size=None):
-        # #region agent log
-        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
-        import json, time
-
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H6",
-                        "location": "model.py:Upsample3D.forward",
-                        "message": "Upsample with ConvTranspose3d",
-                        "data": {
-                            "input_shape": list(x.shape),
-                            "target_size": (
-                                list(target_size) if target_size is not None else None
-                            ),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-        x = self.body(x)
-        # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H6",
-                        "location": "model.py:Upsample3D.after_convt",
-                        "message": "After ConvTranspose3d",
-                        "data": {"shape": list(x.shape)},
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-        return x
+        return self.body(x)
 
 
 ##########################################################################
@@ -521,21 +466,7 @@ class Restormer3D(nn.Module):
         # #region agent log
         _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
         import json, time
-
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H6",
-                        "location": "model.py:Restormer3D.forward_start",
-                        "message": "Forward start",
-                        "data": {"input_shape": list(inp_img.shape)},
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
+        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H12", "location": "model.py:forward_start", "message": "Forward start", "data": {"input_shape": list(inp_img.shape)}, "timestamp": int(time.time() * 1000)}) + "\n")
         # #endregion
 
         # Patch embedding
@@ -554,102 +485,14 @@ class Restormer3D(nn.Module):
         inp_latent = self.down2_latent(out_enc_level2)
         latent = self.latent(inp_latent)
 
-        # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H3",
-                        "location": "model.py:Restormer3D.before_dec2",
-                        "message": "Before decoder level 2",
-                        "data": {
-                            "latent_shape": list(latent.shape),
-                            "enc2_size": list(enc2_size),
-                            "out_enc_level2_shape": list(out_enc_level2.shape),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-
         # Decoder Level 2: upsample latent and concatenate with encoder level 2
         inp_dec_level2 = self.up_latent_2(latent, target_size=enc2_size)
-
-        # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H3",
-                        "location": "model.py:Restormer3D.after_up_latent",
-                        "message": "After upsample latent",
-                        "data": {
-                            "inp_dec_level2_shape": list(inp_dec_level2.shape),
-                            "out_enc_level2_shape": list(out_enc_level2.shape),
-                            "shapes_match": list(inp_dec_level2.shape[2:])
-                            == list(out_enc_level2.shape[2:]),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-
         inp_dec_level2 = torch.cat([inp_dec_level2, out_enc_level2], dim=1)
         inp_dec_level2 = self.reduce_chan_level2(inp_dec_level2)
         out_dec_level2 = self.decoder_level2(inp_dec_level2)
 
-        # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H3",
-                        "location": "model.py:Restormer3D.before_dec1",
-                        "message": "Before decoder level 1",
-                        "data": {
-                            "out_dec_level2_shape": list(out_dec_level2.shape),
-                            "enc1_size": list(enc1_size),
-                            "out_enc_level1_shape": list(out_enc_level1.shape),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-
         # Decoder Level 1: upsample and concatenate with encoder level 1
         inp_dec_level1 = self.up2_1(out_dec_level2, target_size=enc1_size)
-
-        # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H3",
-                        "location": "model.py:Restormer3D.after_up2_1",
-                        "message": "After upsample level 1",
-                        "data": {
-                            "inp_dec_level1_shape": list(inp_dec_level1.shape),
-                            "out_enc_level1_shape": list(out_enc_level1.shape),
-                            "shapes_match": list(inp_dec_level1.shape[2:])
-                            == list(out_enc_level1.shape[2:]),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-
         inp_dec_level1 = torch.cat([inp_dec_level1, out_enc_level1], dim=1)
         out_dec_level1 = self.decoder_level1(inp_dec_level1)
 
@@ -658,20 +501,7 @@ class Restormer3D(nn.Module):
         out = self.output(out_dec_level1)
 
         # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H3,H4",
-                        "location": "model.py:Restormer3D.forward_end",
-                        "message": "Forward complete",
-                        "data": {"output_shape": list(out.shape)},
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
+        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H12", "location": "model.py:forward_end", "message": "Forward complete", "data": {"output_shape": list(out.shape)}, "timestamp": int(time.time() * 1000)}) + "\n")
         # #endregion
 
         return out

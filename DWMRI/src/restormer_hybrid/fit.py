@@ -25,9 +25,13 @@ def fit_model(
     # #region agent log
     _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
     import json, time
-    # H10: Completely disable cuDNN to bypass internal errors
-    torch.backends.cudnn.enabled = False
-    with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H10", "location": "fit.py:fit_model", "message": "cuDNN DISABLED", "data": {"cudnn_enabled": torch.backends.cudnn.enabled}, "timestamp": int(time.time()*1000)}) + "\n")
+    # H12: Re-enable cuDNN (more memory efficient) with benchmark for optimal kernels
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
+    # Clear GPU cache before training
+    if device == "cuda":
+        torch.cuda.empty_cache()
+    with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H12", "location": "fit.py:fit_model", "message": "cuDNN re-enabled, cache cleared", "data": {"cudnn_enabled": torch.backends.cudnn.enabled, "cudnn_benchmark": torch.backends.cudnn.benchmark}, "timestamp": int(time.time()*1000)}) + "\n")
     # #endregion
     logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
