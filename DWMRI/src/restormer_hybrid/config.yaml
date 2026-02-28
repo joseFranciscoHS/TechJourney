@@ -38,8 +38,8 @@ dbrain:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
-    patch_size: 32  # Sliding window patch size (smaller = less memory)
-    overlap: 8  # Overlap between patches for smooth blending
+    patch_size: 16  # Match training patch size to avoid domain shift
+    overlap: 8  # 50% overlap for smooth Gaussian blending (stride=8)
     # Post-reconstruction processing
     clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
     subtract_background_estimate: false  # Subtract median of background voxels
@@ -67,9 +67,9 @@ dbrain:
     num_volumes: 10
     noise_sigma: 0.1
     bvalue: 2500
-    take_x: 64
-    take_y: 64
-    take_z: 64
+    take_x: 128
+    take_y: 128
+    take_z: 96
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
@@ -96,8 +96,8 @@ stanford:
     device: cpu
     mask_p: 0.3
     n_preds: 10
-    patch_size: 32
-    overlap: 8
+    patch_size: 16  # Match training patch size
+    overlap: 8  # 50% overlap for smooth blending
   model:
     in_channel: 9
     out_channel: 1

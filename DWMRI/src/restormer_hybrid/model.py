@@ -463,12 +463,6 @@ class Restormer3D(nn.Module):
         Returns:
             Output tensor of shape (B, out_channels, D, H, W)
         """
-        # #region agent log
-        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
-        import json, time
-        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H12", "location": "model.py:forward_start", "message": "Forward start", "data": {"input_shape": list(inp_img.shape)}, "timestamp": int(time.time() * 1000)}) + "\n")
-        # #endregion
-
         # Patch embedding
         inp_enc_level1 = self.patch_embed(inp_img)
 
@@ -499,10 +493,6 @@ class Restormer3D(nn.Module):
         # Refinement and output
         out_dec_level1 = self.refinement(out_dec_level1)
         out = self.output(out_dec_level1)
-
-        # #region agent log
-        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H12", "location": "model.py:forward_end", "message": "Forward complete", "data": {"output_shape": list(out.shape)}, "timestamp": int(time.time() * 1000)}) + "\n")
-        # #endregion
 
         return out
 

@@ -151,21 +151,32 @@ def reconstruct_dwis(
 
 
 def _create_blend_weights(patch_size, overlap):
-    """Create smooth blending weights with cosine taper at edges."""
-    weights = np.ones((patch_size, patch_size, patch_size), dtype=np.float32)
-
-    if overlap > 0:
-        # Create 1D cosine ramp
-        ramp = np.linspace(0, np.pi / 2, overlap)
-        taper = np.sin(ramp) ** 2
-
-        # Apply taper to all 6 faces
-        for i in range(overlap):
-            weights[i, :, :] *= taper[i]
-            weights[-(i + 1), :, :] *= taper[i]
-            weights[:, i, :] *= taper[i]
-            weights[:, -(i + 1), :] *= taper[i]
-            weights[:, :, i] *= taper[i]
-            weights[:, :, -(i + 1)] *= taper[i]
-
-    return weights
+    """
+    Create 3D Gaussian blending weights for smooth patch stitching.
+    
+    Uses a separable Gaussian window that provides smooth transitions
+    at patch boundaries without the corner/edge underweighting issue
+    of multiplicative cosine tapers.
+    
+    Args:
+        patch_size: Size of cubic patch
+        overlap: Overlap between patches (used to determine sigma)
+    
+    Returns:
+        3D Gaussian weight array of shape (patch_size, patch_size, patch_size)
+    """
+    # Sigma based on overlap - larger overlap = narrower Gaussian (more blending)
+    # For 50% overlap (overlap = patch_size/2), sigma_ratio ~0.3 works well
+    sigma_ratio = 0.3 if overlap > 0 else 0.5
+    
+    center = (patch_size - 1) / 2.0
+    sigma = patch_size * sigma_ratio
+    
+    # Create 1D Gaussian
+    x = np.arange(patch_size) - center
+    gaussian_1d = np.exp(-0.5 * (x / sigma) ** 2)
+    
+    # Create 3D Gaussian via outer product (separable)
+    weights = np.einsum('i,j,k->ijk', gaussian_1d, gaussian_1d, gaussian_1d)
+    
+    return weights.astype(np.float32)

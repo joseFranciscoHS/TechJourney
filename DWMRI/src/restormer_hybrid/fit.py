@@ -22,18 +22,15 @@ def fit_model(
     checkpoint_dir=".",
     loss_dir=None,
 ):
-    # #region agent log
-    _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
-    import json, time
-    # H12: Re-enable cuDNN (more memory efficient) with benchmark for optimal kernels
+    # Enable cuDNN benchmark for optimal kernel selection
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
-    # Clear GPU cache before training
+    
+    # Clear GPU cache before training to reduce fragmentation
     if device == "cuda":
         torch.cuda.empty_cache()
-    with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H12", "location": "fit.py:fit_model", "message": "cuDNN re-enabled, cache cleared", "data": {"cudnn_enabled": torch.backends.cudnn.enabled, "cudnn_benchmark": torch.backends.cudnn.benchmark}, "timestamp": int(time.time()*1000)}) + "\n")
-    # #endregion
-    logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
+    
+    logging.info(f"Starting training - device: {device}, epochs: {num_epochs}")
     logging.info(f"Model device: {next(model.parameters()).device}")
 
     model.to(device)
