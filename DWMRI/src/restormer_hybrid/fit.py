@@ -21,6 +21,7 @@ def fit_model(
     device="cuda",
     checkpoint_dir=".",
     loss_dir=None,
+    use_amp=True,
 ):
     # Enable cuDNN benchmark for optimal kernel selection
     torch.backends.cudnn.enabled = True
@@ -29,6 +30,11 @@ def fit_model(
     # Clear GPU cache before training to reduce fragmentation
     if device == "cuda":
         torch.cuda.empty_cache()
+    
+    # Initialize AMP GradScaler for mixed precision training
+    amp_enabled = use_amp and device == "cuda"
+    scaler = torch.amp.GradScaler(enabled=amp_enabled)
+    logging.info(f"AMP (Automatic Mixed Precision): {'enabled' if amp_enabled else 'disabled'}")
     
     logging.info(f"Starting training - device: {device}, epochs: {num_epochs}")
     logging.info(f"Model device: {next(model.parameters()).device}")
@@ -44,7 +50,7 @@ def fit_model(
 
     # Load the latest checkpoint if it exists
     latest_checkpoint = os.path.join(checkpoint_dir, "latest_checkpoint.pth")
-    model, optimizer, start_epoch, scheduler_state_dict, best_loss = load_checkpoint(
+    model, optimizer, start_epoch, scheduler_state_dict, scaler_state_dict, best_loss = load_checkpoint(
         model, optimizer, latest_checkpoint, device, strict=False
     )
 
@@ -52,6 +58,11 @@ def fit_model(
     if scheduler is not None and scheduler_state_dict is not None:
         scheduler.load_state_dict(scheduler_state_dict)
         logging.info("Scheduler state restored from checkpoint")
+    
+    # Restore scaler state if it exists
+    if scaler_state_dict is not None and amp_enabled:
+        scaler.load_state_dict(scaler_state_dict)
+        logging.info("AMP scaler state restored from checkpoint")
 
     logging.info(f"Training starting from epoch: {start_epoch}")
     logging.info(f"Best loss so far: {best_loss:.6f}")
@@ -98,20 +109,24 @@ def fit_model(
                     )
                 )
 
-            # forward pass
-            x_recon = model(x)
-            # loss: compute only on masked pixels (J-invariant loss)
-            loss = torch.sum(
-                (x_recon - noisy_target_volume)
-                * (x_recon - noisy_target_volume)
-                * (1 - mask)
-            ) / torch.sum(1 - mask)
-            # zero grad
+            # zero grad before forward pass
             optimizer.zero_grad()
-            # backward pass
-            loss.backward()
-            # step
-            optimizer.step()
+            
+            # forward pass with AMP autocast
+            with torch.amp.autocast(device_type="cuda", enabled=amp_enabled):
+                x_recon = model(x)
+                # loss: compute only on masked pixels (J-invariant loss)
+                loss = torch.sum(
+                    (x_recon - noisy_target_volume)
+                    * (x_recon - noisy_target_volume)
+                    * (1 - mask)
+                ) / torch.sum(1 - mask)
+            
+            # backward pass with gradient scaling
+            scaler.scale(loss).backward()
+            # step with scaler (unscales gradients, checks for inf/nan, steps optimizer)
+            scaler.step(optimizer)
+            scaler.update()
 
             total_loss += loss.item()
             epoch_losses.append(loss.item())
@@ -147,8 +162,9 @@ def fit_model(
                 learning_rate=new_lr,
             )
 
-        # Get scheduler state dict for checkpoint saving
+        # Get scheduler and scaler state dicts for checkpoint saving
         scheduler_state_dict = scheduler.state_dict() if scheduler is not None else None
+        scaler_state_dict = scaler.state_dict() if amp_enabled else None
 
         # Update best loss
         if avg_loss < best_loss:
@@ -166,6 +182,7 @@ def fit_model(
                 best_loss=best_loss,
                 filename=best_loss_checkpoint,
                 scheduler_state_dict=scheduler_state_dict,
+                scaler_state_dict=scaler_state_dict,
             )
 
         # Save the latest checkpoint
@@ -177,6 +194,7 @@ def fit_model(
             best_loss=best_loss,
             filename=latest_checkpoint,
             scheduler_state_dict=scheduler_state_dict,
+            scaler_state_dict=scaler_state_dict,
         )
 
         # Log metrics to wandb

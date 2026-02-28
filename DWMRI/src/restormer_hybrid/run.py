@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 import numpy as np
 import torch
@@ -20,6 +21,144 @@ from utils.metrics import (
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config
 import wandb
+
+
+def fit_progressive(
+    model,
+    settings,
+    noisy_data,
+    original_data,
+    brain_mask,
+    checkpoint_dir,
+    loss_dir,
+    patch_filter_method,
+    min_signal_threshold,
+):
+    """
+    Train model progressively with increasing patch sizes.
+    
+    Progressive learning stages:
+    - Stage 1: Small patches (16³) with high batch - learn local noise statistics
+    - Stage 2: Medium patches (24³) - learn structural boundaries  
+    - Stage 3: Large patches (32³) - learn global context for tractography
+    """
+    stages = settings.train.progressive.stages
+    total_stages = len(stages)
+    use_amp = getattr(settings.train, "use_amp", True)
+    
+    logging.info(f"Progressive Learning: {total_stages} stages, AMP={'enabled' if use_amp else 'disabled'}")
+    for i, stage in enumerate(stages):
+        logging.info(f"  Stage {i+1}: patch={stage.patch_size}³, batch={stage.batch_size}, epochs={stage.epochs}, step={stage.step}")
+    
+    for stage_idx, stage in enumerate(stages):
+        stage_num = stage_idx + 1
+        logging.info("=" * 60)
+        logging.info(f"PROGRESSIVE STAGE {stage_num}/{total_stages}")
+        logging.info(f"  Patch size: {stage.patch_size}³")
+        logging.info(f"  Batch size: {stage.batch_size}")
+        logging.info(f"  Epochs: {stage.epochs}")
+        logging.info(f"  Step: {stage.step}")
+        logging.info("=" * 60)
+        
+        # Clear GPU cache before creating new dataset
+        if settings.train.device == "cuda":
+            torch.cuda.empty_cache()
+            logging.info("Cleared GPU cache before stage")
+        
+        # Create dataset for this stage with appropriate patch size
+        train_set = TrainingDataSet(
+            data=noisy_data,
+            patch_size=(
+                settings.data.num_volumes,
+                stage.patch_size,
+                stage.patch_size,
+                stage.patch_size,
+            ),
+            step=stage.step,
+            mask_p=settings.train.mask_p,
+            clean_data=original_data,
+            brain_mask=brain_mask,
+            patch_filter_method=patch_filter_method,
+            min_signal_threshold=min_signal_threshold,
+        )
+        
+        # Use subset for faster iteration (same as main training)
+        subset_fraction = 0.1
+        total_samples = len(train_set)
+        num_samples = int(total_samples * subset_fraction)
+        indices = np.random.choice(total_samples, size=num_samples, replace=False)
+        train_set = Subset(train_set, indices)
+        
+        train_loader = DataLoader(
+            train_set, batch_size=stage.batch_size, shuffle=True
+        )
+        logging.info(
+            f"Stage {stage_num} DataLoader: batch_size={stage.batch_size}, "
+            f"num_batches={len(train_loader)}, samples={len(train_set)}"
+        )
+        
+        # Create fresh optimizer for each stage (reset momentum)
+        optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
+        logging.info(f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})")
+        
+        # Create scheduler for this stage
+        scheduler = None
+        if settings.train.use_scheduler:
+            if settings.train.scheduler_type == "reduceLROnPlateau":
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    optimizer,
+                    patience=settings.train.scheduler_patience,
+                    factor=settings.train.scheduler_factor,
+                    min_lr=settings.train.min_lr,
+                )
+            elif settings.train.scheduler_type == "cosine":
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                    optimizer,
+                    T_0=min(settings.train.scheduler_T_0, stage.epochs),
+                    T_mult=settings.train.scheduler_T_mult,
+                    eta_min=settings.train.eta_min_lr,
+                )
+        
+        # Stage-specific checkpoint directory
+        stage_checkpoint_dir = os.path.join(checkpoint_dir, f"stage_{stage_num}_patch{stage.patch_size}")
+        os.makedirs(stage_checkpoint_dir, exist_ok=True)
+        
+        # Stage-specific loss directory
+        stage_loss_dir = os.path.join(loss_dir, f"stage_{stage_num}_patch{stage.patch_size}")
+        os.makedirs(stage_loss_dir, exist_ok=True)
+        
+        # Train for this stage
+        fit_model(
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            train_loader=train_loader,
+            num_epochs=stage.epochs,
+            device=settings.train.device,
+            checkpoint_dir=stage_checkpoint_dir,
+            loss_dir=stage_loss_dir,
+            use_amp=use_amp,
+        )
+        
+        logging.info(f"Stage {stage_num}/{total_stages} completed")
+        
+        # Log to wandb
+        if wandb.run is not None:
+            wandb.log({
+                "progressive/stage": stage_num,
+                "progressive/patch_size": stage.patch_size,
+                "progressive/batch_size": stage.batch_size,
+            })
+        
+        # Copy best checkpoint to main checkpoint dir after final stage
+        if stage_num == total_stages:
+            stage_best = os.path.join(stage_checkpoint_dir, "best_loss_checkpoint.pth")
+            final_best = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+            if os.path.exists(stage_best):
+                shutil.copy(stage_best, final_best)
+                logging.info(f"Copied final stage best checkpoint to: {final_best}")
+    
+    logging.info("Progressive learning completed successfully")
 
 
 def main(
@@ -250,16 +389,39 @@ def main(
 
         # Training
         if train:
-            fit_model(
-                model=model,
-                optimizer=optimizer,
-                scheduler=scheduler,
-                train_loader=train_loader,
-                num_epochs=settings.train.num_epochs,
-                device=settings.train.device,
-                checkpoint_dir=checkpoint_dir,
-                loss_dir=loss_dir,
+            # Check if progressive learning is enabled
+            progressive_enabled = (
+                hasattr(settings.train, "progressive") 
+                and getattr(settings.train.progressive, "enabled", False)
             )
+            use_amp = getattr(settings.train, "use_amp", True)
+            
+            if progressive_enabled:
+                logging.info("Using progressive learning training strategy")
+                fit_progressive(
+                    model=model,
+                    settings=settings,
+                    noisy_data=noisy_data,
+                    original_data=original_data,
+                    brain_mask=brain_mask,
+                    checkpoint_dir=checkpoint_dir,
+                    loss_dir=loss_dir,
+                    patch_filter_method=patch_filter_method,
+                    min_signal_threshold=min_signal_threshold,
+                )
+            else:
+                logging.info("Using standard training (progressive learning disabled)")
+                fit_model(
+                    model=model,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    train_loader=train_loader,
+                    num_epochs=settings.train.num_epochs,
+                    device=settings.train.device,
+                    checkpoint_dir=checkpoint_dir,
+                    loss_dir=loss_dir,
+                    use_amp=use_amp,
+                )
 
             logging.info("Training setup completed successfully")
             logging.info(f"Training completed. Log file: {log_file}")
@@ -286,7 +448,7 @@ def main(
                 LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
             )
-            reconstruct_model, _, _, _, _ = load_checkpoint(
+            reconstruct_model, _, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,
                 optimizer=None,
                 filename=best_loss_checkpoint,

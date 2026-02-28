@@ -12,6 +12,7 @@ def save_checkpoint(
     best_loss,
     filename,
     scheduler_state_dict,
+    scaler_state_dict=None,
 ):
     logging.info(f"Saving checkpoint to: {filename}")
     logging.debug(
@@ -23,6 +24,7 @@ def save_checkpoint(
         "model_state_dict": model_state_dict,
         "optimizer_state_dict": optimizer_state_dict,
         "scheduler_state_dict": scheduler_state_dict,
+        "scaler_state_dict": scaler_state_dict,
         "loss": loss,
         "best_loss": best_loss,
     }
@@ -76,6 +78,7 @@ def load_checkpoint(model, optimizer, filename, device="cuda", strict=True):
             loss = checkpoint["loss"]
             best_loss = checkpoint["best_loss"]
             scheduler_state_dict = checkpoint.get("scheduler_state_dict", None)
+            scaler_state_dict = checkpoint.get("scaler_state_dict", None)
 
             logging.info(f"Checkpoint loaded successfully: {filename}")
             logging.info(
@@ -85,14 +88,16 @@ def load_checkpoint(model, optimizer, filename, device="cuda", strict=True):
                 logging.info("Scheduler state found in checkpoint")
             else:
                 logging.info("No scheduler state in checkpoint")
+            if scaler_state_dict is not None:
+                logging.info("AMP scaler state found in checkpoint")
 
-            return model, optimizer, epoch, scheduler_state_dict, best_loss
+            return model, optimizer, epoch, scheduler_state_dict, scaler_state_dict, best_loss
         except Exception as e:
             logging.error(f"Failed to load checkpoint: {e}")
             logging.info("Starting training from scratch")
-            return model, optimizer, 0, None, float("inf")
+            return model, optimizer, 0, None, None, float("inf")
     else:
         logging.info(
             f"No checkpoint found at {filename}, starting training from scratch"
         )
-        return model, optimizer, 0, None, float("inf")
+        return model, optimizer, 0, None, None, float("inf")
