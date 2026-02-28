@@ -50,11 +50,11 @@ dbrain:
     in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
-    # Restormer-specific parameters
+    # Restormer-specific parameters (3-level hierarchy for tractography)
     dim: 32                     # Base feature dimension (reduced for 3D memory constraints)
-    num_blocks: [2, 2, 2, 4]    # Transformer blocks per encoder/decoder level
+    num_blocks: [2, 2, 4]       # Transformer blocks per level (3 levels: enc1, enc2, latent)
     num_refinement_blocks: 2    # Number of refinement blocks after decoder
-    heads: [1, 2, 4, 8]         # Attention heads per level (must match num_blocks length)
+    heads: [1, 2, 4]            # Attention heads per level (must match num_blocks length)
     ffn_expansion_factor: 2.0   # FFN hidden dimension multiplier
     bias: false                 # Use bias in convolutions
     LayerNorm_type: "WithBias"  # "WithBias" or "BiasFree"
@@ -94,9 +94,9 @@ stanford:
     in_channel: 9
     out_channel: 1
     dim: 32
-    num_blocks: [2, 2, 2, 4]
+    num_blocks: [2, 2, 4]       # 3-level hierarchy for tractography
     num_refinement_blocks: 2
-    heads: [1, 2, 4, 8]
+    heads: [1, 2, 4]            # Must match num_blocks length
     ffn_expansion_factor: 2.0
   data:
     num_volumes: 10

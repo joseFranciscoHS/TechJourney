@@ -239,18 +239,23 @@ class Downsample3D(nn.Module):
 
 class Upsample3D(nn.Module):
     """
-    Upsampling module for 3D data using transposed convolution.
+    Upsampling module for 3D data using trilinear interpolation.
     Increases spatial dimensions by factor of 2 while halving channels.
+    Uses interpolation instead of ConvTranspose3d to prevent shape mismatches
+    with odd input dimensions.
     """
     
     def __init__(self, n_feat):
         super(Upsample3D, self).__init__()
-        self.body = nn.Sequential(
-            nn.ConvTranspose3d(n_feat, n_feat // 2, kernel_size=2, stride=2, bias=False)
-        )
+        self.channel_reduce = nn.Conv3d(n_feat, n_feat // 2, kernel_size=1, bias=False)
 
-    def forward(self, x):
-        return self.body(x)
+    def forward(self, x, target_size=None):
+        x = self.channel_reduce(x)
+        if target_size is not None:
+            x = F.interpolate(x, size=target_size, mode='trilinear', align_corners=False)
+        else:
+            x = F.interpolate(x, scale_factor=2, mode='trilinear', align_corners=False)
+        return x
 
 
 ##########################################################################
@@ -264,13 +269,17 @@ class Restormer3D(nn.Module):
     Adapted from the original 2D Restormer for 3D medical imaging applications.
     Uses a U-Net style encoder-decoder architecture with transformer blocks.
     
+    This version uses a 3-level hierarchy (2 downsampling operations) optimized
+    for tractography applications where preserving fine structural details is critical.
+    Bottleneck at 32x32x24 (for 128x128x96 input) provides 64x compression instead of 512x.
+    
     Args:
         inp_channels: Number of input channels (e.g., 10 for all DWI volumes)
         out_channels: Number of output channels (e.g., 1 for single denoised volume)
         dim: Base feature dimension
-        num_blocks: Number of transformer blocks at each encoder/decoder level
+        num_blocks: Number of transformer blocks at each encoder/decoder level (3 values)
         num_refinement_blocks: Number of refinement blocks after decoder
-        heads: Number of attention heads at each level
+        heads: Number of attention heads at each level (3 values)
         ffn_expansion_factor: Expansion factor for feed-forward network
         bias: Whether to use bias in convolutions
         LayerNorm_type: Type of layer normalization ('WithBias' or 'BiasFree')
@@ -282,9 +291,9 @@ class Restormer3D(nn.Module):
         inp_channels=10,
         out_channels=1,
         dim=32,
-        num_blocks=[2, 2, 2, 4],
+        num_blocks=[2, 2, 4],
         num_refinement_blocks=2,
-        heads=[1, 2, 4, 8],
+        heads=[1, 2, 4],
         ffn_expansion_factor=2.0,
         bias=False,
         LayerNorm_type='WithBias',
@@ -293,14 +302,14 @@ class Restormer3D(nn.Module):
         super(Restormer3D, self).__init__()
         
         logging.info(
-            f"Initializing Restormer3D: inp_channels={inp_channels}, out_channels={out_channels}, "
+            f"Initializing Restormer3D (3-level): inp_channels={inp_channels}, out_channels={out_channels}, "
             f"dim={dim}, num_blocks={num_blocks}, heads={heads}, "
             f"ffn_expansion_factor={ffn_expansion_factor}, output_activation={output_activation}"
         )
         
         self.patch_embed = OverlapPatchEmbed3D(inp_channels, dim)
         
-        # Encoder Level 1
+        # Encoder Level 1 (full resolution: e.g., 128x128x96)
         self.encoder_level1 = nn.Sequential(*[
             TransformerBlock3D(
                 dim=dim, num_heads=heads[0],
@@ -309,63 +318,42 @@ class Restormer3D(nn.Module):
             ) for _ in range(num_blocks[0])
         ])
         
-        # Level 1 to Level 2
+        # Level 1 to Level 2 (half resolution: e.g., 64x64x48)
         self.down1_2 = Downsample3D(dim)
         self.encoder_level2 = nn.Sequential(*[
             TransformerBlock3D(
-                dim=int(dim * 2 ** 1), num_heads=heads[1],
+                dim=int(dim * 2), num_heads=heads[1],
                 ffn_expansion_factor=ffn_expansion_factor,
                 bias=bias, LayerNorm_type=LayerNorm_type
             ) for _ in range(num_blocks[1])
         ])
         
-        # Level 2 to Level 3
-        self.down2_3 = Downsample3D(int(dim * 2 ** 1))
-        self.encoder_level3 = nn.Sequential(*[
-            TransformerBlock3D(
-                dim=int(dim * 2 ** 2), num_heads=heads[2],
-                ffn_expansion_factor=ffn_expansion_factor,
-                bias=bias, LayerNorm_type=LayerNorm_type
-            ) for _ in range(num_blocks[2])
-        ])
-        
-        # Level 3 to Level 4 (Latent/Bottleneck)
-        self.down3_4 = Downsample3D(int(dim * 2 ** 2))
+        # Level 2 to Latent (quarter resolution: e.g., 32x32x24)
+        self.down2_latent = Downsample3D(int(dim * 2))
         self.latent = nn.Sequential(*[
             TransformerBlock3D(
-                dim=int(dim * 2 ** 3), num_heads=heads[3],
-                ffn_expansion_factor=ffn_expansion_factor,
-                bias=bias, LayerNorm_type=LayerNorm_type
-            ) for _ in range(num_blocks[3])
-        ])
-        
-        # Level 4 to Level 3 (Decoder)
-        self.up4_3 = Upsample3D(int(dim * 2 ** 3))
-        self.reduce_chan_level3 = nn.Conv3d(int(dim * 2 ** 3), int(dim * 2 ** 2), kernel_size=1, bias=bias)
-        self.decoder_level3 = nn.Sequential(*[
-            TransformerBlock3D(
-                dim=int(dim * 2 ** 2), num_heads=heads[2],
+                dim=int(dim * 4), num_heads=heads[2],
                 ffn_expansion_factor=ffn_expansion_factor,
                 bias=bias, LayerNorm_type=LayerNorm_type
             ) for _ in range(num_blocks[2])
         ])
         
-        # Level 3 to Level 2
-        self.up3_2 = Upsample3D(int(dim * 2 ** 2))
-        self.reduce_chan_level2 = nn.Conv3d(int(dim * 2 ** 2), int(dim * 2 ** 1), kernel_size=1, bias=bias)
+        # Latent to Level 2 (Decoder)
+        self.up_latent_2 = Upsample3D(int(dim * 4))
+        self.reduce_chan_level2 = nn.Conv3d(int(dim * 4), int(dim * 2), kernel_size=1, bias=bias)
         self.decoder_level2 = nn.Sequential(*[
             TransformerBlock3D(
-                dim=int(dim * 2 ** 1), num_heads=heads[1],
+                dim=int(dim * 2), num_heads=heads[1],
                 ffn_expansion_factor=ffn_expansion_factor,
                 bias=bias, LayerNorm_type=LayerNorm_type
             ) for _ in range(num_blocks[1])
         ])
         
         # Level 2 to Level 1
-        self.up2_1 = Upsample3D(int(dim * 2 ** 1))
+        self.up2_1 = Upsample3D(int(dim * 2))
         self.decoder_level1 = nn.Sequential(*[
             TransformerBlock3D(
-                dim=int(dim * 2 ** 1), num_heads=heads[0],
+                dim=int(dim * 2), num_heads=heads[0],
                 ffn_expansion_factor=ffn_expansion_factor,
                 bias=bias, LayerNorm_type=LayerNorm_type
             ) for _ in range(num_blocks[0])
@@ -374,7 +362,7 @@ class Restormer3D(nn.Module):
         # Refinement
         self.refinement = nn.Sequential(*[
             TransformerBlock3D(
-                dim=int(dim * 2 ** 1), num_heads=heads[0],
+                dim=int(dim * 2), num_heads=heads[0],
                 ffn_expansion_factor=ffn_expansion_factor,
                 bias=bias, LayerNorm_type=LayerNorm_type
             ) for _ in range(num_refinement_blocks)
@@ -383,12 +371,12 @@ class Restormer3D(nn.Module):
         # Output projection
         if output_activation.lower() == 'sigmoid':
             self.output = nn.Sequential(
-                nn.Conv3d(int(dim * 2 ** 1), out_channels, kernel_size=3, stride=1, padding=1, bias=bias),
+                nn.Conv3d(int(dim * 2), out_channels, kernel_size=3, stride=1, padding=1, bias=bias),
                 nn.Sigmoid()
             )
         else:
             self.output = nn.Sequential(
-                nn.Conv3d(int(dim * 2 ** 1), out_channels, kernel_size=3, stride=1, padding=1, bias=bias),
+                nn.Conv3d(int(dim * 2), out_channels, kernel_size=3, stride=1, padding=1, bias=bias),
                 nn.PReLU(out_channels)
             )
         
@@ -411,30 +399,27 @@ class Restormer3D(nn.Module):
         # Patch embedding
         inp_enc_level1 = self.patch_embed(inp_img)
         
-        # Encoder
+        # Encoder Level 1 (full resolution)
         out_enc_level1 = self.encoder_level1(inp_enc_level1)
+        enc1_size = out_enc_level1.shape[2:]
         
+        # Encoder Level 2 (half resolution)
         inp_enc_level2 = self.down1_2(out_enc_level1)
         out_enc_level2 = self.encoder_level2(inp_enc_level2)
+        enc2_size = out_enc_level2.shape[2:]
         
-        inp_enc_level3 = self.down2_3(out_enc_level2)
-        out_enc_level3 = self.encoder_level3(inp_enc_level3)
+        # Latent (quarter resolution)
+        inp_latent = self.down2_latent(out_enc_level2)
+        latent = self.latent(inp_latent)
         
-        inp_enc_level4 = self.down3_4(out_enc_level3)
-        latent = self.latent(inp_enc_level4)
-        
-        # Decoder
-        inp_dec_level3 = self.up4_3(latent)
-        inp_dec_level3 = torch.cat([inp_dec_level3, out_enc_level3], dim=1)
-        inp_dec_level3 = self.reduce_chan_level3(inp_dec_level3)
-        out_dec_level3 = self.decoder_level3(inp_dec_level3)
-        
-        inp_dec_level2 = self.up3_2(out_dec_level3)
+        # Decoder Level 2: upsample latent and concatenate with encoder level 2
+        inp_dec_level2 = self.up_latent_2(latent, target_size=enc2_size)
         inp_dec_level2 = torch.cat([inp_dec_level2, out_enc_level2], dim=1)
         inp_dec_level2 = self.reduce_chan_level2(inp_dec_level2)
         out_dec_level2 = self.decoder_level2(inp_dec_level2)
         
-        inp_dec_level1 = self.up2_1(out_dec_level2)
+        # Decoder Level 1: upsample and concatenate with encoder level 1
+        inp_dec_level1 = self.up2_1(out_dec_level2, target_size=enc1_size)
         inp_dec_level1 = torch.cat([inp_dec_level1, out_enc_level1], dim=1)
         out_dec_level1 = self.decoder_level1(inp_dec_level1)
         
@@ -449,17 +434,23 @@ if __name__ == "__main__":
     # Test the model
     logging.basicConfig(level=logging.INFO)
     
-    # Create model
+    # Create 3-level model
     model = Restormer3D(
         inp_channels=10,
         out_channels=1,
         dim=32,
-        num_blocks=[2, 2, 2, 4],
-        heads=[1, 2, 4, 8],
+        num_blocks=[2, 2, 4],
+        heads=[1, 2, 4],
     )
     
-    # Test forward pass
-    x = torch.randn(1, 10, 16, 16, 16)
+    # Test forward pass with realistic DWMRI dimensions
+    x = torch.randn(1, 10, 96, 128, 128)
     y = model(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {y.shape}")
+    
+    # Test with odd dimensions to verify interpolation handles them
+    x_odd = torch.randn(1, 10, 97, 127, 129)
+    y_odd = model(x_odd)
+    print(f"Odd input shape: {x_odd.shape}")
+    print(f"Odd output shape: {y_odd.shape}")

@@ -13,15 +13,18 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     but the target volume is masked with Bernoulli mask. Multiple predictions
     with different masks are averaged for robustness.
 
+    Memory optimization: Keeps the prediction accumulator on GPU to eliminate
+    unnecessary GPU-CPU transfers during the reconstruction loop.
+
     Args:
-        model: Trained DRCNet-hybrid model
+        model: Trained Restormer3D-hybrid model
         data: Input data of shape (Vols, X, Y, Z) - full-size data
         device: Device to run inference on
         mask_p: Mask probability (same as training)
         n_preds: Number of predictions per volume (for averaging with different masks)
 
     Returns:
-        Reconstructed data of shape (Vols, X, Y, Z)
+        Reconstructed data of shape (Vols, X, Y, Z) as numpy array
     """
     logging.info(f"Starting DWI reconstruction on device: {device}")
     logging.info(f"Input data shape: {data.shape}")
@@ -35,8 +38,10 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     num_vols, x_size, y_size, z_size = data.shape
     spatial_dims = (x_size, y_size, z_size)
 
-    # Initialize output array
-    sum_preds = np.zeros((num_vols, *spatial_dims), dtype=np.float32)
+    # Keep accumulator on GPU to eliminate GPU-CPU transfers in the loop
+    sum_preds = torch.zeros(
+        (num_vols, *spatial_dims), dtype=torch.float32, device=device
+    )
 
     with torch.inference_mode():
         data_device = data.to(device)
@@ -47,13 +52,10 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
 
             # Multiple predictions per volume for robustness (different random masks)
             for pred_idx in range(n_preds):
-                # Create masked input (same as training approach)
-                # Generate random mask for the target volume
-                p_mtx = np.random.uniform(size=spatial_dims)
-                mask = (p_mtx > mask_p).astype(np.float32)
+                # Generate random mask directly on GPU
                 mask_tensor = (
-                    torch.tensor(mask).to(device, dtype=torch.float32).unsqueeze(0)
-                )
+                    torch.rand(spatial_dims, device=device, dtype=torch.float32) > mask_p
+                ).float().unsqueeze(0)
 
                 # Apply mask to target volume only (keep all volumes in input)
                 data_masked = data_device.clone()
@@ -65,15 +67,11 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
                 # Forward pass: model expects (B, C, X, Y, Z)
                 reconstructed = model(data_masked)
 
-                # Extract the target volume prediction
-                # reconstructed shape: (1, 1, X, Y, Z)
-                pred_volume = reconstructed.squeeze(0).squeeze(0).detach().cpu().numpy()
+                # Accumulate predictions on GPU (no CPU transfer)
+                sum_preds[vol_idx] += reconstructed.squeeze(0).squeeze(0)
 
-                # Accumulate predictions
-                sum_preds[vol_idx] += pred_volume
-
-        # Average predictions
-        reconstructed = sum_preds / n_preds
+        # Average predictions and move to CPU only at the end
+        reconstructed = (sum_preds / n_preds).cpu().numpy()
 
         logging.info(f"Reconstruction completed. Output shape: {reconstructed.shape}")
         logging.info(
