@@ -264,19 +264,20 @@ class Downsample3D(nn.Module):
 
 class Upsample3D(nn.Module):
     """
-    Upsampling module for 3D data using trilinear interpolation.
+    Upsampling module for 3D data using transposed convolution.
     Increases spatial dimensions by factor of 2 while halving channels.
-    Uses interpolation instead of ConvTranspose3d to prevent shape mismatches
-    with odd input dimensions.
+    Uses ConvTranspose3d which has stable cuDNN backward pass support.
     """
 
     def __init__(self, n_feat):
         super(Upsample3D, self).__init__()
-        self.channel_reduce = nn.Conv3d(n_feat, n_feat // 2, kernel_size=1, bias=False)
+        self.body = nn.ConvTranspose3d(
+            n_feat, n_feat // 2, kernel_size=2, stride=2, bias=False
+        )
 
     def forward(self, x, target_size=None):
         # #region agent log
-        _log_path = "restormer_hybrid/debug-da8345.log"
+        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
         import json, time
 
         with open(_log_path, "a") as _f:
@@ -284,16 +285,14 @@ class Upsample3D(nn.Module):
                 json.dumps(
                     {
                         "sessionId": "da8345",
-                        "hypothesisId": "H1,H2,H5",
+                        "hypothesisId": "H6",
                         "location": "model.py:Upsample3D.forward",
-                        "message": "Upsample input",
+                        "message": "Upsample with ConvTranspose3d",
                         "data": {
                             "input_shape": list(x.shape),
                             "target_size": (
                                 list(target_size) if target_size is not None else None
                             ),
-                            "target_size_type": str(type(target_size)),
-                            "is_contiguous": x.is_contiguous(),
                         },
                         "timestamp": int(time.time() * 1000),
                     }
@@ -301,45 +300,17 @@ class Upsample3D(nn.Module):
                 + "\n"
             )
         # #endregion
-        x = self.channel_reduce(x)
+        x = self.body(x)
         # #region agent log
         with open(_log_path, "a") as _f:
             _f.write(
                 json.dumps(
                     {
                         "sessionId": "da8345",
-                        "hypothesisId": "H2",
-                        "location": "model.py:Upsample3D.after_conv",
-                        "message": "After channel reduce",
-                        "data": {
-                            "shape": list(x.shape),
-                            "is_contiguous": x.is_contiguous(),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    }
-                )
-                + "\n"
-            )
-        # #endregion
-        if target_size is not None:
-            x = F.interpolate(
-                x, size=target_size, mode="trilinear", align_corners=False
-            )
-        else:
-            x = F.interpolate(x, scale_factor=2, mode="trilinear", align_corners=False)
-        # #region agent log
-        with open(_log_path, "a") as _f:
-            _f.write(
-                json.dumps(
-                    {
-                        "sessionId": "da8345",
-                        "hypothesisId": "H1,H2",
-                        "location": "model.py:Upsample3D.after_interp",
-                        "message": "After interpolate",
-                        "data": {
-                            "shape": list(x.shape),
-                            "is_contiguous": x.is_contiguous(),
-                        },
+                        "hypothesisId": "H6",
+                        "location": "model.py:Upsample3D.after_convt",
+                        "message": "After ConvTranspose3d",
+                        "data": {"shape": list(x.shape)},
                         "timestamp": int(time.time() * 1000),
                     }
                 )
@@ -535,7 +506,7 @@ class Restormer3D(nn.Module):
             Output tensor of shape (B, out_channels, D, H, W)
         """
         # #region agent log
-        _log_path = "restormer_hybrid/debug-da8345.log"
+        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
         import json, time
 
         with open(_log_path, "a") as _f:
@@ -543,7 +514,7 @@ class Restormer3D(nn.Module):
                 json.dumps(
                     {
                         "sessionId": "da8345",
-                        "hypothesisId": "H3,H4",
+                        "hypothesisId": "H6",
                         "location": "model.py:Restormer3D.forward_start",
                         "message": "Forward start",
                         "data": {"input_shape": list(inp_img.shape)},
