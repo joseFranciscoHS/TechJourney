@@ -304,6 +304,8 @@ def main(
                 device=settings.reconstruct.device,
                 mask_p=settings.reconstruct.mask_p,
                 n_preds=settings.reconstruct.n_preds,
+                patch_size=getattr(settings.reconstruct, "patch_size", 32),
+                overlap=getattr(settings.reconstruct, "overlap", 8),
             )
             # Transpose back to (X, Y, Z, Vols) for metrics and visualization
             reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))

@@ -38,6 +38,8 @@ dbrain:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
+    patch_size: 32  # Sliding window patch size (smaller = less memory)
+    overlap: 8  # Overlap between patches for smooth blending
     # Post-reconstruction processing
     clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
     subtract_background_estimate: false  # Subtract median of background voxels
@@ -90,6 +92,12 @@ stanford:
     checkpoint_dir: "restormer_hybrid/checkpoints/stanford"
     learning_rate: 0.00001
     batch_size: 4
+  reconstruct:
+    device: cpu
+    mask_p: 0.3
+    n_preds: 10
+    patch_size: 32
+    overlap: 8
   model:
     in_channel: 9
     out_channel: 1

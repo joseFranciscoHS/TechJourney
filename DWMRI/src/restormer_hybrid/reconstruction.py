@@ -5,16 +5,15 @@ import torch
 from tqdm import tqdm
 
 
-def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
+def reconstruct_dwis(
+    model, data, device, mask_p=0.3, n_preds=10, patch_size=32, overlap=8, use_amp=True
+):
     """
-    Reconstruct full-size DWI data using hybrid MD-S2S approach.
+    Reconstruct full-size DWI data using sliding window approach.
 
-    Uses the same masking strategy as training: all volumes are included,
-    but the target volume is masked with Bernoulli mask. Multiple predictions
-    with different masks are averaged for robustness.
-
-    Memory optimization: Keeps the prediction accumulator on GPU to eliminate
-    unnecessary GPU-CPU transfers during the reconstruction loop.
+    Uses patch-based inference to handle memory constraints - the same strategy
+    that makes training possible on limited GPU memory. Patches are processed
+    with overlap and blended using weighted averaging for smooth transitions.
 
     Args:
         model: Trained Restormer3D-hybrid model
@@ -22,61 +21,151 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
         device: Device to run inference on
         mask_p: Mask probability (same as training)
         n_preds: Number of predictions per volume (for averaging with different masks)
+        patch_size: Size of cubic patches for inference (default 32)
+        overlap: Overlap between adjacent patches for blending (default 8)
+        use_amp: Use automatic mixed precision for reduced memory (default True)
 
     Returns:
         Reconstructed data of shape (Vols, X, Y, Z) as numpy array
     """
     logging.info(f"Starting DWI reconstruction on device: {device}")
     logging.info(f"Input data shape: {data.shape}")
-    logging.info(
-        f"Using hybrid MD-S2S approach with mask_p={mask_p}, n_preds={n_preds}"
-    )
+    logging.info(f"Using sliding window: patch_size={patch_size}, overlap={overlap}")
+    logging.info(f"Mask probability: {mask_p}, n_preds: {n_preds}")
+    if use_amp and device == "cuda":
+        logging.info("Using AMP (float16) for reduced memory during inference")
 
     model.to(device)
     model.eval()
 
-    num_vols, x_size, y_size, z_size = data.shape
-    spatial_dims = (x_size, y_size, z_size)
+    if device == "cuda":
+        torch.cuda.empty_cache()
 
-    # Keep accumulator on GPU to eliminate GPU-CPU transfers in the loop
-    sum_preds = torch.zeros(
-        (num_vols, *spatial_dims), dtype=torch.float32, device=device
-    )
+    num_vols, x_size, y_size, z_size = data.shape
+    stride = patch_size - overlap
+
+    # Pad data if needed to fit patch grid
+    pad_x = (stride - (x_size - patch_size) % stride) % stride
+    pad_y = (stride - (y_size - patch_size) % stride) % stride
+    pad_z = (stride - (z_size - patch_size) % stride) % stride
+
+    if pad_x > 0 or pad_y > 0 or pad_z > 0:
+        data = torch.nn.functional.pad(
+            data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect"
+        )
+        logging.info(f"Padded data to shape: {data.shape}")
+
+    padded_x, padded_y, padded_z = data.shape[1], data.shape[2], data.shape[3]
+
+    # Output accumulator and weight map (on CPU to save GPU memory)
+    sum_preds = np.zeros((num_vols, padded_x, padded_y, padded_z), dtype=np.float32)
+    weight_map = np.zeros((padded_x, padded_y, padded_z), dtype=np.float32)
+
+    # Create blending weights (cosine taper at edges)
+    blend_weights = _create_blend_weights(patch_size, overlap)
+
+    # Calculate patch positions
+    x_positions = list(range(0, padded_x - patch_size + 1, stride))
+    y_positions = list(range(0, padded_y - patch_size + 1, stride))
+    z_positions = list(range(0, padded_z - patch_size + 1, stride))
+
+    total_patches = len(x_positions) * len(y_positions) * len(z_positions)
+    logging.info(f"Processing {total_patches} patches per volume per prediction")
 
     with torch.inference_mode():
-        data_device = data.to(device)
-
-        # Process each target volume separately
         for vol_idx in tqdm(range(num_vols), desc="Processing volumes"):
             logging.info(f"Processing volume {vol_idx + 1}/{num_vols}")
 
-            # Multiple predictions per volume for robustness (different random masks)
             for pred_idx in range(n_preds):
-                # Generate random mask directly on GPU
-                mask_tensor = (
-                    torch.rand(spatial_dims, device=device, dtype=torch.float32) > mask_p
-                ).float().unsqueeze(0)
+                # Process patches for this volume/prediction
+                for x_start in x_positions:
+                    for y_start in y_positions:
+                        for z_start in z_positions:
+                            x_end = x_start + patch_size
+                            y_end = y_start + patch_size
+                            z_end = z_start + patch_size
 
-                # Apply mask to target volume only (keep all volumes in input)
-                data_masked = data_device.clone()
-                data_masked[vol_idx] = data_device[vol_idx] * mask_tensor
+                            # Extract patch (all volumes)
+                            patch = data[
+                                :, x_start:x_end, y_start:y_end, z_start:z_end
+                            ].clone()
 
-                # Add batch dimension: (1, num_vols, X, Y, Z)
-                data_masked = data_masked.unsqueeze(0)
+                            # Apply mask to target volume
+                            mask = (
+                                torch.rand(
+                                    (patch_size, patch_size, patch_size),
+                                    dtype=torch.float32,
+                                )
+                                > mask_p
+                            ).float()
+                            patch[vol_idx] = patch[vol_idx] * mask
 
-                # Forward pass: model expects (B, C, X, Y, Z)
-                reconstructed = model(data_masked)
+                            # Move to device, add batch dim
+                            patch = patch.unsqueeze(0).to(device)
 
-                # Accumulate predictions on GPU (no CPU transfer)
-                sum_preds[vol_idx] += reconstructed.squeeze(0).squeeze(0)
+                            # Forward pass with AMP
+                            if use_amp and device == "cuda":
+                                with torch.amp.autocast(
+                                    device_type="cuda", dtype=torch.float16
+                                ):
+                                    pred = model(patch)
+                            else:
+                                pred = model(patch)
 
-        # Average predictions and move to CPU only at the end
-        reconstructed = (sum_preds / n_preds).cpu().numpy()
+                            # Move prediction to CPU and accumulate
+                            pred_np = pred.float().squeeze(0).squeeze(0).cpu().numpy()
+                            sum_preds[
+                                vol_idx, x_start:x_end, y_start:y_end, z_start:z_end
+                            ] += (pred_np * blend_weights)
 
-        logging.info(f"Reconstruction completed. Output shape: {reconstructed.shape}")
-        logging.info(
-            f"Output stats - Min: {reconstructed.min():.4f}, "
-            f"Max: {reconstructed.max():.4f}, Mean: {reconstructed.mean():.4f}"
-        )
+                            del patch, pred
+
+                # Accumulate weights (same for all predictions of this volume)
+                if pred_idx == 0:
+                    for x_start in x_positions:
+                        for y_start in y_positions:
+                            for z_start in z_positions:
+                                weight_map[
+                                    x_start : x_start + patch_size,
+                                    y_start : y_start + patch_size,
+                                    z_start : z_start + patch_size,
+                                ] += blend_weights
+
+            if device == "cuda":
+                torch.cuda.empty_cache()
+
+    # Normalize by weights and number of predictions
+    weight_map = np.maximum(weight_map, 1e-8)  # Avoid division by zero
+    reconstructed = sum_preds / (weight_map[np.newaxis, ...] * n_preds)
+
+    # Remove padding
+    reconstructed = reconstructed[:, :x_size, :y_size, :z_size]
+
+    logging.info(f"Reconstruction completed. Output shape: {reconstructed.shape}")
+    logging.info(
+        f"Output stats - Min: {reconstructed.min():.4f}, "
+        f"Max: {reconstructed.max():.4f}, Mean: {reconstructed.mean():.4f}"
+    )
 
     return reconstructed
+
+
+def _create_blend_weights(patch_size, overlap):
+    """Create smooth blending weights with cosine taper at edges."""
+    weights = np.ones((patch_size, patch_size, patch_size), dtype=np.float32)
+
+    if overlap > 0:
+        # Create 1D cosine ramp
+        ramp = np.linspace(0, np.pi / 2, overlap)
+        taper = np.sin(ramp) ** 2
+
+        # Apply taper to all 6 faces
+        for i in range(overlap):
+            weights[i, :, :] *= taper[i]
+            weights[-(i + 1), :, :] *= taper[i]
+            weights[:, i, :] *= taper[i]
+            weights[:, -(i + 1), :] *= taper[i]
+            weights[:, :, i] *= taper[i]
+            weights[:, :, -(i + 1)] *= taper[i]
+
+    return weights
