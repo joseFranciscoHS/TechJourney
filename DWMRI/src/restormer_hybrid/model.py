@@ -125,6 +125,13 @@ class FeedForward3D(nn.Module):
     def forward(self, x):
         x = self.project_in(x)
         x1, x2 = self.dwconv(x).chunk(2, dim=1)
+        # #region agent log
+        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
+        import json, time
+        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H7", "location": "model.py:FeedForward3D", "message": "After chunk", "data": {"x1_contig": x1.is_contiguous(), "x2_contig": x2.is_contiguous()}, "timestamp": int(time.time()*1000)}) + "\n")
+        # #endregion
+        x1 = x1.contiguous()
+        x2 = x2.contiguous()
         x = F.gelu(x1) * x2
         x = self.project_out(x)
         return x
@@ -166,9 +173,15 @@ class Attention3D(nn.Module):
         qkv = self.qkv_dwconv(self.qkv(x))
         q, k, v = qkv.chunk(3, dim=1)
 
-        q = rearrange(q, "b (head c) d h w -> b head c (d h w)", head=self.num_heads)
-        k = rearrange(k, "b (head c) d h w -> b head c (d h w)", head=self.num_heads)
-        v = rearrange(v, "b (head c) d h w -> b head c (d h w)", head=self.num_heads)
+        # #region agent log
+        _log_path = "/Users/study/Documents/Repo/TechJourney/DWMRI/.cursor/debug-da8345.log"
+        import json, time
+        with open(_log_path, "a") as _f: _f.write(json.dumps({"sessionId": "da8345", "hypothesisId": "H8", "location": "model.py:Attention3D.after_chunk", "message": "After qkv chunk", "data": {"q_contig": q.is_contiguous(), "k_contig": k.is_contiguous(), "v_contig": v.is_contiguous()}, "timestamp": int(time.time()*1000)}) + "\n")
+        # #endregion
+
+        q = rearrange(q, "b (head c) d h w -> b head c (d h w)", head=self.num_heads).contiguous()
+        k = rearrange(k, "b (head c) d h w -> b head c (d h w)", head=self.num_heads).contiguous()
+        v = rearrange(v, "b (head c) d h w -> b head c (d h w)", head=self.num_heads).contiguous()
 
         q = F.normalize(q, dim=-1)
         k = F.normalize(k, dim=-1)
@@ -186,7 +199,7 @@ class Attention3D(nn.Module):
             d=d,
             h=h,
             w=w,
-        )
+        ).contiguous()
 
         out = self.project_out(out)
         return out
