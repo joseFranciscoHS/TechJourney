@@ -18,15 +18,15 @@ dbrain:
       stages:
         - patch_size: 16
           batch_size: 4
-          epochs: 10
+          epochs: 5
           step: 4
         - patch_size: 24
           batch_size: 2
-          epochs: 10
+          epochs: 5
           step: 6
         - patch_size: 32
           batch_size: 1
-          epochs: 10
+          epochs: 5
           step: 8
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
@@ -57,7 +57,7 @@ dbrain:
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 10  # Number of predictions per volume for averaging
+    n_preds: 4  # Number of predictions per volume for averaging
     patch_size: 32  # Match final progressive stage (Stage 3) patch size
     overlap: 16  # 50% overlap for smooth Gaussian blending (stride=16)
     # Post-reconstruction processing
@@ -73,11 +73,11 @@ dbrain:
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     # Restormer-specific parameters (3-level hierarchy for tractography)
-    dim: 32                     # Base feature dimension (reduced for 3D memory constraints)
-    num_blocks: [2, 2, 4]       # Transformer blocks per level (3 levels: enc1, enc2, latent)
-    num_refinement_blocks: 2    # Number of refinement blocks after decoder
-    heads: [1, 2, 4]            # Attention heads per level (must match num_blocks length)
-    ffn_expansion_factor: 2.0   # FFN hidden dimension multiplier
+    dim: 24                     # Base feature dimension (reduced for 3D memory constraints)
+    num_blocks: [1, 2, 2]       # Transformer blocks per level (3 levels: enc1, enc2, latent)
+    num_refinement_blocks: 1    # Number of refinement blocks after decoder
+    heads: [1, 2, 2]            # Attention heads per level (must match num_blocks length)
+    ffn_expansion_factor: 1.5   # FFN hidden dimension multiplier
     bias: false                 # Use bias in convolutions
     LayerNorm_type: "WithBias"  # "WithBias" or "BiasFree"
   data:
@@ -87,8 +87,8 @@ dbrain:
     num_volumes: 10
     noise_sigma: 0.1
     bvalue: 2500
-    take_x: 128
-    take_y: 128
+    take_x: 96
+    take_y: 96
     take_z: 96
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
