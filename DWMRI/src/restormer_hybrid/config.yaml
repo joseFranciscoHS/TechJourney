@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 30  # Total epochs across all progressive stages (overridden if progressive.enabled)
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0015  # Base learning rate for single GPU
+    learning_rate: 0.0005  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
     use_amp: true  # Enable Automatic Mixed Precision for ~40-50% memory reduction
     use_scheduler: true
