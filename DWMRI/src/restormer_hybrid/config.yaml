@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 30  # Total epochs across all progressive stages (overridden if progressive.enabled)
     device: cuda:2
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0003  # Base learning rate for single GPU
+    learning_rate: 0.00045  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
     use_amp: true  # Enable Automatic Mixed Precision for ~40-50% memory reduction
     use_scheduler: true
@@ -17,17 +17,19 @@ dbrain:
       enabled: true
       stages:
         - patch_size: 16
-          batch_size: 4
-          epochs: 45
+          batch_size: 64
+          epochs: 30
           step: 4
         - patch_size: 24
-          batch_size: 2
+          batch_size: 64
           epochs: 35
           step: 6
         - patch_size: 32
-          batch_size: 1
-          epochs: 20
+          batch_size: 6
+          epochs: 35
           step: 8
+    # use scale and shift trainable variables
+    scale_and_shift: true
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
@@ -87,8 +89,8 @@ dbrain:
     num_volumes: 10
     noise_sigma: 0.1
     bvalue: 2500
-    take_x: 96
-    take_y: 96
+    take_x: 128
+    take_y: 128
     take_z: 96
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"

@@ -319,14 +319,16 @@ class Restormer3D(nn.Module):
         bias=False,
         LayerNorm_type="WithBias",
         output_activation="prelu",
+        scale_and_shift: bool = True,
     ):
         super(Restormer3D, self).__init__()
 
         logging.info(
             f"Initializing Restormer3D (3-level): inp_channels={inp_channels}, out_channels={out_channels}, "
             f"dim={dim}, num_blocks={num_blocks}, heads={heads}, "
-            f"ffn_expansion_factor={ffn_expansion_factor}, output_activation={output_activation}"
+            f"ffn_expansion_factor={ffn_expansion_factor}, output_activation={output_activation}, scale_and_shift={scale_and_shift}"
         )
+        self.scale_and_shift = scale_and_shift
 
         self.patch_embed = OverlapPatchEmbed3D(inp_channels, dim)
 
@@ -447,6 +449,10 @@ class Restormer3D(nn.Module):
                 nn.PReLU(out_channels),
             )
 
+        if self.scale_and_shift:
+            self.output_scale = nn.Parameter(torch.ones(1))
+            self.output_shift = nn.Parameter(torch.ones(1))
+
         # Log parameter count
         total_params = sum(p.numel() for p in self.parameters())
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
@@ -493,6 +499,10 @@ class Restormer3D(nn.Module):
         # Refinement and output
         out_dec_level1 = self.refinement(out_dec_level1)
         out = self.output(out_dec_level1)
+        # Scale and shift; the goal is to learn 2 parameters to
+        # make the output be in the same scale as the input
+        if self.scale_and_shift:
+            out = self.output_scale * out + self.output_shift
 
         return out
 
