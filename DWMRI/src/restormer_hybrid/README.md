@@ -18,6 +18,7 @@ Restormer-Hybrid combines:
 - **Monte Carlo inference**: Averages multiple masked predictions for robust reconstruction
 - **Progressive learning**: Train on small patches first, then larger ones for better structural integrity (e.g. tractography)
 - **Sliding-window reconstruction**: Full-volume inference via overlapping patches with Gaussian blending to avoid OOM and seam artifacts
+- **Learnable output scale and shift**: Optional trainable scale/shift so outputs match the input data range (avoids "shrunk" reconstructions)
 
 ## Architecture
 
@@ -59,6 +60,11 @@ Input (B, num_vols, D, H, W)
 └─────────────────────────┘
     │
     ▼
+┌─────────────────────────┐
+│   Scale & Shift (opt.)  │  out = scale * out + shift (learnable; fixes output range)
+└─────────────────────────┘
+    │
+    ▼
 Output (B, 1, D, H, W)
 ```
 
@@ -67,6 +73,10 @@ Output (B, 1, D, H, W)
 - **LayerNorm3D**: Layer normalization over channel dimension for 5D tensors (B, C, D, H, W)
 - **Attention3D**: Multi-DConv Head Transposed Self-Attention (channel-wise C×C attention; linear in spatial size)
 - **FeedForward3D**: Gated-DConv Feed-Forward Network with depthwise 3D convolutions
+
+### Output scale and shift
+
+When `scale_and_shift` is enabled (default: true), two learnable scalars are applied after the output projection: `out = output_scale * out + output_shift`. This lets the model match the data range (e.g. [0, 1] normalized DWI) and avoids systematically low ("shrunk") reconstructions. Disable by setting `scale_and_shift: false` in config (under `train` or where the model is built).
 
 ## Training Methodology
 
@@ -133,23 +143,25 @@ Edit `config.yaml` (under `dbrain` or `stanford`) to customize:
 model:
   in_channel: 10
   out_channel: 1
-  dim: 32
-  num_blocks: [2, 2, 4]   # 3 levels: enc1, enc2, latent
-  heads: [1, 2, 4]
-  num_refinement_blocks: 2
-  ffn_expansion_factor: 2.0
+  dim: 24                 # Smaller = fewer params and faster (e.g. 24 or 32)
+  num_blocks: [1, 2, 2]   # 3 levels; fewer blocks = faster
+  heads: [1, 2, 2]        # Must match num_blocks length
+  num_refinement_blocks: 1
+  ffn_expansion_factor: 1.5
+  output_activation: "prelu"  # or "sigmoid" for [0,1]
 
 train:
   num_epochs: 30          # Total when progressive; else single-stage epochs
   batch_size: 2           # Default; overridden by progressive stages
   use_amp: true           # Mixed precision for memory savings
+  scale_and_shift: true   # Learnable output scale/shift (recommended; fixes shrunk range)
   mask_p: 0.3
-  learning_rate: 0.0015
+  learning_rate: 0.00045  # Tune with batch size and stages
   progressive:
     enabled: true
     stages:
       - patch_size: 16
-        batch_size: 4
+        batch_size: 4     # Increase if GPU memory allows
         epochs: 10
         step: 4
       - patch_size: 24
@@ -164,7 +176,7 @@ train:
 reconstruct:
   patch_size: 32   # Match final progressive stage
   overlap: 16      # 50% overlap for Gaussian blending
-  n_preds: 10
+  n_preds: 4       # Fewer = faster; more = smoother
 
 data:
   patch_size: 16   # Used when progressive disabled
@@ -174,15 +186,19 @@ data:
 
 ## Memory Considerations
 
-3D volumetric data and transformer blocks are memory-heavy. Recommended settings:
+3D volumetric data and transformer blocks are memory-heavy. You can reduce parameters and speed up training by lowering `dim`, `num_blocks`, `num_refinement_blocks`, and `ffn_expansion_factor`. Recommended ranges:
 
-| Parameter | 2D Restormer | 3D Restormer (single-stage) | 3D Progressive (with AMP) |
-|-----------|--------------|-----------------------------|----------------------------|
-| `dim` | 48 | 32 | 32 |
-| `num_blocks` | [4,6,6,8] | [2,2,4] | [2,2,4] |
-| `batch_size` | 8 | 2 | 4→2→1 per stage |
-| `patch_size` | 64 | 16 | 16→24→32 |
+| Parameter | 2D Restormer | 3D (heavier) | 3D (lighter, faster) |
+|-----------|--------------|---------------|----------------------|
+| `dim` | 48 | 32 | 24 |
+| `num_blocks` | [4,6,6,8] | [2,2,4] | [1,2,2] |
+| `num_refinement_blocks` | — | 2 | 1 |
+| `ffn_expansion_factor` | — | 2.0 | 1.5 |
+| `batch_size` | 8 | 2 | 2–4 (per stage) |
+| `patch_size` | 64 | 16 | 16→24→32 (progressive) |
 | Reconstruction | Full image | Sliding window (patch_size, overlap) | Same; match final stage |
+
+Enable `use_amp: true` and `scale_and_shift: true` for stable training and output range.
 
 ## File Structure
 

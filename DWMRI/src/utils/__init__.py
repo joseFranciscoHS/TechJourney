@@ -17,6 +17,7 @@ from .multi_gpu import (
     setup_multi_gpu,
     validate_multi_gpu_setup,
 )
+from .noise import NOISE_TYPES, add_noise
 
 
 def setup_logging(log_level=logging.INFO, log_file=None):

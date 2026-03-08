@@ -7,17 +7,20 @@ from dipy.io.gradients import read_bvals_bvecs
 from dipy.io.image import load_nifti
 from dipy.segment.mask import median_otsu
 
+from .noise import add_noise
+
 np.random.seed(91021)
 
 
 class DBrainDataLoader:
-    def __init__(self, nii_path, bvecs_path, bvalue=2500, noise_sigma=0.01):
+    def __init__(self, nii_path, bvecs_path, bvalue=2500, noise_sigma=0.01, noise_type="rician"):
         self.nii_path = nii_path
         self.bvecs_path = bvecs_path
         self.noise_sigma = noise_sigma
+        self.noise_type = noise_type
         self.bvalue = bvalue
         logging.info(
-            f"DBrainDataLoader initialized - nii_path: {nii_path}, bvecs_path: {bvecs_path}, bvalue: {bvalue}, noise_sigma: {noise_sigma}"
+            f"DBrainDataLoader initialized - nii_path: {nii_path}, bvecs_path: {bvecs_path}, bvalue: {bvalue}, noise_sigma: {noise_sigma}, noise_type: {noise_type}"
         )
 
     def load_gradient_table(self):
@@ -65,8 +68,9 @@ class DBrainDataLoader:
             f"Normalized data stats - min: {data_norm_spatial.min():.4f}, max: {data_norm_spatial.max():.4f}, mean: {data_norm_spatial.mean():.4f}"
         )
 
-        logging.info(f"Adding Rician noise with sigma={self.noise_sigma} to normalized data...")
-        noisy_data_norm_spatial = add_rician_noise_to_normalized(data_norm_spatial, sigma=self.noise_sigma)
+        noisy_data_norm_spatial = add_noise(
+            data_norm_spatial, sigma=self.noise_sigma, noise_type=self.noise_type
+        )
         logging.info(
             f"Final noisy data stats - min: {noisy_data_norm_spatial.min():.4f}, max: {noisy_data_norm_spatial.max():.4f}, mean: {noisy_data_norm_spatial.mean():.4f}"
         )
@@ -120,30 +124,16 @@ class StanfordDataLoader:
 def add_rician_noise_to_normalized(data, sigma):
     """
     Add Rician noise to already normalized data (range [0,1]).
-    This is more appropriate when adding noise after normalization.
-    
+    Backward-compatible wrapper around the noise module.
+
     Args:
         data: Normalized MRI data of shape (x, y, z, volumes) in range [0,1]
         sigma: Standard deviation of the Gaussian noise components (relative to [0,1] range)
-    
+
     Returns:
-        noisy_data: Data with Rician noise added
+        noisy_data: Data with Rician noise added, clipped to [0, 1]
     """
-    logging.info(
-        f"Adding Rician noise to normalized data with sigma={sigma} to data of shape {data.shape}"
-    )
-    noisy = np.zeros_like(data)
-    for vol in range(data.shape[-1]):
-        noise_1 = np.random.normal(0, sigma, data[..., vol].shape).astype("float32")
-        noise_2 = np.random.normal(0, sigma, data[..., vol].shape).astype("float32")
-        noisy[..., vol] = (data[..., vol] + noise_1) ** 2 + noise_2**2
-        noisy[..., vol] = noisy[..., vol] ** 0.5
-        
-        # Ensure values stay in [0,1] range (clip if necessary)
-        noisy[..., vol] = np.clip(noisy[..., vol], 0, 1)
-    
-    logging.info(f"Rician noise added to normalized data - noisy data shape: {noisy.shape}")
-    return noisy
+    return add_noise(data, sigma, noise_type="rician")
 
 
 def normalize_spatial_dimensions(data):
