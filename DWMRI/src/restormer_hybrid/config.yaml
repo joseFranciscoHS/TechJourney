@@ -1,7 +1,7 @@
 dbrain:
   train:
     num_epochs: 30  # Total epochs across all progressive stages (overridden if progressive.enabled)
-    device: cuda:2
+    device: cuda:1
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00045  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
@@ -57,7 +57,7 @@ dbrain:
   #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
   #   or set metrics_roi_threshold to null.
   reconstruct:
-    device: cuda:2
+    device: cuda:1
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 4  # Number of predictions per volume for averaging
     patch_size: 32  # Match final progressive stage (Stage 3) patch size
