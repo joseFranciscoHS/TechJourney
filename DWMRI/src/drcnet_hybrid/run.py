@@ -18,7 +18,7 @@ from utils.metrics import (
     visualize_single_volume,
 )
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
-from utils.utils import load_config
+from utils.utils import load_config, noise_path_segment
 import wandb
 
 
@@ -49,9 +49,11 @@ def main(
             bvecs_path=settings.data.bvecs_path,
             bvalue=settings.data.bvalue,
             noise_sigma=settings.data.noise_sigma,
+            noise_type=getattr(settings.data, "noise_type", "rician"),
+            n_coils=getattr(settings.data, "noise_n_coils", 1),
         )
         logging.info(
-            f"DBrainDataLoader initialized with noise_sigma={settings.data.noise_sigma}"
+            f"DBrainDataLoader initialized with noise_sigma={settings.data.noise_sigma}, noise_type={getattr(settings.data, 'noise_type', 'rician')}"
         )
     elif dataset == "stanford":
         logging.info("Using Stanford dataset configuration")
@@ -221,12 +223,16 @@ def main(
         logging.info(f"Number of epochs: {settings.train.num_epochs}")
         logging.info(f"Checkpoint directory: {settings.train.checkpoint_dir}")
 
-        # setting checkpoint dir taking into account run/model parameters
+        # setting checkpoint dir taking into account run/model parameters (noise identifier for distinct runs)
+        noise_segment = noise_path_segment(
+            getattr(settings.data, "noise_type", "rician"),
+            getattr(settings.data, "noise_sigma", 0.1),
+        )
         checkpoint_dir = os.path.join(
             settings.train.checkpoint_dir,
             f"bvalue_{settings.data.bvalue}",
             f"num_volumes_{settings.data.num_volumes}",
-            f"noise_sigma_{settings.data.noise_sigma}",
+            noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
         os.makedirs(checkpoint_dir, exist_ok=True)
@@ -237,7 +243,7 @@ def main(
             dataset,
             f"bvalue_{settings.data.bvalue}",
             f"num_volumes_{settings.data.num_volumes}",
-            f"noise_sigma_{settings.data.noise_sigma}",
+            noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
         os.makedirs(loss_dir, exist_ok=True)
@@ -337,7 +343,7 @@ def main(
                 settings.reconstruct.metrics_dir,
                 f"bvalue_{settings.data.bvalue}",
                 f"num_volumes_{settings.data.num_volumes}",
-                f"noise_sigma_{settings.data.noise_sigma}",
+                noise_segment,
                 f"learning_rate_{settings.train.learning_rate}",
             )
             os.makedirs(metrics_dir, exist_ok=True)
@@ -390,7 +396,7 @@ def main(
                     settings.reconstruct.images_dir,
                     f"bvalue_{settings.data.bvalue}",
                     f"num_volumes_{settings.data.num_volumes}",
-                    f"noise_sigma_{settings.data.noise_sigma}",
+                    noise_segment,
                     f"learning_rate_{settings.train.learning_rate}",
                 )
                 os.makedirs(images_dir, exist_ok=True)

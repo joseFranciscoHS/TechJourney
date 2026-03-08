@@ -13,14 +13,15 @@ np.random.seed(91021)
 
 
 class DBrainDataLoader:
-    def __init__(self, nii_path, bvecs_path, bvalue=2500, noise_sigma=0.01, noise_type="rician"):
+    def __init__(self, nii_path, bvecs_path, bvalue=2500, noise_sigma=0.01, noise_type="rician", n_coils=1):
         self.nii_path = nii_path
         self.bvecs_path = bvecs_path
         self.noise_sigma = noise_sigma
         self.noise_type = noise_type
+        self.n_coils = n_coils
         self.bvalue = bvalue
         logging.info(
-            f"DBrainDataLoader initialized - nii_path: {nii_path}, bvecs_path: {bvecs_path}, bvalue: {bvalue}, noise_sigma: {noise_sigma}, noise_type: {noise_type}"
+            f"DBrainDataLoader initialized - nii_path: {nii_path}, bvecs_path: {bvecs_path}, bvalue: {bvalue}, noise_sigma: {noise_sigma}, noise_type: {noise_type}, n_coils: {n_coils}"
         )
 
     def load_gradient_table(self):
@@ -69,7 +70,10 @@ class DBrainDataLoader:
         )
 
         noisy_data_norm_spatial = add_noise(
-            data_norm_spatial, sigma=self.noise_sigma, noise_type=self.noise_type
+            data_norm_spatial,
+            sigma=self.noise_sigma,
+            noise_type=self.noise_type,
+            n_coils=self.n_coils,
         )
         logging.info(
             f"Final noisy data stats - min: {noisy_data_norm_spatial.min():.4f}, max: {noisy_data_norm_spatial.max():.4f}, mean: {noisy_data_norm_spatial.mean():.4f}"

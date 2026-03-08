@@ -4,6 +4,19 @@ import yaml
 from munch import munchify
 
 
+def noise_path_segment(noise_type, noise_sigma):
+    """
+    Build a path segment that identifies noise distribution and level.
+    Used in checkpoint_dir, loss_dir, metrics_dir, images_dir so runs
+    with different noise settings do not overwrite each other.
+
+    Examples: noise_rician_sigma_0.1, noise_gaussian_sigma_0.15, noise_ncchi_sigma_0.1
+    """
+    nt = (noise_type or "rician").lower().strip()
+    alias = "ncchi" if nt == "noncentral_chi" else nt
+    return f"noise_{alias}_sigma_{noise_sigma}"
+
+
 def load_config(config_path):
     logging.info(f"Loading configuration from: {config_path}")
     try:
