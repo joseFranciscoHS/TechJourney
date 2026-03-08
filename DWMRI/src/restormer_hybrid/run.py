@@ -309,6 +309,7 @@ def main(
             bias=getattr(settings.model, "bias", False),
             LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
             output_activation=getattr(settings.model, "output_activation", "prelu"),
+            scale_and_shift=getattr(settings.model, "scale_and_shift", True),
         )
         logging.info(
             f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
@@ -458,6 +459,7 @@ def main(
                 bias=getattr(settings.model, "bias", False),
                 LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
+                scale_and_shift=getattr(settings.model, "scale_and_shift", True),
             )
             reconstruct_model, _, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,

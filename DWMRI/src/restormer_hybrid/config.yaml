@@ -28,8 +28,6 @@ dbrain:
           batch_size: 6
           epochs: 35
           step: 8
-    # use scale and shift trainable variables
-    scale_and_shift: true
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
@@ -82,6 +80,8 @@ dbrain:
     ffn_expansion_factor: 1.5   # FFN hidden dimension multiplier
     bias: false                 # Use bias in convolutions
     LayerNorm_type: "WithBias"  # "WithBias" or "BiasFree"
+    # use scale and shift trainable variables
+    scale_and_shift: true
   data:
     patch_size: 16  # Patch size (smaller for 3D transformer memory constraints)
     step: 4  # Larger step for more diverse training data
