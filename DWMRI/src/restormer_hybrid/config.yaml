@@ -21,7 +21,7 @@ dbrain:
           epochs: 30
           step: 4
         - patch_size: 24
-          batch_size: 64
+          batch_size: 32
           epochs: 35
           step: 6
         - patch_size: 32
