@@ -88,9 +88,7 @@ def fit_progressive(
         indices = np.random.choice(total_samples, size=num_samples, replace=False)
         train_set = Subset(train_set, indices)
 
-        train_loader = DataLoader(
-            train_set, batch_size=stage.batch_size, shuffle=True
-        )
+        train_loader = DataLoader(train_set, batch_size=stage.batch_size, shuffle=True)
         logging.info(
             f"Stage {stage_num} DataLoader: batch_size={stage.batch_size}, "
             f"num_batches={len(train_loader)}, samples={len(train_set)}"
@@ -114,9 +112,7 @@ def fit_progressive(
             elif settings.train.scheduler_type == "cosine":
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
                     optimizer,
-                    T_0=min(
-                        getattr(settings.train, "scheduler_T_0", 20), stage.epochs
-                    ),
+                    T_0=min(getattr(settings.train, "scheduler_T_0", 20), stage.epochs),
                     T_mult=getattr(settings.train, "scheduler_T_mult", 2),
                     eta_min=getattr(settings.train, "eta_min_lr", 0.0001),
                 )
@@ -160,9 +156,7 @@ def fit_progressive(
             )
 
         if stage_num == total_stages:
-            stage_best = os.path.join(
-                stage_checkpoint_dir, "best_loss_checkpoint.pth"
-            )
+            stage_best = os.path.join(stage_checkpoint_dir, "best_loss_checkpoint.pth")
             final_best = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
             if os.path.exists(stage_best):
                 shutil.copy(stage_best, final_best)
@@ -176,6 +170,9 @@ def main(
     train: bool = True,
     reconstruct: bool = True,
     generate_images: bool = True,
+    noise_sigma=None,
+    noise_type=None,
+    noise_n_coils=None,
 ):
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
@@ -193,6 +190,12 @@ def main(
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
         settings = settings.dbrain
+        if noise_sigma is not None:
+            settings.data.noise_sigma = noise_sigma
+        if noise_type is not None:
+            settings.data.noise_type = noise_type
+        if noise_n_coils is not None:
+            settings.data.noise_n_coils = noise_n_coils
         data_loader = DBrainDataLoader(
             nii_path=settings.data.nii_path,
             bvecs_path=settings.data.bvecs_path,
@@ -215,14 +218,24 @@ def main(
     logging.info("Setting up wandb...")
     wandb_run = None
     try:
-        wandb_run = wandb.init(
-            project="DWMRI-Denoising",
-            config={
-                "dataset": dataset,
-                "model_name": "DRCNet-hybrid",
-                **settings.toDict(),
-            },
-        )
+        wandb_config = {
+            "dataset": dataset,
+            "model_name": "DRCNet-hybrid",
+            **settings.toDict(),
+        }
+        wandb_kwargs = {"project": "DWMRI-Denoising", "config": wandb_config}
+        # Required: set run name and tags from noise condition so sweep runs are distinguishable
+        nt = getattr(settings.data, "noise_type", "rician")
+        sigma = getattr(settings.data, "noise_sigma", 0.1)
+        if sigma is not None:
+            alias = (
+                "ncchi"
+                if (nt or "rician").lower().strip() == "noncentral_chi"
+                else (nt or "rician").lower().strip()
+            )
+            wandb_kwargs["name"] = f"noise_{alias}_sigma_{sigma}"
+            wandb_kwargs["tags"] = [f"sigma_{sigma}", f"type_{alias}"]
+        wandb_run = wandb.init(**wandb_kwargs)
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
         # omitting the b0s from the data
@@ -295,7 +308,9 @@ def main(
             if progressive_enabled:
                 logging.info("Using progressive learning training strategy")
                 first_stage = settings.train.progressive.stages[0]
-                logging.info("Initializing DenoiserNet model (first stage patch size)...")
+                logging.info(
+                    "Initializing DenoiserNet model (first stage patch size)..."
+                )
                 model = DenoiserNet(
                     input_channels=settings.model.in_channel,
                     output_channels=settings.model.out_channel,
@@ -430,11 +445,13 @@ def main(
                             f"gamma={settings.train.scheduler_gamma})"
                         )
                     elif settings.train.scheduler_type == "cosine":
-                        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                            optimizer,
-                            T_0=settings.train.scheduler_T_0,
-                            T_mult=settings.train.scheduler_T_mult,
-                            eta_min=settings.train.eta_min_lr,
+                        scheduler = (
+                            torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                                optimizer,
+                                T_0=settings.train.scheduler_T_0,
+                                T_mult=settings.train.scheduler_T_mult,
+                                eta_min=settings.train.eta_min_lr,
+                            )
                         )
                         logging.info(
                             f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, "
