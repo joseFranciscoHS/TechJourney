@@ -42,38 +42,48 @@ def load_checkpoint(model, optimizer, filename, device="cuda", strict=True):
 
     if os.path.isfile(filename):
         try:
-            checkpoint = torch.load(
-                filename, map_location=torch.device(device)
-            )
-            
+            checkpoint = torch.load(filename, map_location=torch.device(device))
+
             if model is not None:
                 model_state_dict = checkpoint["model_state_dict"]
-                
+
                 # Handle DataParallel state dict (remove 'module.' prefix)
-                if any(key.startswith('module.') for key in model_state_dict.keys()):
-                    logging.info("Detected DataParallel checkpoint, removing 'module.' prefix")
-                    model_state_dict = {k.replace('module.', ''): v for k, v in model_state_dict.items()}
-                
+                if any(key.startswith("module.") for key in model_state_dict.keys()):
+                    logging.info(
+                        "Detected DataParallel checkpoint, removing 'module.' prefix"
+                    )
+                    model_state_dict = {
+                        k.replace("module.", ""): v for k, v in model_state_dict.items()
+                    }
+
                 # Load with strict=False to handle architecture changes gracefully
-                missing_keys, unexpected_keys = model.load_state_dict(model_state_dict, strict=strict)
-                
+                missing_keys, unexpected_keys = model.load_state_dict(
+                    model_state_dict, strict=strict
+                )
+
                 if missing_keys:
-                    logging.warning(f"Missing keys in checkpoint: {len(missing_keys)} keys")
+                    logging.warning(
+                        f"Missing keys in checkpoint: {len(missing_keys)} keys"
+                    )
                     if len(missing_keys) <= 10:  # Log first 10 missing keys
                         logging.warning(f"Missing keys: {missing_keys}")
                     else:
                         logging.warning(f"First 10 missing keys: {missing_keys[:10]}")
-                
+
                 if unexpected_keys:
-                    logging.warning(f"Unexpected keys in checkpoint: {len(unexpected_keys)} keys")
+                    logging.warning(
+                        f"Unexpected keys in checkpoint: {len(unexpected_keys)} keys"
+                    )
                     if len(unexpected_keys) <= 10:  # Log first 10 unexpected keys
                         logging.warning(f"Unexpected keys: {unexpected_keys}")
                     else:
-                        logging.warning(f"First 10 unexpected keys: {unexpected_keys[:10]}")
-            
+                        logging.warning(
+                            f"First 10 unexpected keys: {unexpected_keys[:10]}"
+                        )
+
             if optimizer is not None:
                 optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-            
+
             epoch = checkpoint["epoch"]
             loss = checkpoint["loss"]
             best_loss = checkpoint["best_loss"]
@@ -91,7 +101,14 @@ def load_checkpoint(model, optimizer, filename, device="cuda", strict=True):
             if scaler_state_dict is not None:
                 logging.info("AMP scaler state found in checkpoint")
 
-            return model, optimizer, epoch, scheduler_state_dict, scaler_state_dict, best_loss
+            return (
+                model,
+                optimizer,
+                epoch,
+                scheduler_state_dict,
+                scaler_state_dict,
+                best_loss,
+            )
         except Exception as e:
             logging.error(f"Failed to load checkpoint: {e}")
             logging.info("Starting training from scratch")
