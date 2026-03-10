@@ -505,7 +505,7 @@ def main(
                 device=settings.train.device,
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
             )
-            reconstruct_model, _, _, _, _ = load_checkpoint(
+            reconstruct_model, _, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,
                 optimizer=None,
                 filename=best_loss_checkpoint,
