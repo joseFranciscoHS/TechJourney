@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 import numpy as np
 import torch
@@ -7,7 +8,7 @@ from drcnet_hybrid.data import TrainingDataSet
 from drcnet_hybrid.fit import fit_model
 from drcnet_hybrid.model import DenoiserNet
 from drcnet_hybrid.reconstruction import reconstruct_dwis
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader, compute_brain_mask
@@ -20,6 +21,154 @@ from utils.metrics import (
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
 import wandb
+
+
+def fit_progressive(
+    model,
+    settings,
+    noisy_data,
+    original_data,
+    brain_mask,
+    checkpoint_dir,
+    loss_dir,
+    patch_filter_method,
+    min_signal_threshold,
+):
+    """
+    Train model progressively with increasing patch sizes.
+
+    Progressive learning stages use per-stage patch_size, step, batch_size, and
+    epochs; each stage gets a new dataset, optimizer, and scheduler.
+    """
+    stages = settings.train.progressive.stages
+    total_stages = len(stages)
+    subset_seed = getattr(settings.train, "seed", 42)
+
+    logging.info(f"Progressive Learning: {total_stages} stages")
+    for i, stage in enumerate(stages):
+        logging.info(
+            f"  Stage {i+1}: patch={stage.patch_size}³, batch={stage.batch_size}, "
+            f"epochs={stage.epochs}, step={stage.step}"
+        )
+
+    for stage_idx, stage in enumerate(stages):
+        stage_num = stage_idx + 1
+        logging.info("=" * 60)
+        logging.info(f"PROGRESSIVE STAGE {stage_num}/{total_stages}")
+        logging.info(f"  Patch size: {stage.patch_size}³")
+        logging.info(f"  Batch size: {stage.batch_size}")
+        logging.info(f"  Epochs: {stage.epochs}")
+        logging.info(f"  Step: {stage.step}")
+        logging.info("=" * 60)
+
+        if settings.train.device == "cuda":
+            torch.cuda.empty_cache()
+            logging.info("Cleared GPU cache before stage")
+
+        train_set = TrainingDataSet(
+            data=noisy_data,
+            patch_size=(
+                settings.data.num_volumes,
+                stage.patch_size,
+                stage.patch_size,
+                stage.patch_size,
+            ),
+            step=stage.step,
+            mask_p=settings.train.mask_p,
+            clean_data=original_data,
+            brain_mask=brain_mask,
+            patch_filter_method=patch_filter_method,
+            min_signal_threshold=min_signal_threshold,
+        )
+
+        subset_fraction = 0.1
+        total_samples = len(train_set)
+        num_samples = int(total_samples * subset_fraction)
+        np.random.seed(subset_seed)
+        indices = np.random.choice(total_samples, size=num_samples, replace=False)
+        train_set = Subset(train_set, indices)
+
+        train_loader = DataLoader(
+            train_set, batch_size=stage.batch_size, shuffle=True
+        )
+        logging.info(
+            f"Stage {stage_num} DataLoader: batch_size={stage.batch_size}, "
+            f"num_batches={len(train_loader)}, samples={len(train_set)}"
+        )
+
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=settings.train.learning_rate
+        )
+        logging.info(
+            f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})"
+        )
+
+        scheduler = None
+        if getattr(settings.train, "use_scheduler", False):
+            if settings.train.scheduler_type == "step":
+                scheduler = torch.optim.lr_scheduler.StepLR(
+                    optimizer,
+                    step_size=settings.train.scheduler_step_size,
+                    gamma=settings.train.scheduler_gamma,
+                )
+            elif settings.train.scheduler_type == "cosine":
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                    optimizer,
+                    T_0=min(
+                        getattr(settings.train, "scheduler_T_0", 20), stage.epochs
+                    ),
+                    T_mult=getattr(settings.train, "scheduler_T_mult", 2),
+                    eta_min=getattr(settings.train, "eta_min_lr", 0.0001),
+                )
+            elif settings.train.scheduler_type == "reduceLROnPlateau":
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    optimizer,
+                    patience=settings.train.scheduler_patience,
+                    factor=settings.train.scheduler_factor,
+                    min_lr=settings.train.min_lr,
+                )
+
+        stage_checkpoint_dir = os.path.join(
+            checkpoint_dir, f"stage_{stage_num}_patch{stage.patch_size}"
+        )
+        os.makedirs(stage_checkpoint_dir, exist_ok=True)
+        stage_loss_dir = os.path.join(
+            loss_dir, f"stage_{stage_num}_patch{stage.patch_size}"
+        )
+        os.makedirs(stage_loss_dir, exist_ok=True)
+
+        fit_model(
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            train_loader=train_loader,
+            num_epochs=stage.epochs,
+            device=settings.train.device,
+            checkpoint_dir=stage_checkpoint_dir,
+            loss_dir=stage_loss_dir,
+        )
+
+        logging.info(f"Stage {stage_num}/{total_stages} completed")
+
+        if wandb.run is not None:
+            wandb.log(
+                {
+                    "progressive/stage": stage_num,
+                    "progressive/patch_size": stage.patch_size,
+                    "progressive/batch_size": stage.batch_size,
+                }
+            )
+
+        if stage_num == total_stages:
+            stage_best = os.path.join(
+                stage_checkpoint_dir, "best_loss_checkpoint.pth"
+            )
+            final_best = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+            if os.path.exists(stage_best):
+                shutil.copy(stage_best, final_best)
+                logging.info(f"Copied final stage best checkpoint to: {final_best}")
+
+    logging.info("Progressive learning completed successfully")
 
 
 def main(
@@ -117,113 +266,9 @@ def main(
                 numpass=otsu_numpass,
             )
 
-        train_set = TrainingDataSet(
-            data=noisy_data,
-            patch_size=(
-                settings.data.num_volumes,
-                settings.data.patch_size,
-                settings.data.patch_size,
-                settings.data.patch_size,
-            ),
-            step=settings.data.step,
-            mask_p=settings.train.mask_p,
-            clean_data=original_data,
-            brain_mask=brain_mask,
-            patch_filter_method=patch_filter_method,
-            min_signal_threshold=min_signal_threshold,
+        progressive_enabled = hasattr(settings.train, "progressive") and getattr(
+            settings.train.progressive, "enabled", False
         )
-        train_loader = DataLoader(
-            train_set, batch_size=settings.train.batch_size, shuffle=True
-        )
-        logging.info(
-            f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
-        )
-        logging.info("Initializing DenoiserNet model...")
-        model = DenoiserNet(
-            input_channels=settings.model.in_channel,
-            output_channels=settings.model.out_channel,
-            groups=settings.model.groups,
-            dense_convs=settings.model.dense_convs,
-            residual=settings.model.residual,
-            base_filters=settings.model.base_filters,
-            output_shape=(
-                settings.model.out_channel,
-                settings.data.patch_size,
-                settings.data.patch_size,
-                settings.data.patch_size,
-            ),
-            device=settings.train.device,
-            output_activation=getattr(settings.model, "output_activation", "prelu"),
-        )
-        logging.info(
-            f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
-        )
-        logging.info(
-            f"Total model parameters: {sum(p.numel() for p in model.parameters())}"
-        )
-
-        # Setup multi-GPU training
-        multi_gpu_config = create_multi_gpu_config_from_dict(
-            {
-                "multi_gpu": settings.train.multi_gpu,
-                "gpu_ids": settings.train.gpu_ids,
-                "auto_scale_lr": settings.train.auto_scale_lr,
-                "learning_rate": settings.train.learning_rate,
-                "batch_size": settings.train.batch_size,
-                "auto_exclude_imbalanced": settings.train.auto_exclude_imbalanced,
-                "memory_threshold": settings.train.memory_threshold,
-            }
-        )
-
-        model, effective_lr, effective_batch_size = setup_multi_gpu(
-            model, multi_gpu_config
-        )
-
-        logging.info("Setting up optimizer and scheduler...")
-        optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
-        logging.info(f"Optimizer: Adam(lr={effective_lr:.6f})")
-        logging.info(
-            f"Effective batch size: {effective_batch_size} (per-GPU: {settings.train.batch_size})"
-        )
-
-        scheduler = None
-        if settings.train.use_scheduler:
-            if settings.train.scheduler_type == "step":
-                scheduler = torch.optim.lr_scheduler.StepLR(
-                    optimizer,
-                    step_size=settings.train.scheduler_step_size,
-                    gamma=settings.train.scheduler_gamma,
-                )
-                logging.info(
-                    f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
-                    f"gamma={settings.train.scheduler_gamma})"
-                )
-            elif settings.train.scheduler_type == "cosine":
-                scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                    optimizer,
-                    T_0=settings.train.scheduler_T_0,
-                    T_mult=settings.train.scheduler_T_mult,
-                    eta_min=settings.train.eta_min_lr,
-                )
-                logging.info(
-                    f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, T_mult={settings.train.scheduler_T_mult}, eta_min={settings.train.eta_min_lr})"
-                )
-            elif settings.train.scheduler_type == "reduceLROnPlateau":
-                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                    optimizer,
-                    patience=settings.train.scheduler_patience,
-                    factor=settings.train.scheduler_factor,
-                    min_lr=settings.train.min_lr,
-                )
-                logging.info(
-                    f"Scheduler: ReduceLROnPlateau(patience={settings.train.scheduler_patience}, factor={settings.train.scheduler_factor}, min_lr={settings.train.min_lr})"
-                )
-
-        logging.info(f"Training device: {settings.train.device}")
-        logging.info(f"Number of epochs: {settings.train.num_epochs}")
-        logging.info(f"Checkpoint directory: {settings.train.checkpoint_dir}")
-
-        # setting checkpoint dir taking into account run/model parameters (noise identifier for distinct runs)
         noise_segment = noise_path_segment(
             getattr(settings.data, "noise_type", "rician"),
             getattr(settings.data, "noise_sigma", 0.1),
@@ -236,8 +281,6 @@ def main(
             f"learning_rate_{settings.train.learning_rate}",
         )
         os.makedirs(checkpoint_dir, exist_ok=True)
-
-        # setting loss dir taking into account run/model parameters
         loss_dir = os.path.join(
             "drcnet_hybrid/losses",
             dataset,
@@ -248,19 +291,178 @@ def main(
         )
         os.makedirs(loss_dir, exist_ok=True)
 
-        # Training
         if train:
-            fit_model(
-                model=model,
-                optimizer=optimizer,
-                scheduler=scheduler,
-                train_loader=train_loader,
-                num_epochs=settings.train.num_epochs,
-                device=settings.train.device,
-                checkpoint_dir=checkpoint_dir,
-                loss_dir=loss_dir,
-            )
-
+            if progressive_enabled:
+                logging.info("Using progressive learning training strategy")
+                first_stage = settings.train.progressive.stages[0]
+                logging.info("Initializing DenoiserNet model (first stage patch size)...")
+                model = DenoiserNet(
+                    input_channels=settings.model.in_channel,
+                    output_channels=settings.model.out_channel,
+                    groups=settings.model.groups,
+                    dense_convs=settings.model.dense_convs,
+                    residual=settings.model.residual,
+                    base_filters=settings.model.base_filters,
+                    output_shape=(
+                        settings.model.out_channel,
+                        first_stage.patch_size,
+                        first_stage.patch_size,
+                        first_stage.patch_size,
+                    ),
+                    device=settings.train.device,
+                    output_activation=getattr(
+                        settings.model, "output_activation", "prelu"
+                    ),
+                )
+                logging.info(
+                    f"Model initialized - in_channel: {settings.model.in_channel}, "
+                    f"out_channel: {settings.model.out_channel}"
+                )
+                logging.info(
+                    f"Total model parameters: {sum(p.numel() for p in model.parameters())}"
+                )
+                multi_gpu_config = create_multi_gpu_config_from_dict(
+                    {
+                        "multi_gpu": settings.train.multi_gpu,
+                        "gpu_ids": settings.train.gpu_ids,
+                        "auto_scale_lr": settings.train.auto_scale_lr,
+                        "learning_rate": settings.train.learning_rate,
+                        "batch_size": first_stage.batch_size,
+                        "auto_exclude_imbalanced": settings.train.auto_exclude_imbalanced,
+                        "memory_threshold": settings.train.memory_threshold,
+                    }
+                )
+                model, _, _ = setup_multi_gpu(model, multi_gpu_config)
+                fit_progressive(
+                    model=model,
+                    settings=settings,
+                    noisy_data=noisy_data,
+                    original_data=original_data,
+                    brain_mask=brain_mask,
+                    checkpoint_dir=checkpoint_dir,
+                    loss_dir=loss_dir,
+                    patch_filter_method=patch_filter_method,
+                    min_signal_threshold=min_signal_threshold,
+                )
+            else:
+                logging.info("Using standard training (progressive learning disabled)")
+                train_set = TrainingDataSet(
+                    data=noisy_data,
+                    patch_size=(
+                        settings.data.num_volumes,
+                        settings.data.patch_size,
+                        settings.data.patch_size,
+                        settings.data.patch_size,
+                    ),
+                    step=settings.data.step,
+                    mask_p=settings.train.mask_p,
+                    clean_data=original_data,
+                    brain_mask=brain_mask,
+                    patch_filter_method=patch_filter_method,
+                    min_signal_threshold=min_signal_threshold,
+                )
+                train_loader = DataLoader(
+                    train_set,
+                    batch_size=settings.train.batch_size,
+                    shuffle=True,
+                )
+                logging.info(
+                    f"DataLoader created with batch_size={settings.train.batch_size}, "
+                    f"num_batches={len(train_loader)}"
+                )
+                logging.info("Initializing DenoiserNet model...")
+                model = DenoiserNet(
+                    input_channels=settings.model.in_channel,
+                    output_channels=settings.model.out_channel,
+                    groups=settings.model.groups,
+                    dense_convs=settings.model.dense_convs,
+                    residual=settings.model.residual,
+                    base_filters=settings.model.base_filters,
+                    output_shape=(
+                        settings.model.out_channel,
+                        settings.data.patch_size,
+                        settings.data.patch_size,
+                        settings.data.patch_size,
+                    ),
+                    device=settings.train.device,
+                    output_activation=getattr(
+                        settings.model, "output_activation", "prelu"
+                    ),
+                )
+                logging.info(
+                    f"Model initialized - in_channel: {settings.model.in_channel}, "
+                    f"out_channel: {settings.model.out_channel}"
+                )
+                logging.info(
+                    f"Total model parameters: {sum(p.numel() for p in model.parameters())}"
+                )
+                multi_gpu_config = create_multi_gpu_config_from_dict(
+                    {
+                        "multi_gpu": settings.train.multi_gpu,
+                        "gpu_ids": settings.train.gpu_ids,
+                        "auto_scale_lr": settings.train.auto_scale_lr,
+                        "learning_rate": settings.train.learning_rate,
+                        "batch_size": settings.train.batch_size,
+                        "auto_exclude_imbalanced": settings.train.auto_exclude_imbalanced,
+                        "memory_threshold": settings.train.memory_threshold,
+                    }
+                )
+                model, effective_lr, effective_batch_size = setup_multi_gpu(
+                    model, multi_gpu_config
+                )
+                logging.info("Setting up optimizer and scheduler...")
+                optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
+                logging.info(f"Optimizer: Adam(lr={effective_lr:.6f})")
+                logging.info(
+                    f"Effective batch size: {effective_batch_size} "
+                    f"(per-GPU: {settings.train.batch_size})"
+                )
+                scheduler = None
+                if settings.train.use_scheduler:
+                    if settings.train.scheduler_type == "step":
+                        scheduler = torch.optim.lr_scheduler.StepLR(
+                            optimizer,
+                            step_size=settings.train.scheduler_step_size,
+                            gamma=settings.train.scheduler_gamma,
+                        )
+                        logging.info(
+                            f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
+                            f"gamma={settings.train.scheduler_gamma})"
+                        )
+                    elif settings.train.scheduler_type == "cosine":
+                        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                            optimizer,
+                            T_0=settings.train.scheduler_T_0,
+                            T_mult=settings.train.scheduler_T_mult,
+                            eta_min=settings.train.eta_min_lr,
+                        )
+                        logging.info(
+                            f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, "
+                            f"T_mult={settings.train.scheduler_T_mult}, eta_min={settings.train.eta_min_lr})"
+                        )
+                    elif settings.train.scheduler_type == "reduceLROnPlateau":
+                        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                            optimizer,
+                            patience=settings.train.scheduler_patience,
+                            factor=settings.train.scheduler_factor,
+                            min_lr=settings.train.min_lr,
+                        )
+                        logging.info(
+                            f"Scheduler: ReduceLROnPlateau(patience={settings.train.scheduler_patience}, "
+                            f"factor={settings.train.scheduler_factor}, min_lr={settings.train.min_lr})"
+                        )
+                logging.info(f"Training device: {settings.train.device}")
+                logging.info(f"Number of epochs: {settings.train.num_epochs}")
+                fit_model(
+                    model=model,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    train_loader=train_loader,
+                    num_epochs=settings.train.num_epochs,
+                    device=settings.train.device,
+                    checkpoint_dir=checkpoint_dir,
+                    loss_dir=loss_dir,
+                )
             logging.info("Training setup completed successfully")
             logging.info(f"Training completed. Log file: {log_file}")
 

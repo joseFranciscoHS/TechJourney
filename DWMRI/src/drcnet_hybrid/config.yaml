@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 20  # Increased for better convergence
     device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0015  # Base learning rate for single GPU
+    learning_rate: 0.003  # Base learning rate for single GPU
     batch_size: 64  # Per-GPU batch size
     use_scheduler: true
     scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
@@ -25,6 +25,22 @@ dbrain:
     scheduler_patience: 4  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
+    # Progressive learning (optional): train with increasing patch sizes; when enabled, num_epochs/batch_size are overridden per stage
+    progressive:
+      enabled: true
+      stages:
+        - patch_size: 8
+          batch_size: 64
+          epochs: 10
+          step: 2
+        - patch_size: 16
+          batch_size: 64
+          epochs: 10
+          step: 4
+        - patch_size: 32
+          batch_size: 32
+          epochs: 10
+          step: 8
   # --- reconstruct (metrics & viz) ---
   # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
   # metrics_roi_threshold: 0.02 → ROI = voxels where original > 0.02 (tissue). Full-image and ROI
