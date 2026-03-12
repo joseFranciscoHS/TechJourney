@@ -22,7 +22,7 @@ dbrain:
     scheduler_step_size: 15
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 4  # More aggressive reduction
+    scheduler_patience: 8  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
     # Progressive learning (optional): train with increasing patch sizes; when enabled, num_epochs/batch_size are overridden per stage
@@ -30,16 +30,16 @@ dbrain:
       enabled: true
       stages:
         - patch_size: 8
-          batch_size: 64
-          epochs: 10
+          batch_size: 128
+          epochs: 20
           step: 2
         - patch_size: 16
           batch_size: 64
-          epochs: 10
+          epochs: 20
           step: 4
         - patch_size: 32
           batch_size: 32
-          epochs: 10
+          epochs: 20
           step: 8
   # --- reconstruct (metrics & viz) ---
   # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
