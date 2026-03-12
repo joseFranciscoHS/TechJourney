@@ -178,6 +178,9 @@ def main(
     train: bool = True,
     reconstruct: bool = True,
     generate_images: bool = True,
+    noise_sigma=None,
+    noise_type=None,
+    noise_n_coils=None,
 ):
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
@@ -195,6 +198,12 @@ def main(
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
         settings = settings.dbrain
+        if noise_sigma is not None:
+            settings.data.noise_sigma = noise_sigma
+        if noise_type is not None:
+            settings.data.noise_type = noise_type
+        if noise_n_coils is not None:
+            settings.data.noise_n_coils = noise_n_coils
         data_loader = DBrainDataLoader(
             nii_path=settings.data.nii_path,
             bvecs_path=settings.data.bvecs_path,
@@ -217,14 +226,24 @@ def main(
     logging.info("Setting up wandb...")
     wandb_run = None
     try:
-        wandb_run = wandb.init(
-            project="DWMRI-Denoising",
-            config={
-                "dataset": dataset,
-                "model_name": "Restormer3D-hybrid",
-                **settings.toDict(),
-            },
-        )
+        wandb_config = {
+            "dataset": dataset,
+            "model_name": "Restormer3D-hybrid",
+            **settings.toDict(),
+        }
+        wandb_kwargs = {"project": "DWMRI-Denoising", "config": wandb_config}
+        # Set run name and tags from noise condition so sweep runs are distinguishable
+        nt = getattr(settings.data, "noise_type", "rician")
+        sigma = getattr(settings.data, "noise_sigma", 0.1)
+        if sigma is not None:
+            alias = (
+                "ncchi"
+                if (nt or "rician").lower().strip() == "noncentral_chi"
+                else (nt or "rician").lower().strip()
+            )
+            wandb_kwargs["name"] = f"noise_{alias}_sigma_{sigma}"
+            wandb_kwargs["tags"] = [f"sigma_{sigma}", f"type_{alias}"]
+        wandb_run = wandb.init(**wandb_kwargs)
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
         # omitting the b0s from the data
