@@ -291,18 +291,20 @@ def main(
             getattr(settings.data, "noise_type", "rician"),
             getattr(settings.data, "noise_sigma", 0.1),
         )
+        bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
         checkpoint_dir = os.path.join(
             settings.train.checkpoint_dir,
-            f"bvalue_{settings.data.bvalue}",
+            bvalue_segment,
             f"num_volumes_{settings.data.num_volumes}",
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
         os.makedirs(checkpoint_dir, exist_ok=True)
+        # setting loss dir taking into account run/model parameters (includes bvalue)
         loss_dir = os.path.join(
             "drcnet_hybrid/losses",
             dataset,
-            f"bvalue_{settings.data.bvalue}",
+            bvalue_segment,
             f"num_volumes_{settings.data.num_volumes}",
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
@@ -575,10 +577,10 @@ def main(
                     f"max={reconstructed_dwis.max():.4f}, mean={reconstructed_dwis.mean():.4f}"
                 )
 
-            # setting metrics dir taking into account run/model parameters
+            # setting metrics dir taking into account run/model parameters (includes bvalue)
             metrics_dir = os.path.join(
                 settings.reconstruct.metrics_dir,
-                f"bvalue_{settings.data.bvalue}",
+                bvalue_segment,
                 f"num_volumes_{settings.data.num_volumes}",
                 noise_segment,
                 f"learning_rate_{settings.train.learning_rate}",
@@ -628,10 +630,10 @@ def main(
 
             if generate_images:
                 logging.info("Generating images...")
-                # setting images dir taking into account run/model parameters
+                # setting images dir taking into account run/model parameters (includes bvalue)
                 images_dir = os.path.join(
                     settings.reconstruct.images_dir,
-                    f"bvalue_{settings.data.bvalue}",
+                    bvalue_segment,
                     f"num_volumes_{settings.data.num_volumes}",
                     noise_segment,
                     f"learning_rate_{settings.train.learning_rate}",

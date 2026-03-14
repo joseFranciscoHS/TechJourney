@@ -8,6 +8,7 @@ dbrain:
     use_amp: true  # Enable Automatic Mixed Precision for ~40-50% memory reduction
     use_scheduler: true
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
+    # Paths include bvalue (e.g. b2500) via run.py; we start with 2500
     checkpoint_dir: "restormer_hybrid/checkpoints/dbrain"
     # Progressive learning: train with increasing patch sizes
     # Stage 1: Small patches (16³) with high batch - learn local noise statistics
@@ -92,7 +93,7 @@ dbrain:
     noise_sigma: 0.1
     noise_type: "rician"  # rician, gaussian, noncentral_chi (or ncchi); used in checkpoint paths
     noise_n_coils: 1     # for noncentral_chi only
-    bvalue: 2500
+    bvalue: 2500  # Used in paths (losses, checkpoints, metrics, images); we start with 2500
     take_x: 128
     take_y: 128
     take_z: 96
