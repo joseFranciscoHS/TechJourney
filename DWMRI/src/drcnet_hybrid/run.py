@@ -11,7 +11,12 @@ from drcnet_hybrid.reconstruction import reconstruct_dwis
 from torch.utils.data import DataLoader, Subset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
-from utils.data import DBrainDataLoader, StanfordDataLoader, compute_brain_mask
+from utils.data import (
+    DBrainDataLoader,
+    StanfordDataLoader,
+    compute_brain_mask,
+    rescale_reconstruction_to_01,
+)
 from utils.metrics import (
     compute_metrics,
     fully_compare_volumes,
@@ -533,6 +538,18 @@ def main(
                 f"mean: {reconstructed_dwis.mean():.4f}"
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
+
+            # Optional: rescale reconstruction to [0, 1] (inverse of per-volume preprocessing)
+            if getattr(settings.reconstruct, "rescale_to_01", False):
+                rescale_mode = getattr(
+                    settings.reconstruct, "rescale_mode", "per_volume"
+                )
+                reference = original_data if rescale_mode == "match_gt" else None
+                reconstructed_dwis = rescale_reconstruction_to_01(
+                    reconstructed_dwis,
+                    mode=rescale_mode,
+                    reference=reference,
+                )
 
             # Optional: subtract estimated background level then clip
             if getattr(settings.reconstruct, "subtract_background_estimate", False):

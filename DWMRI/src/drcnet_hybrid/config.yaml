@@ -55,6 +55,8 @@ dbrain:
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
     # Post-reconstruction processing
+    rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
+    rescale_mode: "per_volume"  # "per_volume" (default) or "match_gt" to align to GT range per volume
     clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
     subtract_background_estimate: false  # Subtract median of background voxels
     subtract_background_threshold: 0.02  # Voxels where original <= this are "background"
