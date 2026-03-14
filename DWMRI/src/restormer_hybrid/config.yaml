@@ -1,7 +1,7 @@
 dbrain:
   train:
     num_epochs: 30  # Total epochs across all progressive stages (overridden if progressive.enabled)
-    device: cuda:1
+    device: cuda
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00035  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
@@ -56,7 +56,7 @@ dbrain:
   #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
   #   or set metrics_roi_threshold to null.
   reconstruct:
-    device: cuda:1
+    device: cuda
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
     patch_size: 32  # Match final progressive stage (Stage 3) patch size
@@ -76,7 +76,7 @@ dbrain:
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     # Restormer-specific parameters (3-level hierarchy for tractography)
-    dim: 16                     # Base feature dimension (reduced for 3D memory constraints)
+    dim: 32                     # Base feature dimension (reduced for 3D memory constraints)
     num_blocks: [1, 2, 2]       # Transformer blocks per level (3 levels: enc1, enc2, latent)
     num_refinement_blocks: 2    # Number of refinement blocks after decoder
     heads: [1, 2, 2]            # Attention heads per level (must match num_blocks length)
@@ -97,10 +97,12 @@ dbrain:
     take_x: 128
     take_y: 128
     take_z: 96
+    nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
-    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
-    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     # Patch filtering to exclude background-only patches (reduces positive bias in empty regions)
     # "none": keep all patches (original behavior)
     # "threshold": exclude patches where max(clean_patch) <= min_signal_threshold
