@@ -18,16 +18,16 @@ dbrain:
       stages:
         - patch_size: 16
           batch_size: 64
-          epochs: 50
+          epochs: 30
           step: 4
         - patch_size: 24
           batch_size: 32
-          epochs: 50
+          epochs: 35
           step: 6
-        # - patch_size: 24
-        #   batch_size: 6
-        #   epochs: 35
-        #   step: 8
+        - patch_size: 32
+          batch_size: 6
+          epochs: 35
+          step: 8
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
@@ -58,7 +58,7 @@ dbrain:
     device: cuda:1
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
-    patch_size: 24  # Match final progressive stage (Stage 3) patch size
+    patch_size: 32  # Match final progressive stage (Stage 3) patch size
     overlap: 8  # 50% overlap for smooth Gaussian blending (stride=16)
     # Post-reconstruction processing
     rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
@@ -75,9 +75,9 @@ dbrain:
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     # Restormer-specific parameters (3-level hierarchy for tractography)
-    dim: 32                     # Base feature dimension (reduced for 3D memory constraints)
+    dim: 16                     # Base feature dimension (reduced for 3D memory constraints)
     num_blocks: [1, 2, 2]       # Transformer blocks per level (3 levels: enc1, enc2, latent)
-    num_refinement_blocks: 1    # Number of refinement blocks after decoder
+    num_refinement_blocks: 2    # Number of refinement blocks after decoder
     heads: [1, 2, 2]            # Attention heads per level (must match num_blocks length)
     ffn_expansion_factor: 1.5   # FFN hidden dimension multiplier
     bias: false                 # Use bias in convolutions
