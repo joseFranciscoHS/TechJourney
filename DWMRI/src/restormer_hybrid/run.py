@@ -468,12 +468,13 @@ def main(
             logging.info("Training setup completed successfully")
             logging.info(f"Training completed. Log file: {log_file}")
 
+            del model
+
         if reconstruct:
             logging.info("Reconstructing DWIs...")
             best_loss_checkpoint = os.path.join(
                 checkpoint_dir, "best_loss_checkpoint.pth"
             )
-            del model
             reconstruct_model = Restormer3D(
                 inp_channels=settings.model.in_channel,
                 out_channels=settings.model.out_channel,
