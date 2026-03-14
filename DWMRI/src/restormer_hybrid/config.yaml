@@ -61,6 +61,8 @@ dbrain:
     patch_size: 32  # Match final progressive stage (Stage 3) patch size
     overlap: 16  # 50% overlap for smooth Gaussian blending (stride=16)
     # Post-reconstruction processing
+    rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
+    rescale_mode: "per_volume"  # "per_volume" (default) or "match_gt" to align to GT range per volume
     clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
     subtract_background_estimate: false  # Subtract median of background voxels
     subtract_background_threshold: 0.02  # Voxels where original <= this are "background"
@@ -125,6 +127,8 @@ stanford:
     n_preds: 10
     patch_size: 32  # Match final training patch size (or use 16 if not using progressive)
     overlap: 16  # 50% overlap for smooth blending
+    rescale_to_01: true
+    rescale_mode: "per_volume"  # or "match_gt"
   model:
     in_channel: 9
     out_channel: 1

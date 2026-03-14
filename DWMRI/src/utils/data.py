@@ -159,6 +159,67 @@ def normalize_spatial_dimensions(data):
     return normalized_data
 
 
+def rescale_reconstruction_to_01(data, mode="per_volume", reference=None, eps=1e-6):
+    """
+    Rescale 4D reconstruction (X, Y, Z, V) to [0, 1] per volume.
+
+    Inverse of the per-volume normalization used in preprocessing, so that
+    metrics and difference maps (GT vs denoised) are on a comparable scale.
+
+    Args:
+        data: 4D array (X, Y, Z, volumes) - reconstructed DWIs (any scale).
+        mode: "per_volume" (default) or "match_gt".
+            - per_volume: map each volume to [0,1] using its own min/max.
+            - match_gt: map each volume to the min/max range of reference[..., i].
+        reference: 4D array (X, Y, Z, volumes), required when mode="match_gt"
+            (e.g. original_data / ground truth).
+        eps: small constant to avoid division by zero.
+
+    Returns:
+        Rescaled array, same shape as data, dtype float32, values in [0, 1].
+    """
+    if data.ndim != 4:
+        raise ValueError(f"rescale_reconstruction_to_01 expects 4D data, got ndim={data.ndim}")
+    out = np.zeros_like(data, dtype=np.float32)
+    n_vols = data.shape[-1]
+
+    if mode == "per_volume":
+        for i in range(n_vols):
+            vol = data[..., i].astype(np.float64)
+            mn, mx = vol.min(), vol.max()
+            r = mx - mn + eps
+            out[..., i] = np.clip((vol - mn) / r, 0.0, 1.0).astype(np.float32)
+        logging.info(
+            f"Rescaled reconstruction to [0,1] per_volume: "
+            f"global min={out.min():.4f}, max={out.max():.4f}, mean={out.mean():.4f}"
+        )
+    elif mode == "match_gt":
+        if reference is None or reference.shape != data.shape:
+            raise ValueError(
+                "rescale_reconstruction_to_01 with mode='match_gt' requires "
+                "reference array of the same shape as data"
+            )
+        for i in range(n_vols):
+            vol = data[..., i].astype(np.float64)
+            ref_vol = reference[..., i].astype(np.float64)
+            mn_rec, mx_rec = vol.min(), vol.max()
+            mn_ref, mx_ref = ref_vol.min(), ref_vol.max()
+            r_rec = mx_rec - mn_rec + eps
+            r_ref = mx_ref - mn_ref + eps
+            # Map rec to [0,1] then to ref range, then clip to [0,1]
+            t = (vol - mn_rec) / r_rec
+            out[..., i] = np.clip(t * r_ref + mn_ref, 0.0, 1.0).astype(np.float32)
+        logging.info(
+            f"Rescaled reconstruction to [0,1] match_gt: "
+            f"global min={out.min():.4f}, max={out.max():.4f}, mean={out.mean():.4f}"
+        )
+    else:
+        raise ValueError(
+            f"rescale_reconstruction_to_01 mode must be 'per_volume' or 'match_gt', got {mode!r}"
+        )
+    return out
+
+
 def compute_brain_mask(data, median_radius=2, numpass=1):
     """
     Compute brain mask using DIPY's median_otsu on the mean volume.
