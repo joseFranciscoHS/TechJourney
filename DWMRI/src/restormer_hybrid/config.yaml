@@ -3,11 +3,11 @@ dbrain:
     num_epochs: 30  # Total epochs across all progressive stages (overridden if progressive.enabled)
     device: cuda:1
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.00045  # Base learning rate for single GPU
+    learning_rate: 0.00035  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
     use_amp: true  # Enable Automatic Mixed Precision for ~40-50% memory reduction
     use_scheduler: true
-    scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
+    scheduler_type: "step" # step, cosine, reduceLROnPlateau
     checkpoint_dir: "restormer_hybrid/checkpoints/dbrain"
     # Progressive learning: train with increasing patch sizes
     # Stage 1: Small patches (16³) with high batch - learn local noise statistics
@@ -18,16 +18,16 @@ dbrain:
       stages:
         - patch_size: 16
           batch_size: 64
-          epochs: 30
+          epochs: 50
           step: 4
         - patch_size: 24
           batch_size: 32
-          epochs: 35
+          epochs: 50
           step: 6
-        - patch_size: 32
-          batch_size: 6
-          epochs: 35
-          step: 8
+        # - patch_size: 24
+        #   batch_size: 6
+        #   epochs: 35
+        #   step: 8
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
     gpu_ids: [0, 1, 2]  # Specify which GPUs to use
@@ -39,7 +39,7 @@ dbrain:
     eta_min_lr: 0.0001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
-    scheduler_step_size: 15
+    scheduler_step_size: 100
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
     scheduler_patience: 10  # More aggressive reduction
@@ -57,9 +57,9 @@ dbrain:
   reconstruct:
     device: cuda:1
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 4  # Number of predictions per volume for averaging
-    patch_size: 32  # Match final progressive stage (Stage 3) patch size
-    overlap: 16  # 50% overlap for smooth Gaussian blending (stride=16)
+    n_preds: 10  # Number of predictions per volume for averaging
+    patch_size: 24  # Match final progressive stage (Stage 3) patch size
+    overlap: 8  # 50% overlap for smooth Gaussian blending (stride=16)
     # Post-reconstruction processing
     rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
     rescale_mode: "per_volume"  # "per_volume" (default) or "match_gt" to align to GT range per volume
@@ -75,7 +75,7 @@ dbrain:
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     # Restormer-specific parameters (3-level hierarchy for tractography)
-    dim: 24                     # Base feature dimension (reduced for 3D memory constraints)
+    dim: 32                     # Base feature dimension (reduced for 3D memory constraints)
     num_blocks: [1, 2, 2]       # Transformer blocks per level (3 levels: enc1, enc2, latent)
     num_refinement_blocks: 1    # Number of refinement blocks after decoder
     heads: [1, 2, 2]            # Attention heads per level (must match num_blocks length)
