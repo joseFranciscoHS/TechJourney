@@ -19,15 +19,15 @@ dbrain:
       stages:
         - patch_size: 16
           batch_size: 64
-          epochs: 30
+          epochs: 15
           step: 4
         - patch_size: 24
           batch_size: 32
-          epochs: 35
+          epochs: 15
           step: 6
         - patch_size: 32
           batch_size: 6
-          epochs: 35
+          epochs: 15
           step: 8
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
