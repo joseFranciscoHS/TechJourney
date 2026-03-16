@@ -1,9 +1,11 @@
+import gc
 import logging
 import os
 import shutil
 
 import numpy as np
 import torch
+import wandb
 from restormer_hybrid.data import TrainingDataSet
 from restormer_hybrid.fit import fit_model
 from restormer_hybrid.model import Restormer3D
@@ -25,7 +27,6 @@ from utils.metrics import (
 )
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
-import wandb
 
 
 def fit_progressive(
@@ -70,7 +71,7 @@ def fit_progressive(
         logging.info("=" * 60)
 
         # Clear GPU cache before creating new dataset
-        if settings.train.device == "cuda":
+        if settings.train.device[:4] == "cuda":
             torch.cuda.empty_cache()
             logging.info("Cleared GPU cache before stage")
 
@@ -92,7 +93,7 @@ def fit_progressive(
         )
 
         # Use subset for faster iteration (same as main training)
-        subset_fraction = 0.1
+        subset_fraction = 0.2
         total_samples = len(train_set)
         num_samples = int(total_samples * subset_fraction)
         indices = np.random.choice(total_samples, size=num_samples, replace=False)
@@ -166,6 +167,12 @@ def fit_progressive(
                     "progressive/batch_size": stage.batch_size,
                 }
             )
+
+        # Free memory before next stage so the next TrainingDataSet allocation can succeed
+        del train_loader, train_set
+        gc.collect()
+        if settings.train.device.startswith("cuda"):
+            torch.cuda.empty_cache()
 
         # Copy best checkpoint to main checkpoint dir after final stage
         if stage_num == total_stages:
@@ -291,36 +298,6 @@ def main(
                 median_radius=otsu_median_radius,
                 numpass=otsu_numpass,
             )
-
-        train_set = TrainingDataSet(
-            data=noisy_data,
-            patch_size=(
-                settings.data.num_volumes,
-                settings.data.patch_size,
-                settings.data.patch_size,
-                settings.data.patch_size,
-            ),
-            step=settings.data.step,
-            mask_p=settings.train.mask_p,
-            clean_data=original_data,
-            brain_mask=brain_mask,
-            patch_filter_method=patch_filter_method,
-            min_signal_threshold=min_signal_threshold,
-        )
-        # Use 80% of the data
-        subset_fraction = 0.1
-        total_samples = len(train_set)
-        num_samples = int(total_samples * subset_fraction)
-        indices = np.random.choice(total_samples, size=num_samples, replace=False)
-
-        train_set = Subset(train_set, indices)
-
-        train_loader = DataLoader(
-            train_set, batch_size=settings.train.batch_size, shuffle=True
-        )
-        logging.info(
-            f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
-        )
 
         # Initialize Restormer3D model
         logging.info("Initializing Restormer3D model...")
@@ -454,6 +431,36 @@ def main(
                 )
             else:
                 logging.info("Using standard training (progressive learning disabled)")
+                train_set = TrainingDataSet(
+                    data=noisy_data,
+                    patch_size=(
+                        settings.data.num_volumes,
+                        settings.data.patch_size,
+                        settings.data.patch_size,
+                        settings.data.patch_size,
+                    ),
+                    step=settings.data.step,
+                    mask_p=settings.train.mask_p,
+                    clean_data=original_data,
+                    brain_mask=brain_mask,
+                    patch_filter_method=patch_filter_method,
+                    min_signal_threshold=min_signal_threshold,
+                )
+                subset_fraction = 0.1
+                total_samples = len(train_set)
+                num_samples = int(total_samples * subset_fraction)
+                indices = np.random.choice(
+                    total_samples, size=num_samples, replace=False
+                )
+                train_set = Subset(train_set, indices)
+                train_loader = DataLoader(
+                    train_set,
+                    batch_size=settings.train.batch_size,
+                    shuffle=True,
+                )
+                logging.info(
+                    f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
+                )
                 fit_model(
                     model=model,
                     optimizer=optimizer,

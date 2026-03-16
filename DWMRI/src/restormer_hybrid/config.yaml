@@ -22,11 +22,11 @@ dbrain:
           epochs: 15
           step: 4
         - patch_size: 24
-          batch_size: 32
+          batch_size: 64
           epochs: 15
           step: 6
         - patch_size: 32
-          batch_size: 6
+          batch_size: 64
           epochs: 15
           step: 8
     # Multi-GPU settings
@@ -72,7 +72,7 @@ dbrain:
     metrics_dir: "restormer_hybrid/metrics/dbrain"
     images_dir: "restormer_hybrid/images/dbrain"
   model:
-    in_channel: 10 # is the number of volumes (all volumes including masked target)
+    in_channel: 32 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     # Restormer-specific parameters (3-level hierarchy for tractography)
@@ -89,7 +89,7 @@ dbrain:
     patch_size: 16  # Patch size (smaller for 3D transformer memory constraints)
     step: 4  # Larger step for more diverse training data
     num_b0s: 6
-    num_volumes: 10
+    num_volumes: 32
     noise_sigma: 0.1
     noise_type: "rician"  # rician, gaussian, noncentral_chi (or ncchi); used in checkpoint paths
     noise_n_coils: 1     # for noncentral_chi only
