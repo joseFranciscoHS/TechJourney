@@ -5,7 +5,7 @@ dbrain:
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00035  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
-    use_amp: true  # Enable Automatic Mixed Precision for ~40-50% memory reduction
+    use_amp: false  # Enable Automatic Mixed Precision for ~40-50% memory reduction
     use_scheduler: true
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
     # Paths include bvalue (e.g. b2500) via run.py; we start with 2500
@@ -19,15 +19,15 @@ dbrain:
       stages:
         - patch_size: 16
           batch_size: 128
-          epochs: 5
+          epochs: 8
           step: 4
         - patch_size: 24
           batch_size: 64
-          epochs: 5
+          epochs: 8
           step: 6
         - patch_size: 32
           batch_size: 16
-          epochs: 5
+          epochs: 8
           step: 8
     # Multi-GPU settings
     multi_gpu: false  # Set to false to disable multi-GPU
@@ -58,7 +58,7 @@ dbrain:
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 10  # Number of predictions per volume for averaging
+    n_preds: 6  # Number of predictions per volume for averaging
     patch_size: 32  # Match final progressive stage (Stage 3) patch size
     overlap: 8  # 50% overlap for smooth Gaussian blending (stride=16)
     # Post-reconstruction processing

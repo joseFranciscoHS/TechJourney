@@ -39,6 +39,6 @@ main(
     train=True,
     reconstruct=True,
     generate_images=True,
-    noise_sigma=0.05,
+    noise_sigma=0.1,
     noise_type="rician",
 )
