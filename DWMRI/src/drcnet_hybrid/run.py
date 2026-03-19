@@ -226,11 +226,7 @@ def main(
     elif dataset == "stanford":
         logging.info("Using Stanford dataset configuration")
         settings = settings.stanford
-        # StanfordDataLoader expects (bvalue, noise_sigma), not the full config object
-        data_loader = StanfordDataLoader(
-            bvalue=getattr(settings.data, "bvalue", 1000),
-            noise_sigma=getattr(settings.data, "noise_sigma", 0.01),
-        )
+        data_loader = StanfordDataLoader()
         logging.info("StanfordDataLoader initialized")
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
@@ -244,17 +240,8 @@ def main(
             **settings.toDict(),
         }
         wandb_kwargs = {"project": "DWMRI-Denoising", "config": wandb_config}
-        # Required: set run name and tags from noise condition so sweep runs are distinguishable
-        nt = getattr(settings.data, "noise_type", "rician")
-        sigma = getattr(settings.data, "noise_sigma", 0.1)
-        if sigma is not None:
-            alias = (
-                "ncchi"
-                if (nt or "rician").lower().strip() == "noncentral_chi"
-                else (nt or "rician").lower().strip()
-            )
-            wandb_kwargs["name"] = f"noise_{alias}_sigma_{sigma}"
-            wandb_kwargs["tags"] = [f"sigma_{sigma}", f"type_{alias}"]
+        wandb_kwargs["name"] = f"{dataset}_nvol{settings.data.num_volumes}"
+        wandb_kwargs["tags"] = [dataset, f"num_volumes_{settings.data.num_volumes}"]
         wandb_run = wandb.init(**wandb_kwargs)
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
