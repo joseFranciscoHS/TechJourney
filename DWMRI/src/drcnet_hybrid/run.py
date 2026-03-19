@@ -226,7 +226,11 @@ def main(
     elif dataset == "stanford":
         logging.info("Using Stanford dataset configuration")
         settings = settings.stanford
-        data_loader = StanfordDataLoader(settings.data)
+        # StanfordDataLoader expects (bvalue, noise_sigma), not the full config object
+        data_loader = StanfordDataLoader(
+            bvalue=getattr(settings.data, "bvalue", 1000),
+            noise_sigma=getattr(settings.data, "noise_sigma", 0.01),
+        )
         logging.info("StanfordDataLoader initialized")
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
@@ -254,6 +258,12 @@ def main(
         wandb_run = wandb.init(**wandb_kwargs)
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
+        # Stanford loader returns (None, data); treat as self-supervised training where GT=noisy
+        if original_data is None:
+            original_data = noisy_data
+            logging.info(
+                "StanfordDataLoader returned original_data=None; using noisy_data as reference (self-supervised)"
+            )
         # omitting the b0s from the data
         take_volumes = settings.data.num_b0s + settings.data.num_volumes
         logging.info(f"Taking volumes from {settings.data.num_b0s} to {take_volumes}")
