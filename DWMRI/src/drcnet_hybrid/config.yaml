@@ -101,17 +101,59 @@ dbrain:
 stanford:
   train:
     num_epochs: 100
-    num_volumes: 6
-    device: cpu
+    device: cuda:1
     mask_p: 0.3
-    dropout_p: 0.3
-    checkpoint_dir: "checkpoints"
-    learning_rate: 0.00001
+    learning_rate: 0.0001
     batch_size: 8
+    use_amp: true
+    use_scheduler: false
+    checkpoint_dir: "drcnet_hybrid/checkpoints/stanford"
+    progressive:
+      enabled: true
+      stages:
+        - patch_size: 8
+          batch_size: 32
+          epochs: 20
+          step: 2
+        - patch_size: 16
+          batch_size: 16
+          epochs: 20
+          step: 4
+        - patch_size: 32
+          batch_size: 8
+          epochs: 20
+          step: 8
   model:
-    in_channel: 9
-    out_channel: 9
+    in_channel: 10
+    out_channel: 1
+    output_activation: "prelu"
+    groups: 1
+    dense_convs: 2
+    residual: true
+    base_filters: 32
   data:
     num_volumes: 10
+    num_b0s: 10
     noise_sigma: 0.01
-    bvalue: 2500
+    bvalue: 1000
+    patch_size: 16
+    step: 8
+    take_x: 80
+    take_y: 106
+    take_z: 76
+    patch_filter_method: "none"
+    min_signal_threshold: 0.0
+    otsu_median_radius: 2
+    otsu_numpass: 1
+  reconstruct:
+    device: cuda:1
+    mask_p: 0.3
+    n_preds: 10
+    rescale_to_01: true
+    rescale_mode: "per_volume"
+    clip_to_range: true
+    subtract_background_estimate: false
+    subtract_background_threshold: 0.02
+    metrics_roi_threshold: 0.02
+    metrics_dir: "drcnet_hybrid/metrics/stanford"
+    images_dir: "drcnet_hybrid/images/stanford"

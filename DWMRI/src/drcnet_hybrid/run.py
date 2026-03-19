@@ -90,7 +90,7 @@ def fit_progressive(
             min_signal_threshold=min_signal_threshold,
         )
 
-        subset_fraction = 0.1
+        subset_fraction = 0.2
         total_samples = len(train_set)
         num_samples = int(total_samples * subset_fraction)
         np.random.seed(subset_seed)
