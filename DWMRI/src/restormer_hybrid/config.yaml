@@ -5,7 +5,7 @@ dbrain:
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00035  # Base learning rate for single GPU
     batch_size: 2  # Default batch size (overridden by progressive stages)
-    use_amp: false  # Enable Automatic Mixed Precision for ~40-50% memory reduction
+    use_amp: true  # Enable Automatic Mixed Precision for ~40-50% memory reduction
     use_scheduler: true
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
     # Paths include bvalue (e.g. b2500) via run.py; we start with 2500
