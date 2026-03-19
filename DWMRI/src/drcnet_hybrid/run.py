@@ -1,3 +1,4 @@
+import gc
 import logging
 import os
 import shutil
@@ -48,8 +49,11 @@ def fit_progressive(
     stages = settings.train.progressive.stages
     total_stages = len(stages)
     subset_seed = getattr(settings.train, "seed", 42)
+    use_amp = getattr(settings.train, "use_amp", True)
 
-    logging.info(f"Progressive Learning: {total_stages} stages")
+    logging.info(
+        f"Progressive Learning: {total_stages} stages, AMP={'enabled' if use_amp else 'disabled'}"
+    )
     for i, stage in enumerate(stages):
         logging.info(
             f"  Stage {i+1}: patch={stage.patch_size}³, batch={stage.batch_size}, "
@@ -66,7 +70,7 @@ def fit_progressive(
         logging.info(f"  Step: {stage.step}")
         logging.info("=" * 60)
 
-        if settings.train.device == "cuda":
+        if settings.train.device[:4] == "cuda":
             torch.cuda.empty_cache()
             logging.info("Cleared GPU cache before stage")
 
@@ -147,6 +151,7 @@ def fit_progressive(
             device=settings.train.device,
             checkpoint_dir=stage_checkpoint_dir,
             loss_dir=stage_loss_dir,
+            use_amp=use_amp,
         )
 
         logging.info(f"Stage {stage_num}/{total_stages} completed")
@@ -159,6 +164,12 @@ def fit_progressive(
                     "progressive/batch_size": stage.batch_size,
                 }
             )
+
+        # Free memory before next stage so the next TrainingDataSet allocation can succeed
+        del train_loader, train_set
+        gc.collect()
+        if settings.train.device[:4] == "cuda":
+            torch.cuda.empty_cache()
 
         if stage_num == total_stages:
             stage_best = os.path.join(stage_checkpoint_dir, "best_loss_checkpoint.pth")
@@ -312,6 +323,7 @@ def main(
         os.makedirs(loss_dir, exist_ok=True)
 
         if train:
+            use_amp = getattr(settings.train, "use_amp", True)
             if progressive_enabled:
                 logging.info("Using progressive learning training strategy")
                 first_stage = settings.train.progressive.stages[0]
@@ -486,6 +498,7 @@ def main(
                     device=settings.train.device,
                     checkpoint_dir=checkpoint_dir,
                     loss_dir=loss_dir,
+                    use_amp=use_amp,
                 )
             logging.info("Training setup completed successfully")
             logging.info(f"Training completed. Log file: {log_file}")
