@@ -108,6 +108,7 @@ stanford:
     use_amp: true
     use_scheduler: false
     checkpoint_dir: "drcnet_hybrid/checkpoints/stanford"
+    multi_gpu: false
     progressive:
       enabled: true
       stages:
