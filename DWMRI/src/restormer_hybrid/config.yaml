@@ -140,22 +140,22 @@ stanford:
       enabled: true
       stages:
         - patch_size: 32
-          batch_size: 24
-          epochs: 15
+          batch_size: 4
+          epochs: 1
           step: 8
         - patch_size: 16
-          batch_size: 124
-          epochs: 15
+          batch_size: 8
+          epochs: 1
           step: 4
         - patch_size: 8
-          batch_size: 248
-          epochs: 8
+          batch_size: 12
+          epochs: 1
           step: 2
   model:
-    in_channel: 32
+    in_channel: 10
     out_channel: 1
     output_activation: "prelu"
-    dim: 32
+    dim: 10
     num_blocks: [1, 2, 2]
     num_refinement_blocks: 2
     heads: [1, 2, 2]
