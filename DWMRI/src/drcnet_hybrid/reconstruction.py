@@ -82,3 +82,56 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
         )
 
     return reconstructed
+
+
+def reconstruct_full_dwi_chunked(
+    model,
+    noisy_xyzv,
+    train_num_volumes,
+    device,
+    mask_p=0.3,
+    n_preds=10,
+):
+    """
+    Reconstruct all DWI volumes by splitting into contiguous chunks of
+    ``train_num_volumes`` (must match training ``input_channels``), calling
+    :func:`reconstruct_dwis` per chunk, and concatenating along the volume axis.
+
+    Args:
+        noisy_xyzv: (X, Y, Z, V) all diffusion-weighted volumes after b0s.
+        train_num_volumes: Chunk size (model input channels).
+
+    Returns:
+        (X, Y, Z, V) with the same V as ``noisy_xyzv``.
+    """
+    if train_num_volumes < 1:
+        raise ValueError("train_num_volumes must be >= 1")
+    v = noisy_xyzv.shape[-1]
+    pad = (train_num_volumes - (v % train_num_volumes)) % train_num_volumes
+    if pad > 0:
+        noisy_xyzv = np.pad(
+            noisy_xyzv,
+            ((0, 0), (0, 0), (0, 0), (0, pad)),
+            mode="edge",
+        )
+        logging.info(
+            f"Chunked reconstruction: padded last dim by {pad} (edge) so V is "
+            f"multiple of {train_num_volumes}"
+        )
+
+    v_padded = noisy_xyzv.shape[-1]
+    chunks_out = []
+    for start in range(0, v_padded, train_num_volumes):
+        block = noisy_xyzv[..., start : start + train_num_volumes]
+        x_t = torch.from_numpy(np.transpose(block, (3, 0, 1, 2))).type(torch.float)
+        rec_vxyz = reconstruct_dwis(
+            model=model,
+            data=x_t,
+            device=device,
+            mask_p=mask_p,
+            n_preds=n_preds,
+        )
+        chunks_out.append(np.transpose(rec_vxyz, (1, 2, 3, 0)))
+
+    full = np.concatenate(chunks_out, axis=-1)
+    return full[..., :v]

@@ -139,6 +139,11 @@ stanford:
     base_filters: 32
   data:
     num_volumes: 32
+    # Few-volume experiment (run_stanford_fewvol.py): train on this many DWI channels; omit to use num_volumes.
+    train_num_volumes: 10
+    # If true, infer all non-b0 DWI via chunked reconstruction (see run_stanford_fewvol.py).
+    reconstruct_full_dwi: true
+    noise_type: "rician"
     num_b0s: 10
     noise_sigma: 0.01
     bvalue: 1000
