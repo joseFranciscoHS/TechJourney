@@ -113,34 +113,82 @@ dbrain:
     otsu_numpass: 1             # For "otsu" method: number of median filter passes
 stanford:
   train:
-    num_epochs: 100
-    num_volumes: 6
-    device: cuda
+    num_epochs: 1
+    device: cuda:0
     mask_p: 0.3
-    dropout_p: 0.3
+    learning_rate: 0.0002
+    batch_size: 8
+    use_amp: true
+    use_scheduler: false
+    scheduler_type: "step" # step, cosine, reduceLROnPlateau (used if use_scheduler true)
     checkpoint_dir: "restormer_hybrid/checkpoints/stanford"
-    learning_rate: 0.00001
-    batch_size: 4
-    use_amp: false  # Disabled for CPU training
+    # Multi-GPU settings
+    multi_gpu: false
+    gpu_ids: [0, 1, 2]
+    auto_scale_lr: true
+    auto_exclude_imbalanced: true
+    memory_threshold: 0.15
+    scheduler_T_0: 20
+    eta_min_lr: 0.0001
+    scheduler_T_mult: 2
+    scheduler_step_size: 100
+    scheduler_gamma: 0.5
+    scheduler_patience: 10
+    scheduler_factor: 0.8
+    min_lr: 0.0001
     progressive:
-      enabled: false  # Progressive learning not configured for Stanford
-  reconstruct:
-    device: cuda
-    mask_p: 0.3
-    n_preds: 10
-    patch_size: 32  # Match final training patch size (or use 16 if not using progressive)
-    overlap: 16  # 50% overlap for smooth blending
-    rescale_to_01: true
-    rescale_mode: "per_volume"  # or "match_gt"
+      enabled: true
+      stages:
+        - patch_size: 32
+          batch_size: 24
+          epochs: 15
+          step: 8
+        - patch_size: 16
+          batch_size: 124
+          epochs: 15
+          step: 4
+        - patch_size: 8
+          batch_size: 248
+          epochs: 8
+          step: 2
   model:
-    in_channel: 9
+    in_channel: 32
     out_channel: 1
+    output_activation: "prelu"
     dim: 32
-    num_blocks: [2, 2, 4]       # 3-level hierarchy for tractography
+    num_blocks: [1, 2, 2]
     num_refinement_blocks: 2
-    heads: [1, 2, 4]            # Must match num_blocks length
-    ffn_expansion_factor: 2.0
+    heads: [1, 2, 2]
+    ffn_expansion_factor: 1.5
+    bias: false
+    LayerNorm_type: "WithBias"
+    scale_and_shift: true
   data:
     num_volumes: 10
+    num_b0s: 10
     noise_sigma: 0.01
-    bvalue: 2500
+    noise_type: "rician"
+    bvalue: 1000
+    patch_size: 16
+    step: 8
+    take_x: 80
+    take_y: 106
+    take_z: 76
+    patch_filter_method: "none"
+    min_signal_threshold: 0.0
+    otsu_median_radius: 2
+    otsu_numpass: 1
+  reconstruct:
+    device: cuda:0
+    mask_p: 0.3
+    n_preds: 10
+    patch_size: 8
+    overlap: 4
+    rescale_to_01: true
+    rescale_mode: "per_volume"
+    clip_to_range: true
+    subtract_background_estimate: false
+    subtract_background_threshold: 0.02
+    metrics_roi_threshold: 0.02
+    metrics_dir: "restormer_hybrid/metrics/stanford"
+    images_dir: "restormer_hybrid/images/stanford"
