@@ -165,6 +165,10 @@ stanford:
     scale_and_shift: true
   data:
     num_volumes: 10
+    # Few-volume experiment: train/infer patches use this many channels (must match model.in_channel).
+    train_num_volumes: 10
+    # If true, after training reconstruct every non-b0 DWI via chunked inference (see run_stanford_fewvol.py).
+    reconstruct_full_dwi: true
     num_b0s: 10
     noise_sigma: 0.01
     noise_type: "rician"
@@ -180,6 +184,7 @@ stanford:
     otsu_numpass: 1
   reconstruct:
     device: cuda:0
+    use_amp: true
     mask_p: 0.3
     n_preds: 10
     patch_size: 8
