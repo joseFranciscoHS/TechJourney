@@ -101,9 +101,9 @@ dbrain:
 stanford:
   train:
     num_epochs: 100
-    device: cuda:1
+    device: cuda:0
     mask_p: 0.3
-    learning_rate: 0.00015
+    learning_rate: 0.0002
     batch_size: 8
     use_amp: true
     use_scheduler: false
@@ -117,20 +117,20 @@ stanford:
     progressive:
       enabled: true
       stages:
-        - patch_size: 8
-          batch_size: 192
-          epochs: 10
-          step: 2
-        - patch_size: 16
-          batch_size: 192
-          epochs: 25
-          step: 4
         - patch_size: 32
-          batch_size: 72
-          epochs: 30
+          batch_size: 24
+          epochs: 15
           step: 8
+        - patch_size: 16
+          batch_size: 124
+          epochs: 15
+          step: 4
+        - patch_size: 8
+          batch_size: 248
+          epochs: 8
+          step: 2
   model:
-    in_channel: 10
+    in_channel: 32
     out_channel: 1
     output_activation: "prelu"
     groups: 1
@@ -138,7 +138,7 @@ stanford:
     residual: true
     base_filters: 32
   data:
-    num_volumes: 10
+    num_volumes: 32
     num_b0s: 10
     noise_sigma: 0.01
     bvalue: 1000
@@ -152,7 +152,7 @@ stanford:
     otsu_median_radius: 2
     otsu_numpass: 1
   reconstruct:
-    device: cuda:1
+    device: cuda:0
     mask_p: 0.3
     n_preds: 10
     rescale_to_01: true
