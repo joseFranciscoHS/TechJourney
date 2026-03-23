@@ -92,7 +92,7 @@ def fit_progressive(
         )
 
         # Use subset for faster iteration (same as main training)
-        subset_fraction = 0.6
+        subset_fraction = 0.8
         total_samples = len(train_set)
         num_samples = int(total_samples * subset_fraction)
         np.random.seed(subset_seed)
@@ -106,12 +106,8 @@ def fit_progressive(
         )
 
         # Create fresh optimizer for each stage (reset momentum)
-        optimizer = torch.optim.Adam(
-            model.parameters(), lr=settings.train.learning_rate
-        )
-        logging.info(
-            f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})"
-        )
+        optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
+        logging.info(f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})")
 
         # Create scheduler for this stage
         scheduler = None
@@ -144,9 +140,7 @@ def fit_progressive(
         os.makedirs(stage_checkpoint_dir, exist_ok=True)
 
         # Stage-specific loss directory
-        stage_loss_dir = os.path.join(
-            loss_dir, f"stage_{stage_num}_patch{stage.patch_size}"
-        )
+        stage_loss_dir = os.path.join(loss_dir, f"stage_{stage_num}_patch{stage.patch_size}")
         os.makedirs(stage_loss_dir, exist_ok=True)
 
         # Train for this stage
@@ -335,9 +329,7 @@ def main(
         logging.info(
             f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
         )
-        logging.info(
-            f"Total model parameters: {sum(p.numel() for p in model.parameters()):,}"
-        )
+        logging.info(f"Total model parameters: {sum(p.numel() for p in model.parameters()):,}")
 
         progressive_enabled = hasattr(settings.train, "progressive") and getattr(
             settings.train.progressive, "enabled", False
@@ -361,9 +353,7 @@ def main(
             }
         )
 
-        model, effective_lr, effective_batch_size = setup_multi_gpu(
-            model, multi_gpu_config
-        )
+        model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
 
         logging.info("Setting up optimizer and scheduler...")
         optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
@@ -472,9 +462,7 @@ def main(
                 subset_fraction = 0.6
                 total_samples = len(train_set)
                 num_samples = int(total_samples * subset_fraction)
-                indices = np.random.choice(
-                    total_samples, size=num_samples, replace=False
-                )
+                indices = np.random.choice(total_samples, size=num_samples, replace=False)
                 train_set = Subset(train_set, indices)
                 train_loader = DataLoader(
                     train_set,
@@ -503,21 +491,15 @@ def main(
 
         if reconstruct:
             logging.info("Reconstructing DWIs...")
-            best_loss_checkpoint = os.path.join(
-                checkpoint_dir, "best_loss_checkpoint.pth"
-            )
+            best_loss_checkpoint = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
             reconstruct_model = Restormer3D(
                 inp_channels=settings.model.in_channel,
                 out_channels=settings.model.out_channel,
                 dim=getattr(settings.model, "dim", 32),
                 num_blocks=getattr(settings.model, "num_blocks", [2, 2, 2, 4]),
-                num_refinement_blocks=getattr(
-                    settings.model, "num_refinement_blocks", 2
-                ),
+                num_refinement_blocks=getattr(settings.model, "num_refinement_blocks", 2),
                 heads=getattr(settings.model, "heads", [1, 2, 4, 8]),
-                ffn_expansion_factor=getattr(
-                    settings.model, "ffn_expansion_factor", 2.0
-                ),
+                ffn_expansion_factor=getattr(settings.model, "ffn_expansion_factor", 2.0),
                 bias=getattr(settings.model, "bias", False),
                 LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
@@ -531,9 +513,9 @@ def main(
                 strict=False,  # Allow partial loading for architecture changes
             )
             # Prepare data for reconstruction: transpose from (X, Y, Z, Vols) to (Vols, X, Y, Z)
-            x_reconstruct = torch.from_numpy(
-                np.transpose(noisy_data, (3, 0, 1, 2))
-            ).type(torch.float)
+            x_reconstruct = torch.from_numpy(np.transpose(noisy_data, (3, 0, 1, 2))).type(
+                torch.float
+            )
 
             reconstructed_dwis = reconstruct_dwis(
                 model=reconstruct_model,
@@ -556,9 +538,7 @@ def main(
 
             # Optional: rescale reconstruction to [0, 1] (inverse of per-volume preprocessing)
             if getattr(settings.reconstruct, "rescale_to_01", False):
-                rescale_mode = getattr(
-                    settings.reconstruct, "rescale_mode", "per_volume"
-                )
+                rescale_mode = getattr(settings.reconstruct, "rescale_mode", "per_volume")
                 reference = original_data if rescale_mode == "match_gt" else None
                 reconstructed_dwis = rescale_reconstruction_to_01(
                     reconstructed_dwis,
@@ -568,9 +548,7 @@ def main(
 
             # Optional: subtract estimated background level then clip
             if getattr(settings.reconstruct, "subtract_background_estimate", False):
-                thresh = getattr(
-                    settings.reconstruct, "subtract_background_threshold", 0.02
-                )
+                thresh = getattr(settings.reconstruct, "subtract_background_threshold", 0.02)
                 bg_mask = (original_data <= thresh).all(axis=-1)
                 if np.any(bg_mask):
                     bg_vals = reconstructed_dwis[bg_mask]
@@ -625,9 +603,7 @@ def main(
                 logging.info(
                     f"ROI mask: original > {roi_threshold}, {n_roi:,} voxels ({100.0 * n_roi / roi_mask.size:.1f}%)"
                 )
-                metrics_roi = compute_metrics(
-                    original_data, reconstructed_dwis, mask=roi_mask
-                )
+                metrics_roi = compute_metrics(original_data, reconstructed_dwis, mask=roi_mask)
                 logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
 
@@ -656,9 +632,7 @@ def main(
                 # Generate comparison image
                 wandb_images = []
                 for i in range(settings.data.num_volumes):
-                    comparison_path = os.path.join(
-                        images_dir, f"comparison_volume_{i}.png"
-                    )
+                    comparison_path = os.path.join(images_dir, f"comparison_volume_{i}.png")
                     fully_compare_volumes(
                         original_volume=np.transpose(original_data, (2, 3, 0, 1)),
                         noisy_volume=np.transpose(noisy_data, (2, 3, 0, 1)),
@@ -666,9 +640,7 @@ def main(
                         file_name=comparison_path,
                         volume_idx=i,
                     )
-                    wandb_images.append(
-                        wandb.Image(comparison_path, caption=f"Volume index {i}")
-                    )
+                    wandb_images.append(wandb.Image(comparison_path, caption=f"Volume index {i}"))
                 # Log images to wandb
                 if wandb_run is not None:
                     wandb.log(
