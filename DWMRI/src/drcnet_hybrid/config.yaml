@@ -103,7 +103,7 @@ stanford:
     num_epochs: 100
     device: cuda:0
     mask_p: 0.3
-    learning_rate: 0.0002
+    learning_rate: 0.0003
     batch_size: 8
     use_amp: true
     use_scheduler: false
@@ -119,15 +119,15 @@ stanford:
       stages:
         - patch_size: 32
           batch_size: 24
-          epochs: 15
+          epochs: 30
           step: 8
-        - patch_size: 16
-          batch_size: 124
-          epochs: 15
+        - patch_size: 24
+          batch_size: 64
+          epochs: 20
           step: 4
-        - patch_size: 8
-          batch_size: 248
-          epochs: 15
+        - patch_size: 16
+          batch_size: 128
+          epochs: 10
           step: 2
   model:
     in_channel: 10
