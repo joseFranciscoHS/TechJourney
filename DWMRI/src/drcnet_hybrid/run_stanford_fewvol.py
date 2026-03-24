@@ -22,19 +22,24 @@ import sys
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, Subset
-
 from drcnet_hybrid.data import TrainingDataSet
 from drcnet_hybrid.fit import fit_model
 from drcnet_hybrid.model import DenoiserNet
 from drcnet_hybrid.reconstruction import reconstruct_dwis, reconstruct_full_dwi_chunked
 from drcnet_hybrid.run import fit_progressive
+from torch.utils.data import DataLoader, Subset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
-from utils.data import StanfordDataLoader, compute_brain_mask, rescale_reconstruction_to_01
+from utils.data import (
+    StanfordDataLoader,
+    compute_brain_mask,
+    rescale_reconstruction_to_01,
+)
 from utils.metrics import compute_metrics, save_metrics
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
+
+import wandb
 
 
 def _build_checkpoint_dir(settings, train_num_volumes: int) -> str:
@@ -119,6 +124,11 @@ def main():
     parser.add_argument("--force-train", action="store_true")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
+    parser.add_argument(
+        "--no-wandb",
+        action="store_true",
+        help="Disable Weights & Biases (no wandb.init / logging to the cloud).",
+    )
     args = parser.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -128,9 +138,7 @@ def main():
     train_num_volumes = int(
         getattr(settings.data, "train_num_volumes", settings.data.num_volumes)
     )
-    reconstruct_full = bool(
-        getattr(settings.data, "reconstruct_full_dwi", True)
-    )
+    reconstruct_full = bool(getattr(settings.data, "reconstruct_full_dwi", True))
 
     settings.data.num_volumes = train_num_volumes
     settings.model.in_channel = train_num_volumes
@@ -140,7 +148,52 @@ def main():
         f"Stanford few-volume (DRCNet): train_num_volumes={train_num_volumes}, "
         f"reconstruct_full_dwi={reconstruct_full}"
     )
+    logging.info(
+        "Logs also go to the file above; if the terminal looks empty, open that path "
+        "or run with: python -u runner_stanford.py"
+    )
 
+    wandb_run = None
+    if not args.no_wandb:
+        noise_segment = noise_path_segment(
+            getattr(settings.data, "noise_type", "rician"),
+            getattr(settings.data, "noise_sigma", 0.1),
+        )
+        bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
+        wandb_config = {
+            "dataset": "stanford_fewvol_drcnet",
+            "train_num_volumes": train_num_volumes,
+            "reconstruct_full_dwi": reconstruct_full,
+            "learning_rate": settings.train.learning_rate,
+            "bvalue": getattr(settings.data, "bvalue", None),
+            "noise_sigma": getattr(settings.data, "noise_sigma", None),
+            "noise_type": getattr(settings.data, "noise_type", None),
+        }
+        wandb_run = wandb.init(
+            project="DWMRI-Denoising",
+            name=f"drcnet_stanford_fewvol_{bvalue_segment}_nvol{train_num_volumes}_{noise_segment}",
+            tags=["stanford", "fewvol", "drcnet", bvalue_segment, noise_segment],
+            config=wandb_config,
+        )
+        logging.info("wandb run started (project DWMRI-Denoising).")
+
+    try:
+        _run_stanford_fewvol_body(
+            args,
+            settings,
+            train_num_volumes,
+            reconstruct_full,
+            log_file,
+            wandb_run,
+        )
+    finally:
+        if wandb_run is not None:
+            wandb_run.finish()
+
+
+def _run_stanford_fewvol_body(
+    args, settings, train_num_volumes, reconstruct_full, log_file, wandb_run
+):
     train_noisy, train_orig, full_noisy, full_orig = _prepare_stanford_arrays(
         settings, train_num_volumes
     )
@@ -394,14 +447,29 @@ def main():
     logging.info(f"Metrics ({tag}): {metrics}")
     save_metrics(metrics, metrics_dir, filename="metrics.json")
 
+    if wandb_run is not None:
+        wandb.log(
+            {
+                f"reconstruct/{tag}/metrics_mse": metrics["mse"],
+                f"reconstruct/{tag}/metrics_ssim": metrics["ssim"],
+                f"reconstruct/{tag}/metrics_psnr": metrics["psnr"],
+            }
+        )
+
     roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", None)
     if roi_thr is not None:
         roi_mask = (ref_for_metrics > roi_thr).any(axis=-1)
-        metrics_roi = compute_metrics(
-            ref_for_metrics, reconstructed, mask=roi_mask
-        )
+        metrics_roi = compute_metrics(ref_for_metrics, reconstructed, mask=roi_mask)
         logging.info(f"Metrics ROI ({tag}): {metrics_roi}")
         save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
+        if wandb_run is not None:
+            wandb.log(
+                {
+                    f"reconstruct/{tag}/metrics_roi_mse": metrics_roi["mse"],
+                    f"reconstruct/{tag}/metrics_roi_ssim": metrics_roi["ssim"],
+                    f"reconstruct/{tag}/metrics_roi_psnr": metrics_roi["psnr"],
+                }
+            )
 
     logging.info(f"Saved metrics under: {metrics_dir}")
     logging.info(f"Done. Log file: {log_file}")
