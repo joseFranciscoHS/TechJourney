@@ -11,6 +11,7 @@ Usage (from ``DWMRI/src`` with PYTHONPATH set)::
     python -m restormer_hybrid.run_stanford_fewvol
     python -m restormer_hybrid.run_stanford_fewvol --force-train
     python -m restormer_hybrid.run_stanford_fewvol --skip-train
+    python -m restormer_hybrid.run_stanford_fewvol --no-images
 """
 
 from __future__ import annotations
@@ -39,7 +40,12 @@ from utils.data import (
     compute_brain_mask,
     rescale_reconstruction_to_01,
 )
-from utils.metrics import compute_metrics, save_metrics
+from utils.metrics import (
+    compute_metrics,
+    fully_compare_volumes,
+    save_metrics,
+    visualize_single_volume,
+)
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
 
@@ -144,6 +150,11 @@ def main():
         "--no-wandb",
         action="store_true",
         help="Disable Weights & Biases (no wandb.init / logging to the cloud).",
+    )
+    parser.add_argument(
+        "--no-images",
+        action="store_true",
+        help="Skip saving comparison PNGs and wandb image panels.",
     )
     args = parser.parse_args()
 
@@ -481,6 +492,51 @@ def _run_stanford_fewvol_body(
                     f"reconstruct/{tag}/metrics_roi_psnr": metrics_roi["psnr"],
                 }
             )
+
+    if not args.no_images:
+        logging.info("Generating images...")
+        noisy_for_viz = full_noisy if reconstruct_full else train_noisy
+        n_vols = int(reconstructed.shape[-1])
+        images_dir = os.path.join(
+            settings.reconstruct.images_dir,
+            bvalue_segment,
+            f"num_volumes_{train_num_volumes}_{tag}",
+            noise_segment,
+            f"learning_rate_{settings.train.learning_rate}",
+        )
+        os.makedirs(images_dir, exist_ok=True)
+        logging.info(f"Saving images to: {images_dir}")
+
+        wandb_images = []
+        for i in range(n_vols):
+            comparison_path = os.path.join(images_dir, f"comparison_volume_{i}.png")
+            fully_compare_volumes(
+                original_volume=np.transpose(ref_for_metrics, (2, 3, 0, 1)),
+                noisy_volume=np.transpose(noisy_for_viz, (2, 3, 0, 1)),
+                denoised_volume=np.transpose(reconstructed, (2, 3, 0, 1)),
+                file_name=comparison_path,
+                volume_idx=i,
+            )
+            wandb_images.append(
+                wandb.Image(comparison_path, caption=f"Volume index {i}")
+            )
+
+        if wandb_run is not None:
+            wandb.log({"reconstruct/comparison": wandb_images})
+
+        single_path = os.path.join(images_dir, "single.png")
+        visualize_single_volume(
+            np.transpose(reconstructed, (2, 3, 0, 1)),
+            file_name=single_path,
+            volume_idx=0,
+        )
+
+        noisy_path = os.path.join(images_dir, "noisy.png")
+        visualize_single_volume(
+            np.transpose(noisy_for_viz, (2, 3, 0, 1)),
+            file_name=noisy_path,
+            volume_idx=0,
+        )
 
     logging.info(f"Saved metrics under: {metrics_dir}")
     logging.info(f"Done. Log file: {log_file}")
