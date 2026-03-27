@@ -1,14 +1,15 @@
 # Noise sweep: train and validate over different noise levels and distributions (same-condition).
 # Uses DRCNet-hybrid; each run gets its own checkpoint/metrics dir and wandb run name/tags.
-# from drcnet_hybrid.run import main
-# Noise sweep: Restormer-hybrid; same conditions as DRCNet sweep.
-from restormer_hybrid.run import main
+from drcnet_hybrid_2.run import main
 
-"""
+# Noise sweep: Restormer-hybrid; same conditions as DRCNet sweep.
+# from restormer_hybrid.run import main
+
+
 NOISE_SWEEP = [
-    (0.05, "rician"),
+    # (0.05, "rician"),
     (0.1, "rician"),
-    (0.15, "rician"),
+    # (0.15, "rician"),
     # (0.05, "gaussian"),
     # (0.1, "gaussian"),
     # (0.15, "gaussian"),
@@ -42,3 +43,4 @@ main(
     noise_sigma=0.1,
     noise_type="rician",
 )
+"""
