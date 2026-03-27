@@ -285,7 +285,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
 
     def __getitem__(self, index: int):
         window_idx = index // self.n_volumes
-        target_volume_idx = index % self.n_volumes
+        # target_volume_idx = index % self.n_volumes
 
         x, y, z = self.valid_coords[window_idx]
         px, py, pz = (
@@ -298,20 +298,15 @@ class TrainingDataSet(torch.utils.data.Dataset):
         window = torch.from_numpy(window).float()
 
         # Bernoulli mask for spatial dimensions (hybrid MD-S2S)
-        window_shape = list(window.shape[1:])
+        window_shape = list(window.shape)
         p_mtx = np.random.uniform(size=window_shape)
         mask = (p_mtx > self.mask_p).astype(np.double)
-        mask = torch.tensor(mask, dtype=torch.float32).unsqueeze(0)
+        mask = torch.tensor(mask, dtype=torch.float32)
 
         x_masked = window.clone()
-        volume_masked = x_masked[target_volume_idx] * mask.squeeze(0)
-        x_masked[target_volume_idx] = volume_masked
-        noisy_target_volume = window[target_volume_idx : target_volume_idx + 1]
+        x_masked = x_masked * mask
+        noisy_target_volume = window
 
-        logging.debug(
-            f"__getitem__ index={index}, window_idx={window_idx}, target_vol={target_volume_idx}, "
-            f"x_masked.shape={x_masked.shape}, noisy_target_volume.shape={noisy_target_volume.shape}"
-        )
         return x_masked, mask, noisy_target_volume
 
     def __len__(self):
