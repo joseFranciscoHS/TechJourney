@@ -192,7 +192,8 @@ def reconstruct_full_dwi_static_base(
     )
     chunks_out.append(np.transpose(rec_vxyz, (1, 2, 3, 0)))
     for start in range(train_num_volumes, v):
-        block = noisy_xyzv[..., start : start + train_num_volumes]
+        indices_to_select = np.r_[0 : train_num_volumes - 1, start]  # 0:9 gives 0, 1, ..., 8
+        block = noisy_xyzv[..., indices_to_select]
         x_t = torch.from_numpy(np.transpose(block, (3, 0, 1, 2))).type(torch.float)
         rec_vxyz = reconstruct_dwis_index_volume(
             model=model,

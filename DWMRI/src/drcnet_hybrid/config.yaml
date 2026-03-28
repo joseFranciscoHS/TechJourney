@@ -1,7 +1,7 @@
 dbrain:
   train:
     num_epochs: 20  # Increased for better convergence
-    device: cuda:1
+    device: cuda:0
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.003  # Base learning rate for single GPU
     batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
@@ -53,7 +53,7 @@ dbrain:
   #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
   #   or set metrics_roi_threshold to null.
   reconstruct:
-    device: cuda:1
+    device: cuda:0
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 10  # Number of predictions per volume for averaging
     # Post-reconstruction processing
@@ -67,7 +67,7 @@ dbrain:
     metrics_dir: "drcnet_hybrid/metrics/dbrain"
     images_dir: "drcnet_hybrid/images/dbrain"
   model:
-    in_channel: 32 # is the number of volumes (all volumes including masked target)
+    in_channel: 10 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     groups: 1  # Increased for better feature separation
@@ -78,7 +78,7 @@ dbrain:
     patch_size: 8  # Larger patches for better context
     step: 2  # Larger step for more diverse training data
     num_b0s: 6
-    num_volumes: 32
+    num_volumes: 10
     noise_sigma: 0.1
     noise_type: "rician"  # rician, gaussian, noncentral_chi (or ncchi); used in checkpoint paths
     noise_n_coils: 1     # for noncentral_chi only
