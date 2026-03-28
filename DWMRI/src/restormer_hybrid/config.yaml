@@ -58,7 +58,7 @@ dbrain:
   reconstruct:
     device: cuda
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 6  # Number of predictions per volume for averaging
+    n_preds: 10  # Number of predictions per volume for averaging
     patch_size: 32  # Match final progressive stage (Stage 3) patch size
     overlap: 8  # 50% overlap for smooth Gaussian blending (stride=16)
     # Post-reconstruction processing

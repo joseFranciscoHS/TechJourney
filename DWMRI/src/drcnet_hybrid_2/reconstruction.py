@@ -25,9 +25,7 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
     """
     logging.info(f"Starting DWI reconstruction on device: {device}")
     logging.info(f"Input data shape: {data.shape}")
-    logging.info(
-        f"Using hybrid MD-S2S approach with mask_p={mask_p}, n_preds={n_preds}"
-    )
+    logging.info(f"Using hybrid MD-S2S approach with mask_p={mask_p}, n_preds={n_preds}")
 
     model.to(device)
     model.eval()
@@ -42,35 +40,33 @@ def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
         data_device = data.to(device)
 
         # Process each target volume separately
-        for vol_idx in tqdm(range(num_vols), desc="Processing volumes"):
-            logging.info(f"Processing volume {vol_idx + 1}/{num_vols}")
+        # for vol_idx in tqdm(range(num_vols), desc="Processing volumes"):
+        #     logging.info(f"Processing volume {vol_idx + 1}/{num_vols}")
 
-            # Multiple predictions per volume for robustness (different random masks)
-            for pred_idx in range(n_preds):
-                # Create masked input (same as training approach)
-                # Generate random mask for the target volume
-                p_mtx = np.random.uniform(size=spatial_dims)
-                mask = (p_mtx > mask_p).astype(np.float32)
-                mask_tensor = (
-                    torch.tensor(mask).to(device, dtype=torch.float32).unsqueeze(0)
-                )
+        # Multiple predictions per volume for robustness (different random masks)
+        for pred_idx in range(n_preds):
+            # Create masked input (same as training approach)
+            # Generate random mask for the target volume
+            p_mtx = np.random.uniform(size=data.shape)
+            mask = (p_mtx > mask_p).astype(np.float32)
+            mask_tensor = torch.tensor(mask).to(device, dtype=torch.float32)
 
-                # Apply mask to target volume only (keep all volumes in input)
-                data_masked = data_device.clone()
-                data_masked[vol_idx] = data_device[vol_idx] * mask_tensor
+            # Apply mask to target volume only (keep all volumes in input)
+            data_masked = data_device.clone()
+            data_masked = data_device * mask_tensor
 
-                # Add batch dimension: (1, num_vols, X, Y, Z)
-                data_masked = data_masked.unsqueeze(0)
+            # Add batch dimension: (1, num_vols, X, Y, Z)
+            data_masked = data_masked.unsqueeze(0)
 
-                # Forward pass: model expects (B, C, X, Y, Z)
-                reconstructed = model(data_masked)
+            # Forward pass: model expects (B, C, X, Y, Z)
+            reconstructed = model(data_masked)
 
-                # Extract the target volume prediction
-                # reconstructed shape: (1, 1, X, Y, Z)
-                pred_volume = reconstructed.squeeze(0).squeeze(0).detach().cpu().numpy()
+            # Extract the target volume prediction
+            # reconstructed shape: (1, V, X, Y, Z)
+            pred_volume = reconstructed.squeeze(0).detach().cpu().numpy()
 
-                # Accumulate predictions
-                sum_preds[vol_idx] += pred_volume
+            # Accumulate predictions
+            sum_preds += pred_volume
 
         # Average predictions
         reconstructed = sum_preds / n_preds
@@ -104,9 +100,7 @@ def reconstruct_dwis_index_volume(model, data, index, device, mask_p=0.3, n_pred
     """
     logging.info(f"Starting DWI reconstruction on device: {device}")
     logging.info(f"Input data shape: {data.shape}")
-    logging.info(
-        f"Using hybrid MD-S2S approach with mask_p={mask_p}, n_preds={n_preds}"
-    )
+    logging.info(f"Using hybrid MD-S2S approach with mask_p={mask_p}, n_preds={n_preds}")
 
     model.to(device)
     model.eval()
@@ -121,35 +115,31 @@ def reconstruct_dwis_index_volume(model, data, index, device, mask_p=0.3, n_pred
         data_device = data.to(device)
 
         # Process each target volume separately
-        for vol_idx in tqdm(range(index, index + 1), desc="Processing volumes"):
-            logging.info(f"Processing volume {vol_idx + 1}/{num_vols}")
 
-            # Multiple predictions per volume for robustness (different random masks)
-            for pred_idx in range(n_preds):
-                # Create masked input (same as training approach)
-                # Generate random mask for the target volume
-                p_mtx = np.random.uniform(size=spatial_dims)
-                mask = (p_mtx > mask_p).astype(np.float32)
-                mask_tensor = (
-                    torch.tensor(mask).to(device, dtype=torch.float32).unsqueeze(0)
-                )
+        # Multiple predictions per volume for robustness (different random masks)
+        for pred_idx in range(n_preds):
+            # Create masked input (same as training approach)
+            # Generate random mask for the target volume
+            p_mtx = np.random.uniform(size=spatial_dims)
+            mask = (p_mtx > mask_p).astype(np.float32)
+            mask_tensor = torch.tensor(mask).to(device, dtype=torch.float32)
 
-                # Apply mask to target volume only (keep all volumes in input)
-                data_masked = data_device.clone()
-                data_masked[vol_idx] = data_device[vol_idx] * mask_tensor
+            # Apply mask to target volume only (keep all volumes in input)
+            data_masked = data_device.clone()
+            data_masked = data_device * mask_tensor
 
-                # Add batch dimension: (1, num_vols, X, Y, Z)
-                data_masked = data_masked.unsqueeze(0)
+            # Add batch dimension: (1, num_vols, X, Y, Z)
+            data_masked = data_masked
 
-                # Forward pass: model expects (B, C, X, Y, Z)
-                reconstructed = model(data_masked)
+            # Forward pass: model expects (B, C, X, Y, Z)
+            reconstructed = model(data_masked)
 
-                # Extract the target volume prediction
-                # reconstructed shape: (1, 1, X, Y, Z)
-                pred_volume = reconstructed.squeeze(0).squeeze(0).detach().cpu().numpy()
+            # Extract the target volume prediction
+            # reconstructed shape: (1, 1, X, Y, Z)
+            pred_volume = reconstructed.squeeze(0).detach().cpu().numpy()
 
-                # Accumulate predictions
-                sum_preds[vol_idx] += pred_volume
+            # Accumulate predictions
+            sum_preds += pred_volume
 
         # Average predictions
         reconstructed = sum_preds / n_preds
@@ -199,6 +189,8 @@ def reconstruct_full_dwi_static_base(
         n_preds=n_preds,
     )
     chunks_out.append(np.transpose(rec_vxyz, (1, 2, 3, 0)))
+    logging.info("train_num_volumes", train_num_volumes)
+    logging.info("volumes", v)
     for start in range(train_num_volumes, v):
         block = noisy_xyzv[..., start : start + train_num_volumes]
         x_t = torch.from_numpy(np.transpose(block, (3, 0, 1, 2))).type(torch.float)
