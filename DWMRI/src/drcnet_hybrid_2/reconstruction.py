@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
 
 def reconstruct_dwis(model, data, device, mask_p=0.3, n_preds=10):
@@ -120,7 +119,7 @@ def reconstruct_dwis_index_volume(model, data, index, device, mask_p=0.3, n_pred
         for pred_idx in range(n_preds):
             # Create masked input (same as training approach)
             # Generate random mask for the target volume
-            p_mtx = np.random.uniform(size=spatial_dims)
+            p_mtx = np.random.uniform(size=data.shape)
             mask = (p_mtx > mask_p).astype(np.float32)
             mask_tensor = torch.tensor(mask).to(device, dtype=torch.float32)
 
@@ -129,7 +128,7 @@ def reconstruct_dwis_index_volume(model, data, index, device, mask_p=0.3, n_pred
             data_masked = data_device * mask_tensor
 
             # Add batch dimension: (1, num_vols, X, Y, Z)
-            data_masked = data_masked
+            data_masked = data_masked.unsqueeze(0)
 
             # Forward pass: model expects (B, C, X, Y, Z)
             reconstructed = model(data_masked)
@@ -189,10 +188,14 @@ def reconstruct_full_dwi_static_base(
         n_preds=n_preds,
     )
     chunks_out.append(np.transpose(rec_vxyz, (1, 2, 3, 0)))
-    logging.info("train_num_volumes", train_num_volumes)
-    logging.info("volumes", v)
+    logging.info(
+        "static_base reconstruction: train_num_volumes=%s, total_volumes=%s",
+        train_num_volumes,
+        v,
+    )
     for start in range(train_num_volumes, v):
-        block = noisy_xyzv[..., start : start + train_num_volumes]
+        indices_to_select = np.r_[0 : train_num_volumes - 1, start]  # 0:9 gives 0, 1, ..., 8
+        block = noisy_xyzv[..., indices_to_select]
         x_t = torch.from_numpy(np.transpose(block, (3, 0, 1, 2))).type(torch.float)
         rec_vxyz = reconstruct_dwis_index_volume(
             model=model,
