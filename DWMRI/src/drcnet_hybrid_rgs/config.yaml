@@ -1,0 +1,182 @@
+dbrain:
+  train:
+    num_epochs: 20  # Increased for better convergence
+    device: cuda:0
+    mask_p: 0.3  # Mask probability for hybrid MD-S2S training
+    learning_rate: 0.003  # Base learning rate for single GPU
+    batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
+    use_amp: true  # Enable Automatic Mixed Precision for memory reduction
+    use_scheduler: true
+    scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
+    # Paths include bvalue (e.g. b2500) via run.py; we start with 2500
+    checkpoint_dir: "drcnet_hybrid_rgs/checkpoints/dbrain"
+    # Multi-GPU settings
+    multi_gpu: false  # Set to false to disable multi-GPU
+    gpu_ids: [0, 1, 2]  # Specify which GPUs to use
+    auto_scale_lr: true  # Automatically scale LR based on GPU count
+    auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
+    memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
+    ## cosine annealing warm restarts
+    scheduler_T_0: 20  # More frequent restarts
+    eta_min_lr: 0.0001  # Lower minimum LR
+    scheduler_T_mult: 2
+    ## stepLR
+    scheduler_step_size: 15
+    scheduler_gamma: 0.5
+    ## reduceLROnPlateau
+    scheduler_patience: 8  # More aggressive reduction
+    scheduler_factor: 0.8  # Less aggressive reduction
+    min_lr: 0.0001
+    # Progressive learning (optional): train with increasing patch sizes; when enabled, num_epochs/batch_size are overridden per stage
+    progressive:
+      enabled: true
+      stages:
+        - patch_size: 8
+          batch_size: 32
+          epochs: 20
+          step: 2
+        - patch_size: 16
+          batch_size: 16
+          epochs: 20
+          step: 4
+        - patch_size: 32
+          batch_size: 8
+          epochs: 20
+          step: 8
+  # --- reconstruct (metrics & viz) ---
+  # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
+  # metrics_roi_threshold: 0.02 → ROI = voxels where original > 0.02 (tissue). Full-image and ROI
+  #   metrics are both computed and saved. run.py: after reconstruction, if clip_to_range then clip
+  #   and log min/max/mean; full-image metrics (unchanged); if metrics_roi_threshold set, mask
+  #   (original_data > threshold).any(axis=-1) and compute ROI metrics; save full → metrics.json,
+  #   ROI → metrics_roi.json; wandb: reconstruct/metrics_* and reconstruct/metrics_roi_*. ROI metrics
+  #   align with central-crop quality; full-image stays as reference. To disable: clip_to_range: false
+  #   or set metrics_roi_threshold to null.
+  reconstruct:
+    device: cuda:0
+    mask_p: 0.3  # Mask probability (same as training)
+    n_preds: 10  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
+    # RGS inference: random 9-tuple + target k, averaged n_context times (then × n_preds inside)
+    n_context_samples: 10
+    # Post-reconstruction processing
+    rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
+    rescale_mode: "per_volume"  # "per_volume" (default) or "match_gt" to align to GT range per volume
+    clip_to_range: true  # Clip reconstruction to [0, 1] before metrics
+    subtract_background_estimate: false  # Subtract median of background voxels
+    subtract_background_threshold: 0.02  # Voxels where original <= this are "background"
+    # ROI metrics
+    metrics_roi_threshold: 0.02  # Set to 0.02 to compute ROI metrics (original > threshold)
+    metrics_dir: "drcnet_hybrid_rgs/metrics/dbrain"
+    images_dir: "drcnet_hybrid_rgs/images/dbrain"
+  model:
+    in_channel: 10 # is the number of volumes (all volumes including masked target)
+    out_channel: 1 # is the predicted volume
+    output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
+    groups: 1  # Increased for better feature separation
+    dense_convs: 2  # More dense connections for better feature learning
+    residual: true
+    base_filters: 32  # Doubled for more model capacity
+  data:
+    patch_size: 8  # Larger patches for better context
+    step: 2  # Larger step for more diverse training data
+    num_b0s: 6
+    num_volumes: 10  # DWI count in slice when shell_sampling_mode is sequential
+    # RGS–Hybrid (Random Gradient Subset): random K-tuples from full shell G (see README)
+    shell_sampling_mode: rgs  # sequential | rgs
+    num_input_volumes: 10  # K; must match model.in_channel
+    shell_gradient_volumes: 60  # G — DWI count after b0s when mode=rgs
+    target_channel: 9  # 0-based; mask + loss on this channel (K-th slot)
+    noise_sigma: 0.1
+    noise_type: "rician"  # rician, gaussian, noncentral_chi (or ncchi); used in checkpoint paths
+    noise_n_coils: 1     # for noncentral_chi only
+    bvalue: 2500  # Used in paths (losses, checkpoints, metrics, images); we start with 2500
+    take_x: 128
+    take_y: 128
+    take_z: 96
+    nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    # Patch filtering to exclude background-only patches (reduces positive bias in empty regions)
+    # "none": keep all patches (original behavior)
+    # "threshold": exclude patches where max(clean_patch) <= min_signal_threshold
+    # "otsu": exclude patches outside brain mask computed via DIPY median_otsu
+    patch_filter_method: "threshold"
+    min_signal_threshold: 0.02  # For "threshold" method
+    otsu_median_radius: 2       # For "otsu" method: median filter radius
+    otsu_numpass: 1             # For "otsu" method: number of median filter passes
+stanford:
+  train:
+    num_epochs: 100
+    device: cuda
+    mask_p: 0.3
+    learning_rate: 0.0003
+    batch_size: 8
+    use_amp: true
+    use_scheduler: false
+    checkpoint_dir: "drcnet_hybrid_rgs/checkpoints/stanford"
+    # Multi-GPU settings
+    multi_gpu: false  # Set to false to disable multi-GPU
+    gpu_ids: [0, 1, 2]  # Specify which GPUs to use
+    auto_scale_lr: true  # Automatically scale LR based on GPU count
+    auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
+    memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
+    progressive:
+      enabled: true
+      stages:
+        - patch_size: 32
+          batch_size: 24
+          epochs: 30
+          step: 8
+        - patch_size: 24
+          batch_size: 64
+          epochs: 20
+          step: 4
+        - patch_size: 16
+          batch_size: 128
+          epochs: 10
+          step: 2
+  model:
+    in_channel: 10
+    out_channel: 1
+    output_activation: "prelu"
+    groups: 1
+    dense_convs: 2
+    residual: true
+    base_filters: 32
+  data:
+    num_volumes: 10
+    shell_sampling_mode: rgs
+    num_input_volumes: 10
+    shell_gradient_volumes: 150
+    target_channel: 9
+    # Few-volume experiment (run_stanford_fewvol.py): train on this many DWI channels; omit to use num_volumes.
+    train_num_volumes: 10
+    # If true, infer all non-b0 DWI via chunked reconstruction (see run_stanford_fewvol.py).
+    reconstruct_full_dwi: true
+    noise_type: "rician"
+    num_b0s: 10
+    noise_sigma: 0.01
+    bvalue: 1000
+    patch_size: 16
+    step: 8
+    take_x: 80
+    take_y: 106
+    take_z: 76
+    patch_filter_method: "none"
+    min_signal_threshold: 0.0
+    otsu_median_radius: 2
+    otsu_numpass: 1
+  reconstruct:
+    device: cuda
+    mask_p: 0.3
+    n_preds: 10
+    n_context_samples: 10
+    rescale_to_01: true
+    rescale_mode: "per_volume"
+    clip_to_range: true
+    subtract_background_estimate: false
+    subtract_background_threshold: 0.02
+    metrics_roi_threshold: 0.02
+    metrics_dir: "drcnet_hybrid_rgs/metrics/stanford"
+    images_dir: "drcnet_hybrid_rgs/images/stanford"

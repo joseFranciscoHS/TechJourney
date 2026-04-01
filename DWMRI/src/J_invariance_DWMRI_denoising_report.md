@@ -68,9 +68,30 @@ To advance the research, two strategies are proposed using neural networks (NNs)
 - **Input:** Set of volumes $v_{-j}$ (e.g., 9 input volumes to predict volume 10).
 - **Rationale:** By construction, the volume-based J-invariance suppresses noise independent to each acquisition while preserving the coherent structural signal across angular dimensions.
 
-### Scheme 2: MD-S2S Style (Spatial–Angular Hybrid)
+### Scheme 2: MD-S2S Style (Spatial–Angular Hybrid) — *active implementation*
 
-- **Description:** Integrates the angular redundancy of Patch2Self with the fine-grained spatial redundancy of Multidimensional Self2Self (MD-S2S).
-- **Input:** The complete volumes $v_{-j}$ plus the target volume $v_j$ under a pixel-level Bernoulli mask.
-- **Loss mechanism:** The loss function is computed exclusively over the masked pixels of volume $v_j$.
-- **Rationale:** This approach allows the network to interpolate the signal using both information from other gradients and the spatial context of visible neighboring pixels in the same volume.
+This is the scheme implemented in the hybrid training pipelines (e.g. `drcnet_hybrid`, `restormer_hybrid`, `drcnet_hybrid_multiple_networks`): a single network takes **all** gradient volumes as input channels and predicts **one** target volume, combining Patch2Self-style angular conditioning with MD-S2S-style spatial masking on the target channel only.
+
+#### Construction (per training sample)
+
+Fix a 3D patch (sliding window) and a target volume index $j$. Let $M \in \{0,1\}^{X \times Y \times Z}$ be an independent Bernoulli draw over voxels (parameter set by `mask_p`: larger `mask_p` yields more occluded voxels).
+
+- **Input to the network:** Stack $\tilde{v}_1,\ldots,\tilde{v}_N$ where $\tilde{v}_i = v_i$ for $i \neq j$, and $\tilde{v}_j = M \odot v_j$ (elementwise product). Occluded voxels in $v_j$ are set to zero in the input; all other volumes are unmasked.
+- **Forward map:** $f_\theta: \mathbb{R}^{N \times X \times Y \times Z} \to \mathbb{R}^{1 \times X \times Y \times Z}$ produces a prediction $\hat{v}_j = f_\theta(\tilde{v})$ of the target volume.
+- **Training loss (masked MSE):** With $(1-M)$ selecting the **occluded** voxels (supervision mask in code: loss on `1 - mask`),  
+  $$\mathcal{L} = \frac{\sum_{x,y,z} (1-M_{xyz})\,\bigl(\hat{v}_{j,xyz} - y_{j,xyz}\bigr)^2}{\sum_{x,y,z} (1-M_{xyz})}\,,$$  
+  where $y_j$ is the **noisy** observed target volume on that patch (the same $v_j$ before masking). No loss is applied on visible voxels of $v_j$ in this formulation.
+
+#### Why this is J-invariant (for reviewers)
+
+For a **fixed** mask $M$, let $J$ be the set of voxel indices $(x,y,z)$ in the target volume where $M_{xyz}=0$ (occluded in the input). The input values in those coordinates are identically zero and do not carry the original noisy measurements $y_{j,xyz}$. Under the usual idealization that the network’s prediction at $J$ is determined only by its input tensor, $\hat{v}_{j,J}$ does **not** depend on $y_{j,J}$—only on $v_{-j}$ and on $y_j$ at voxels where $M=1$. Supervision uses $y_{j,J}$ only in the loss, not as input. This matches the J-invariance pattern used in Noise2Void / blind-spot denoising and in Patch2Self, extended here to **two** sources of redundancy: across gradients ($v_{-j}$) and within-plane neighbors in $v_j$.
+
+**Assumptions (explicit):** Unbiased, spatially and angularly independent noise (conditional on signal) so that the risk identity linking masked loss to denoising the underlying signal holds; signal correlation across $v_{-j}$ and across neighboring voxels in $v_j$ so that prediction from the complement is feasible. Violations (e.g. structured noise, Gibbs ringing shared across volumes) weaken the interpretation and can introduce bias.
+
+#### Inference
+
+At test time the implementation uses the **full** unmasked stack (or the project’s chosen reconstruction protocol); training masks are not applied. Optional variance reduction via multiple random masks or dropout ensembles follows the Self2Self spirit but is a separate design choice from J-invariance itself.
+
+#### Relation to Scheme 1
+
+Scheme 1 drops $\tilde{v}_j$ from the input entirely (pure volume-based J). Scheme 2 **adds** masked $\tilde{v}_j$ so the network can use same-volume spatial context while still supervising only at occluded voxels, which can reduce bias when angular redundancy alone is insufficient for a patch.
