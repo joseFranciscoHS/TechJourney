@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 20  # Increased for better convergence
     device: cuda:0
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.003  # Base learning rate for single GPU
+    learning_rate: 0.0003  # Base learning rate for single GPU
     batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
     use_amp: true  # Enable Automatic Mixed Precision for memory reduction
     use_scheduler: true
@@ -31,18 +31,18 @@ dbrain:
     progressive:
       enabled: true
       stages:
-        - patch_size: 8
-          batch_size: 32
-          epochs: 20
-          step: 2
-        - patch_size: 16
-          batch_size: 16
-          epochs: 20
-          step: 4
         - patch_size: 32
-          batch_size: 8
-          epochs: 20
+          batch_size: 128
+          epochs: 30
           step: 8
+        - patch_size: 24
+          batch_size: 256
+          epochs: 30
+          step: 6
+        - patch_size: 16
+          batch_size: 256
+          epochs: 10
+          step: 4
   # --- reconstruct (metrics & viz) ---
   # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
   # metrics_roi_threshold: 0.02 → ROI = voxels where original > 0.02 (tissue). Full-image and ROI
@@ -55,7 +55,7 @@ dbrain:
   reconstruct:
     device: cuda:0
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 10  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
+    n_preds: 20  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
     # RGS inference: random 9-tuple + target k, averaged n_context times (then × n_preds inside)
     n_context_samples: 10
     # Post-reconstruction processing
