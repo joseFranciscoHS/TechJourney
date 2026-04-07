@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 20  # Increased for better convergence
     device: cuda:0
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0003  # Base learning rate for single GPU
+    learning_rate: 0.0004  # Base learning rate for single GPU
     batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
     use_amp: true  # Enable Automatic Mixed Precision for memory reduction
     use_scheduler: true
@@ -24,7 +24,7 @@ dbrain:
     scheduler_step_size: 15
     scheduler_gamma: 0.5
     ## reduceLROnPlateau
-    scheduler_patience: 8  # More aggressive reduction
+    scheduler_patience: 15  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
     # Progressive learning (optional): train with increasing patch sizes; when enabled, num_epochs/batch_size are overridden per stage
@@ -33,15 +33,15 @@ dbrain:
       stages:
         - patch_size: 32
           batch_size: 128
-          epochs: 30
+          epochs: 100
           step: 8
         - patch_size: 24
           batch_size: 256
-          epochs: 30
+          epochs: 100
           step: 6
         - patch_size: 16
           batch_size: 256
-          epochs: 10
+          epochs: 100
           step: 4
   # --- reconstruct (metrics & viz) ---
   # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
@@ -55,9 +55,9 @@ dbrain:
   reconstruct:
     device: cuda:0
     mask_p: 0.3  # Mask probability (same as training)
-    n_preds: 20  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
+    n_preds: 12  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
     # RGS inference: random 9-tuple + target k, averaged n_context times (then × n_preds inside)
-    n_context_samples: 10
+    n_context_samples: 24
     # Post-reconstruction processing
     rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
     rescale_mode: "per_volume"  # "per_volume" (default) or "match_gt" to align to GT range per volume
@@ -69,7 +69,7 @@ dbrain:
     metrics_dir: "drcnet_hybrid_rgs/metrics/dbrain"
     images_dir: "drcnet_hybrid_rgs/images/dbrain"
   model:
-    in_channel: 10 # is the number of volumes (all volumes including masked target)
+    in_channel: 24 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     groups: 1  # Increased for better feature separation
@@ -80,10 +80,10 @@ dbrain:
     patch_size: 8  # Larger patches for better context
     step: 2  # Larger step for more diverse training data
     num_b0s: 6
-    num_volumes: 10  # DWI count in slice when shell_sampling_mode is sequential
+    num_volumes: 24  # DWI count in slice when shell_sampling_mode is sequential
     # RGS–Hybrid (Random Gradient Subset): random K-tuples from full shell G (see README)
     shell_sampling_mode: rgs  # sequential | rgs
-    num_input_volumes: 10  # K; must match model.in_channel
+    num_input_volumes: 24  # K; must match model.in_channel
     shell_gradient_volumes: 60  # G — DWI count after b0s when mode=rgs
     target_channel: 9  # 0-based; mask + loss on this channel (K-th slot)
     noise_sigma: 0.1
@@ -93,10 +93,12 @@ dbrain:
     take_x: 128
     take_y: 128
     take_z: 96
+    nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
     bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
-    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
-    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
     # Patch filtering to exclude background-only patches (reduces positive bias in empty regions)
     # "none": keep all patches (original behavior)
     # "threshold": exclude patches where max(clean_patch) <= min_signal_threshold

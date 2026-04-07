@@ -26,6 +26,7 @@ from utils.metrics import (
 )
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
+
 import wandb
 
 
@@ -35,9 +36,7 @@ def _is_rgs(settings) -> bool:
 
 def _volume_path_segment(settings) -> str:
     if _is_rgs(settings):
-        g = int(
-            getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
-        )
+        g = int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes))
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
         return f"rgs_G{g}_K{k}"
     return f"num_volumes_{settings.data.num_volumes}"
@@ -45,9 +44,7 @@ def _volume_path_segment(settings) -> str:
 
 def _patch_volume_dim(settings) -> int:
     if _is_rgs(settings):
-        return int(
-            getattr(settings.data, "num_input_volumes", settings.model.in_channel)
-        )
+        return int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
     return settings.data.num_volumes
 
 
@@ -146,12 +143,8 @@ def fit_progressive(
             f"num_batches={len(train_loader)}, samples={len(train_set)}"
         )
 
-        optimizer = torch.optim.Adam(
-            model.parameters(), lr=settings.train.learning_rate
-        )
-        logging.info(
-            f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})"
-        )
+        optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
+        logging.info(f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})")
 
         scheduler = None
         if getattr(settings.train, "use_scheduler", False):
@@ -180,9 +173,7 @@ def fit_progressive(
             checkpoint_dir, f"stage_{stage_num}_patch{stage.patch_size}"
         )
         os.makedirs(stage_checkpoint_dir, exist_ok=True)
-        stage_loss_dir = os.path.join(
-            loss_dir, f"stage_{stage_num}_patch{stage.patch_size}"
-        )
+        stage_loss_dir = os.path.join(loss_dir, f"stage_{stage_num}_patch{stage.patch_size}")
         os.makedirs(stage_loss_dir, exist_ok=True)
 
         fit_model(
@@ -279,7 +270,7 @@ def main(
     try:
         wandb_config = {
             "dataset": dataset,
-            "model_name": "DRCNet-hybrid",
+            "model_name": "DRCNet-hybrid-rgs",
             **settings.toDict(),
         }
         wandb_kwargs = {"project": "DWMRI-Denoising", "config": wandb_config}
@@ -298,9 +289,7 @@ def main(
         take_volumes = _take_volumes_dwi(settings)
         logging.info(f"Taking volumes from {settings.data.num_b0s} to {take_volumes}")
         if _is_rgs(settings):
-            k = int(
-                getattr(settings.data, "num_input_volumes", settings.model.in_channel)
-            )
+            k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
             if k != settings.model.in_channel:
                 raise ValueError(
                     f"RGS: num_input_volumes ({k}) must match model.in_channel ({settings.model.in_channel})"
@@ -376,9 +365,7 @@ def main(
             if progressive_enabled:
                 logging.info("Using progressive learning training strategy")
                 first_stage = settings.train.progressive.stages[0]
-                logging.info(
-                    "Initializing DenoiserNet model (first stage patch size)..."
-                )
+                logging.info("Initializing DenoiserNet model (first stage patch size)...")
                 model = DenoiserNet(
                     input_channels=settings.model.in_channel,
                     output_channels=settings.model.out_channel,
@@ -393,9 +380,7 @@ def main(
                         first_stage.patch_size,
                     ),
                     device=settings.train.device,
-                    output_activation=getattr(
-                        settings.model, "output_activation", "prelu"
-                    ),
+                    output_activation=getattr(settings.model, "output_activation", "prelu"),
                 )
                 logging.info(
                     f"Model initialized - in_channel: {settings.model.in_channel}, "
@@ -470,9 +455,7 @@ def main(
                         settings.data.patch_size,
                     ),
                     device=settings.train.device,
-                    output_activation=getattr(
-                        settings.model, "output_activation", "prelu"
-                    ),
+                    output_activation=getattr(settings.model, "output_activation", "prelu"),
                 )
                 logging.info(
                     f"Model initialized - in_channel: {settings.model.in_channel}, "
@@ -492,9 +475,7 @@ def main(
                         "memory_threshold": settings.train.memory_threshold,
                     }
                 )
-                model, effective_lr, effective_batch_size = setup_multi_gpu(
-                    model, multi_gpu_config
-                )
+                model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
                 logging.info("Setting up optimizer and scheduler...")
                 optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
                 logging.info(f"Optimizer: Adam(lr={effective_lr:.6f})")
@@ -515,13 +496,11 @@ def main(
                             f"gamma={settings.train.scheduler_gamma})"
                         )
                     elif settings.train.scheduler_type == "cosine":
-                        scheduler = (
-                            torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-                                optimizer,
-                                T_0=settings.train.scheduler_T_0,
-                                T_mult=settings.train.scheduler_T_mult,
-                                eta_min=settings.train.eta_min_lr,
-                            )
+                        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                            optimizer,
+                            T_0=settings.train.scheduler_T_0,
+                            T_mult=settings.train.scheduler_T_mult,
+                            eta_min=settings.train.eta_min_lr,
                         )
                         logging.info(
                             f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, "
@@ -558,9 +537,7 @@ def main(
 
         if reconstruct:
             logging.info("Reconstructing DWIs...")
-            best_loss_checkpoint = os.path.join(
-                checkpoint_dir, "best_loss_checkpoint.pth"
-            )
+            best_loss_checkpoint = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
             reconstruct_model = DenoiserNet(
                 input_channels=settings.model.in_channel,
                 output_channels=settings.model.out_channel,
@@ -585,9 +562,9 @@ def main(
                 strict=False,  # Allow partial loading for architecture changes
             )
             # Prepare data for reconstruction: transpose from (X, Y, Z, Vols) to (Vols, X, Y, Z)
-            x_reconstruct = torch.from_numpy(
-                np.transpose(noisy_data, (3, 0, 1, 2))
-            ).type(torch.float)
+            x_reconstruct = torch.from_numpy(np.transpose(noisy_data, (3, 0, 1, 2))).type(
+                torch.float
+            )
 
             if _is_rgs(settings):
                 n_ctx = int(getattr(settings.reconstruct, "n_context_samples", 10))
@@ -627,9 +604,7 @@ def main(
 
             # Optional: rescale reconstruction to [0, 1] (inverse of per-volume preprocessing)
             if getattr(settings.reconstruct, "rescale_to_01", False):
-                rescale_mode = getattr(
-                    settings.reconstruct, "rescale_mode", "per_volume"
-                )
+                rescale_mode = getattr(settings.reconstruct, "rescale_mode", "per_volume")
                 reference = original_data if rescale_mode == "match_gt" else None
                 reconstructed_dwis = rescale_reconstruction_to_01(
                     reconstructed_dwis,
@@ -639,9 +614,7 @@ def main(
 
             # Optional: subtract estimated background level then clip
             if getattr(settings.reconstruct, "subtract_background_estimate", False):
-                thresh = getattr(
-                    settings.reconstruct, "subtract_background_threshold", 0.02
-                )
+                thresh = getattr(settings.reconstruct, "subtract_background_threshold", 0.02)
                 bg_mask = (original_data <= thresh).all(axis=-1)
                 if np.any(bg_mask):
                     bg_vals = reconstructed_dwis[bg_mask]
@@ -696,9 +669,7 @@ def main(
                 logging.info(
                     f"ROI mask: original > {roi_threshold}, {n_roi:,} voxels ({100.0 * n_roi / roi_mask.size:.1f}%)"
                 )
-                metrics_roi = compute_metrics(
-                    original_data, reconstructed_dwis, mask=roi_mask
-                )
+                metrics_roi = compute_metrics(original_data, reconstructed_dwis, mask=roi_mask)
                 logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
 
@@ -738,9 +709,7 @@ def main(
                     else settings.data.num_volumes
                 )
                 for i in range(n_viz):
-                    comparison_path = os.path.join(
-                        images_dir, f"comparison_volume_{i}.png"
-                    )
+                    comparison_path = os.path.join(images_dir, f"comparison_volume_{i}.png")
                     fully_compare_volumes(
                         original_volume=np.transpose(original_data, (2, 3, 0, 1)),
                         noisy_volume=np.transpose(noisy_data, (2, 3, 0, 1)),
@@ -748,9 +717,7 @@ def main(
                         file_name=comparison_path,
                         volume_idx=i,
                     )
-                    wandb_images.append(
-                        wandb.Image(comparison_path, caption=f"Volume index {i}")
-                    )
+                    wandb_images.append(wandb.Image(comparison_path, caption=f"Volume index {i}"))
                 # Log images to wandb
                 if wandb_run is not None:
                     wandb.log(
