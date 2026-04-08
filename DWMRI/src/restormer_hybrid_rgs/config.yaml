@@ -1,0 +1,181 @@
+dbrain:
+  train:
+    num_epochs: 30
+    device: cuda
+    mask_p: 0.3
+    learning_rate: 0.00045
+    batch_size: 2
+    use_amp: true
+    use_scheduler: true
+    scheduler_type: "step"
+    checkpoint_dir: "restormer_hybrid_rgs/checkpoints/dbrain"
+    progressive:
+      enabled: true
+      stages:
+        - patch_size: 32
+          batch_size: 16
+          epochs: 30
+          step: 8
+        - patch_size: 24
+          batch_size: 64
+          epochs: 30
+          step: 6
+        - patch_size: 16
+          batch_size: 128
+          epochs: 30
+          step: 4
+    multi_gpu: false
+    gpu_ids: [0, 1, 2]
+    auto_scale_lr: true
+    auto_exclude_imbalanced: true
+    memory_threshold: 0.15
+    scheduler_T_0: 20
+    eta_min_lr: 0.0001
+    scheduler_T_mult: 2
+    scheduler_step_size: 100
+    scheduler_gamma: 0.5
+    scheduler_patience: 10
+    scheduler_factor: 0.8
+    min_lr: 0.0001
+  reconstruct:
+    device: cuda
+    use_amp: true
+    mask_p: 0.3
+    n_preds: 10
+    n_context_samples: 10
+    patch_size: 32
+    overlap: 8
+    rescale_to_01: true
+    rescale_mode: "per_volume"
+    clip_to_range: true
+    subtract_background_estimate: false
+    subtract_background_threshold: 0.02
+    metrics_roi_threshold: 0.02
+    metrics_dir: "restormer_hybrid_rgs/metrics/dbrain"
+    images_dir: "restormer_hybrid_rgs/images/dbrain"
+  model:
+    in_channel: 10
+    out_channel: 1
+    output_activation: "prelu"
+    dim: 32
+    num_blocks: [1, 2, 2]
+    num_refinement_blocks: 2
+    heads: [1, 2, 2]
+    ffn_expansion_factor: 1.5
+    bias: false
+    LayerNorm_type: "WithBias"
+    scale_and_shift: true
+  data:
+    patch_size: 16
+    step: 4
+    num_b0s: 10
+    num_volumes: 150
+    shell_sampling_mode: rgs
+    num_input_volumes: 10
+    shell_gradient_volumes: 150
+    target_channel: 9
+    noise_sigma: 0.1
+    noise_type: "rician"
+    noise_n_coils: 1
+    bvalue: 2500
+    take_x: 128
+    take_y: 128
+    take_z: 96
+    nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_b_matrix.txt"
+    patch_filter_method: "threshold"
+    min_signal_threshold: 0.02
+    otsu_median_radius: 2
+    otsu_numpass: 1
+stanford:
+  train:
+    num_epochs: 100
+    device: cuda
+    mask_p: 0.3
+    learning_rate: 0.00035
+    batch_size: 8
+    use_amp: true
+    use_scheduler: false
+    scheduler_type: "step"
+    checkpoint_dir: "restormer_hybrid_rgs/checkpoints/stanford"
+    multi_gpu: false
+    gpu_ids: [0, 1, 2]
+    auto_scale_lr: true
+    auto_exclude_imbalanced: true
+    memory_threshold: 0.15
+    scheduler_T_0: 20
+    eta_min_lr: 0.0001
+    scheduler_T_mult: 2
+    scheduler_step_size: 100
+    scheduler_gamma: 0.5
+    scheduler_patience: 10
+    scheduler_factor: 0.8
+    min_lr: 0.0001
+    progressive:
+      enabled: true
+      stages:
+        - patch_size: 32
+          batch_size: 24
+          epochs: 30
+          step: 8
+        - patch_size: 24
+          batch_size: 64
+          epochs: 20
+          step: 6
+        - patch_size: 16
+          batch_size: 128
+          epochs: 10
+          step: 4
+  model:
+    in_channel: 10
+    out_channel: 1
+    output_activation: "prelu"
+    dim: 32
+    num_blocks: [1, 2, 2]
+    num_refinement_blocks: 2
+    heads: [1, 2, 2]
+    ffn_expansion_factor: 1.5
+    bias: false
+    LayerNorm_type: "WithBias"
+    scale_and_shift: true
+  data:
+    num_volumes: 10
+    shell_sampling_mode: rgs
+    num_input_volumes: 10
+    shell_gradient_volumes: 150
+    target_channel: 9
+    train_num_volumes: 10
+    reconstruct_full_dwi: true
+    noise_type: "rician"
+    num_b0s: 10
+    noise_sigma: 0.01
+    bvalue: 1000
+    patch_size: 16
+    step: 8
+    take_x: 80
+    take_y: 106
+    take_z: 76
+    patch_filter_method: "none"
+    min_signal_threshold: 0.0
+    otsu_median_radius: 2
+    otsu_numpass: 1
+  reconstruct:
+    device: cuda
+    use_amp: true
+    mask_p: 0.3
+    n_preds: 10
+    n_context_samples: 10
+    patch_size: 32
+    overlap: 8
+    rescale_to_01: true
+    rescale_mode: "per_volume"
+    clip_to_range: true
+    subtract_background_estimate: false
+    subtract_background_threshold: 0.02
+    metrics_roi_threshold: 0.02
+    metrics_dir: "restormer_hybrid_rgs/metrics/stanford"
+    images_dir: "restormer_hybrid_rgs/images/stanford"
