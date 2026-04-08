@@ -3,11 +3,11 @@ dbrain:
     num_epochs: 20  # Increased for better convergence
     device: cuda:0
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
-    learning_rate: 0.0004  # Base learning rate for single GPU
+    learning_rate: 0.00045  # Base learning rate for single GPU
     batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
     use_amp: true  # Enable Automatic Mixed Precision for memory reduction
     use_scheduler: true
-    scheduler_type: "reduceLROnPlateau" # step, cosine, reduceLROnPlateau
+    scheduler_type: "step" # step, cosine, reduceLROnPlateau
     # Paths include bvalue (e.g. b2500) via run.py; we start with 2500
     checkpoint_dir: "drcnet_hybrid_rgs/checkpoints/dbrain"
     # Multi-GPU settings
@@ -21,10 +21,10 @@ dbrain:
     eta_min_lr: 0.0001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
-    scheduler_step_size: 15
-    scheduler_gamma: 0.5
+    scheduler_step_size: 20
+    scheduler_gamma: 0.8
     ## reduceLROnPlateau
-    scheduler_patience: 15  # More aggressive reduction
+    scheduler_patience: 30  # More aggressive reduction
     scheduler_factor: 0.8  # Less aggressive reduction
     min_lr: 0.0001
     # Progressive learning (optional): train with increasing patch sizes; when enabled, num_epochs/batch_size are overridden per stage
@@ -85,7 +85,7 @@ dbrain:
     shell_sampling_mode: rgs  # sequential | rgs
     num_input_volumes: 24  # K; must match model.in_channel
     shell_gradient_volumes: 60  # G — DWI count after b0s when mode=rgs
-    target_channel: 9  # 0-based; mask + loss on this channel (K-th slot)
+    target_channel: 23  # 0-based; mask + loss on this channel (K-th slot)
     noise_sigma: 0.1
     noise_type: "rician"  # rician, gaussian, noncentral_chi (or ncchi); used in checkpoint paths
     noise_n_coils: 1     # for noncentral_chi only
