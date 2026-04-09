@@ -3,7 +3,7 @@ dbrain:
     num_epochs: 30
     device: cuda
     mask_p: 0.3
-    learning_rate: 0.00045
+    learning_rate: 0.00044
     batch_size: 2
     use_amp: true
     use_scheduler: true
@@ -13,15 +13,15 @@ dbrain:
       enabled: true
       stages:
         - patch_size: 32
-          batch_size: 16
+          batch_size: 48
           epochs: 30
           step: 8
         - patch_size: 24
-          batch_size: 64
+          batch_size: 96
           epochs: 30
           step: 6
         - patch_size: 16
-          batch_size: 128
+          batch_size: 256
           epochs: 30
           step: 4
     multi_gpu: false
@@ -42,9 +42,9 @@ dbrain:
     use_amp: true
     mask_p: 0.3
     n_preds: 10
-    n_context_samples: 10
+    n_context_samples: 24
     patch_size: 32
-    overlap: 8
+    overlap: 4
     rescale_to_01: true
     rescale_mode: "per_volume"
     clip_to_range: true
@@ -54,10 +54,10 @@ dbrain:
     metrics_dir: "restormer_hybrid_rgs/metrics/dbrain"
     images_dir: "restormer_hybrid_rgs/images/dbrain"
   model:
-    in_channel: 10
+    in_channel: 24
     out_channel: 1
     output_activation: "prelu"
-    dim: 32
+    dim: 16
     num_blocks: [1, 2, 2]
     num_refinement_blocks: 2
     heads: [1, 2, 2]
@@ -68,12 +68,12 @@ dbrain:
   data:
     patch_size: 16
     step: 4
-    num_b0s: 10
-    num_volumes: 150
+    num_b0s: 6
+    num_volumes: 24
     shell_sampling_mode: rgs
-    num_input_volumes: 10
-    shell_gradient_volumes: 150
-    target_channel: 9
+    num_input_volumes: 24
+    shell_gradient_volumes: 60
+    target_channel: 23
     noise_sigma: 0.1
     noise_type: "rician"
     noise_n_coils: 1
