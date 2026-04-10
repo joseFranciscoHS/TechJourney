@@ -44,7 +44,7 @@ dbrain:
     n_preds: 10
     n_context_samples: 24
     patch_size: 32
-    overlap: 4
+    overlap: 16
     rescale_to_01: true
     rescale_mode: "per_volume"
     clip_to_range: true
