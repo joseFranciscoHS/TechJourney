@@ -41,10 +41,10 @@ dbrain:
     device: cuda
     use_amp: true
     mask_p: 0.3
-    n_preds: 10
+    n_preds: 5
     n_context_samples: 24
     patch_size: 32
-    overlap: 16
+    overlap: 1
     rescale_to_01: true
     rescale_mode: "per_volume"
     clip_to_range: true
