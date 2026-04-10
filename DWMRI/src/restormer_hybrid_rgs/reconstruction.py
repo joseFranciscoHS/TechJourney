@@ -155,6 +155,7 @@ def reconstruct_dwis_rgs(
     overlap=8,
     use_amp=True,
     seed=None,
+    pred_chunk_size=None,
 ):
     """
     RGS–Hybrid inference with patch-based sliding windows (Restormer memory budget).
@@ -167,16 +168,23 @@ def reconstruct_dwis_rgs(
     Args:
         data: (Vols, X, Y, Z) float tensor or numpy on CPU.
         n_context: outer MC passes (random context tuples + vol_k at target_channel).
-        n_preds: inner spatial Bernoulli mask passes per context.
+        n_preds: inner spatial Bernoulli mask passes per context (batched on GPU).
         target_channel: 0-based slot where ``vol_k`` is placed (typically K-1).
         num_input: K (must match model input channels).
+        pred_chunk_size: if set, run mask passes in chunks of this batch size to limit
+            GPU memory (outputs are summed; same normalization as full batch).
 
     Returns:
         Reconstructed array (Vols, X, Y, Z) as numpy float32.
     """
+    if pred_chunk_size is not None and int(pred_chunk_size) < 1:
+        raise ValueError("pred_chunk_size must be >= 1 when set")
+    _chunk = int(pred_chunk_size) if pred_chunk_size is not None else int(n_preds)
+
     logging.info(
         f"RGS patch reconstruction: patch_size={patch_size}, overlap={overlap}, "
         f"mask_p={mask_p}, n_context={n_context}, n_preds={n_preds}, "
+        f"pred_chunk_size={pred_chunk_size or 'full'}, "
         f"target_channel={target_channel}, K={num_input}"
     )
     if num_input != target_channel + 1:
@@ -219,7 +227,8 @@ def reconstruct_dwis_rgs(
     total_patches = len(x_positions) * len(y_positions) * len(z_positions)
     denom = float(n_context * n_preds)
     logging.info(
-        f"RGS: {total_patches} patches per (context, pred); "
+        f"RGS: {total_patches} spatial patches per context "
+        f"({n_preds} mask draws batched, chunk={_chunk}); "
         f"normalizer weight_map * {denom}"
     )
 
@@ -251,35 +260,45 @@ def reconstruct_dwis_rgs(
                 order_buf[-1] = vol_k
                 order_t = torch.from_numpy(order_buf.copy()).long()
 
-                for _pred in range(n_preds):
-                    for x_start in x_positions:
-                        for y_start in y_positions:
-                            for z_start in z_positions:
-                                x_end = x_start + patch_size
-                                y_end = y_start + patch_size
-                                z_end = z_start + patch_size
+                for x_start in x_positions:
+                    for y_start in y_positions:
+                        for z_start in z_positions:
+                            x_end = x_start + patch_size
+                            y_end = y_start + patch_size
+                            z_end = z_start + patch_size
 
-                                patch = (
-                                    data[
-                                        order_t,
-                                        x_start:x_end,
-                                        y_start:y_end,
-                                        z_start:z_end,
-                                    ]
-                                    .clone()
-                                    .contiguous()
-                                )
+                            patch = (
+                                data[
+                                    order_t,
+                                    x_start:x_end,
+                                    y_start:y_end,
+                                    z_start:z_end,
+                                ]
+                                .clone()
+                                .contiguous()
+                            )
 
-                                mask = (
+                            pred_sum_t = None
+                            for start in range(0, n_preds, _chunk):
+                                bsz = min(_chunk, n_preds - start)
+                                masks = (
                                     torch.rand(
-                                        (patch_size, patch_size, patch_size),
+                                        bsz,
+                                        patch_size,
+                                        patch_size,
+                                        patch_size,
                                         dtype=torch.float32,
+                                        device=patch.device,
                                     )
                                     > mask_p
                                 ).float()
-                                patch[target_channel] = patch[target_channel] * mask
-
-                                patch_b = patch.unsqueeze(0).to(device)
+                                patch_b = patch.unsqueeze(0).expand(
+                                    bsz, -1, -1, -1, -1
+                                ).clone()
+                                patch_b[:, target_channel] = (
+                                    patch[target_channel].unsqueeze(0) * masks
+                                )
+                                patch_b = patch_b.to(device)
 
                                 if amp_ok:
                                     with torch.amp.autocast(
@@ -289,17 +308,24 @@ def reconstruct_dwis_rgs(
                                 else:
                                     pred = model(patch_b)
 
-                                pred_np = (
-                                    pred.float().squeeze(0).squeeze(0).cpu().numpy()
+                                part = pred.float().sum(dim=0)
+                                pred_sum_t = (
+                                    part if pred_sum_t is None else pred_sum_t + part
                                 )
-                                sum_preds[
-                                    vol_k,
-                                    x_start:x_end,
-                                    y_start:y_end,
-                                    z_start:z_end,
-                                ] += (pred_np * blend_weights)
+                                del patch_b, pred, part
 
-                                del patch_b, pred, patch
+                            pred_np = (
+                                pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
+                            )
+                            del pred_sum_t
+                            sum_preds[
+                                vol_k,
+                                x_start:x_end,
+                                y_start:y_end,
+                                z_start:z_end,
+                            ] += pred_np * blend_weights
+
+                            del patch
 
                 if _cuda_device(device):
                     torch.cuda.empty_cache()

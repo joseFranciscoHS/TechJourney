@@ -564,6 +564,7 @@ def main(
 
             if _is_rgs(settings):
                 n_ctx = int(getattr(settings.reconstruct, "n_context_samples", 10))
+                pred_chunk = getattr(settings.reconstruct, "pred_chunk_size", None)
                 reconstructed_dwis = reconstruct_dwis_rgs(
                     model=reconstruct_model,
                     data=x_reconstruct,
@@ -582,6 +583,7 @@ def main(
                     patch_size=patch_sz,
                     overlap=overlap,
                     use_amp=rec_use_amp,
+                    pred_chunk_size=pred_chunk,
                 )
             else:
                 reconstructed_dwis = reconstruct_dwis(

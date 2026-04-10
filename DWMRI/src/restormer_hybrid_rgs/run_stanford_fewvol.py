@@ -453,6 +453,9 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
+                pred_chunk_size=getattr(
+                    settings.reconstruct, "pred_chunk_size", None
+                ),
             )
             reconstructed = np.transpose(rec_vxyz, (1, 2, 3, 0))
         else:
@@ -490,6 +493,9 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
+                pred_chunk_size=getattr(
+                    settings.reconstruct, "pred_chunk_size", None
+                ),
             )
         else:
             rec_vxyz = reconstruct_dwis(
