@@ -139,7 +139,7 @@ stanford:
           epochs: 50
           step: 2
   model:
-    in_channel: 10
+    in_channel: 24
     out_channel: 1
     output_activation: "prelu"
     groups: 1
@@ -147,13 +147,13 @@ stanford:
     residual: true
     base_filters: 32
   data:
-    num_volumes: 10
+    num_volumes: 24
     shell_sampling_mode: rgs
-    num_input_volumes: 10
+    num_input_volumes: 24
     shell_gradient_volumes: 150
-    target_channel: 9
+    target_channel: 23
     # Few-volume experiment (run_stanford_fewvol.py): train on this many DWI channels; omit to use num_volumes.
-    train_num_volumes: 10
+    train_num_volumes: 24
     # If true, infer all non-b0 DWI via chunked reconstruction (see run_stanford_fewvol.py).
     reconstruct_full_dwi: true
     noise_type: "rician"
