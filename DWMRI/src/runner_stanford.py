@@ -9,6 +9,6 @@
 #     generate_images=True,
 # )
 
-from drcnet_hybrid.run_stanford_fewvol import main
+from drcnet_hybrid_rgs.run_stanford_fewvol import main
 
 main()

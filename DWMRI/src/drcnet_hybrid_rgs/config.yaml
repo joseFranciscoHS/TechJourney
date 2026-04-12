@@ -128,15 +128,15 @@ stanford:
       stages:
         - patch_size: 32
           batch_size: 24
-          epochs: 30
+          epochs: 50
           step: 8
         - patch_size: 24
           batch_size: 64
-          epochs: 20
+          epochs: 50
           step: 4
         - patch_size: 16
           batch_size: 128
-          epochs: 10
+          epochs: 50
           step: 2
   model:
     in_channel: 10
