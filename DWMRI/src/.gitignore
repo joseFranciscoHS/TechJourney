@@ -135,4 +135,7 @@ checkpoints/
 *.ckpt
 outputs/
 logs/
-results/ 
+results/
+
+# Patch2Self generated artifacts (NIfTI outputs exceed GitHub size limits)
+p2s/output/ 

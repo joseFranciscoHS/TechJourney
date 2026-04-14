@@ -1,0 +1,41 @@
+dbrain:
+  patch2self:
+    model: "ols"            # "ols" (default, more accurate) or "ridge" (faster)
+    shift_intensity: true   # shift intensities to avoid negatives before denoising
+    clip_negative_vals: false  # clip negatives in output; prefer shift_intensity instead
+    b0_threshold: 50        # bvals <= this are treated as b0; only bvals > threshold are denoised
+  data:
+    num_b0s: 6
+    bvalue: 2500
+    noise_sigma: 0.1
+    noise_type: "rician"
+    nii_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+    nii_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
+    bvecs_path_lightning: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+  reconstruct:
+    metrics_dir: "p2s/metrics/dbrain"
+    images_dir: "p2s/images/dbrain"
+    output_dir: "p2s/output/dbrain"
+    metrics_roi_threshold: 0.02  # ROI = voxels where original > threshold (tissue)
+    generate_images: true
+    num_image_volumes: 10   # number of DWI volumes to generate comparison images for
+
+stanford:
+  patch2self:
+    model: "ols"
+    shift_intensity: true
+    clip_negative_vals: false
+    b0_threshold: 50
+  data:
+    num_b0s: 10
+    bvalue: 2000
+    noise_sigma: 0.01
+    noise_type: "rician"
+  reconstruct:
+    metrics_dir: "p2s/metrics/stanford"
+    images_dir: "p2s/images/stanford"
+    output_dir: "p2s/output/stanford"
+    metrics_roi_threshold: 0.02
+    generate_images: true
+    num_image_volumes: 10

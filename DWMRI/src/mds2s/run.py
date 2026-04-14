@@ -55,7 +55,10 @@ def main(
     elif dataset == "stanford":
         logging.info("Using Stanford dataset configuration")
         settings = settings.stanford
-        data_loader = StanfordDataLoader(settings.data)
+        data_loader = StanfordDataLoader(
+            bvalue=settings.data.bvalue,
+            noise_sigma=settings.data.noise_sigma,
+        )
         logging.info("StanfordDataLoader initialized")
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
