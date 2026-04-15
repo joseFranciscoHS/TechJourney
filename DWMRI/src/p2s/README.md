@@ -4,6 +4,19 @@ Classical [DIPY Patch2Self](https://docs.dipy.org/1.12.0/examples_built/preproce
 
 Denoises **only diffusion-weighted volumes** (`bvals > b0_threshold`); b0 volumes are kept intact (`b0_denoising=False`).
 
+## Weights & Biases
+
+Runs log to project `DWMRI-Denoising` by default (same as MDS2S), with tags `Patch2Self`, `P2S`, and the dataset name. Logged fields include data shape/stats, Patch2Self wall time, denoised min/max/mean, output NIfTI path, reconstruction metrics (dBrain), and comparison images.
+
+Disable W&B for offline runs:
+
+```yaml
+wandb:
+  enabled: false
+```
+
+Or in code: `main(dataset="stanford", use_wandb=False)`.
+
 ## Configuration
 
 Edit `p2s/config.yaml` to adjust per-dataset settings:

@@ -1,3 +1,8 @@
+# Weights & Biases (optional; set enabled: false for offline runs)
+wandb:
+  enabled: true
+  project: "DWMRI-Denoising"
+
 dbrain:
   patch2self:
     model: "ols"            # "ols" (default, more accurate) or "ridge" (faster)
