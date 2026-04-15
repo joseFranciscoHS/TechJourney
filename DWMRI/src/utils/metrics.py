@@ -169,36 +169,40 @@ def compare_volumes(
     file_name="",
 ):
     if slice_idx is None:
-        slice_idx = source_volume.shape[0] // 2  # Middle slice by default
+        slice_idx = source_volume.shape[0] // 2
 
     fig, axes = plt.subplots(1, 3, figsize=(12, 6))
-    fig.suptitle(
-        f"{source_title} vs Denoised Volume (Slice: {slice_idx} | Volume Index: {volume_idx})"
-    )
-
-    axes[0].imshow(source_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    axes[0].set_title(source_title)
-    axes[0].axis("off")
-
-    axes[1].imshow(denoised_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    axes[1].set_title("Denoised")
-    axes[1].axis("off")
-
-    rms_diff = np.sqrt(
-        (
-            source_volume[slice_idx, volume_idx, :, :]
-            - denoised_volume[slice_idx, volume_idx, :, :]
+    try:
+        fig.suptitle(
+            f"{source_title} vs Denoised Volume (Slice: {slice_idx} | Volume Index: {volume_idx})"
         )
-        ** 2
-    )
-    axes[2].imshow(rms_diff, cmap="gray")
-    axes[2].set_title("RMS Diff")
-    axes[2].axis("off")
 
-    plt.tight_layout()
-    if file_name:
-        plt.savefig(file_name, bbox_inches="tight")
-    plt.show()
+        axes[0].imshow(source_volume[slice_idx, volume_idx, :, :], cmap="gray")
+        axes[0].set_title(source_title)
+        axes[0].axis("off")
+
+        axes[1].imshow(denoised_volume[slice_idx, volume_idx, :, :], cmap="gray")
+        axes[1].set_title("Denoised")
+        axes[1].axis("off")
+
+        rms_diff = np.sqrt(
+            (
+                source_volume[slice_idx, volume_idx, :, :]
+                - denoised_volume[slice_idx, volume_idx, :, :]
+            )
+            ** 2
+        )
+        axes[2].imshow(rms_diff, cmap="gray")
+        axes[2].set_title("RMS Diff")
+        axes[2].axis("off")
+
+        fig.tight_layout()
+        if file_name:
+            fig.savefig(file_name, bbox_inches="tight")
+        else:
+            plt.show()
+    finally:
+        plt.close(fig)
 
 
 def fully_compare_volumes(
@@ -210,40 +214,44 @@ def fully_compare_volumes(
     file_name="",
 ):
     if slice_idx is None:
-        slice_idx = original_volume.shape[0] // 2  # Middle slice by default
+        slice_idx = original_volume.shape[0] // 2
 
     fig, axes = plt.subplots(1, 4, figsize=(12, 6))
-    fig.suptitle(
-        f"Ground Truth vs Noisy vs Denoised Volume (Slice: {slice_idx} | Volume Index: {volume_idx})"
-    )
-
-    axes[0].imshow(original_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    axes[0].set_title("Ground Truth")
-    axes[0].axis("off")
-
-    axes[1].imshow(noisy_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    axes[1].set_title("Noisy")
-    axes[1].axis("off")
-
-    axes[2].imshow(denoised_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    axes[2].set_title("Denoised")
-    axes[2].axis("off")
-
-    rms_diff = np.sqrt(
-        (
-            original_volume[slice_idx, volume_idx, :, :]
-            - denoised_volume[slice_idx, volume_idx, :, :]
+    try:
+        fig.suptitle(
+            f"Ground Truth vs Noisy vs Denoised Volume (Slice: {slice_idx} | Volume Index: {volume_idx})"
         )
-        ** 2
-    )
-    axes[3].imshow(rms_diff, cmap="gray")
-    axes[3].set_title("RMS Diff Ground Truth vs Denoised")
-    axes[3].axis("off")
 
-    plt.tight_layout()
-    if file_name:
-        plt.savefig(file_name, bbox_inches="tight")
-    plt.show()
+        axes[0].imshow(original_volume[slice_idx, volume_idx, :, :], cmap="gray")
+        axes[0].set_title("Ground Truth")
+        axes[0].axis("off")
+
+        axes[1].imshow(noisy_volume[slice_idx, volume_idx, :, :], cmap="gray")
+        axes[1].set_title("Noisy")
+        axes[1].axis("off")
+
+        axes[2].imshow(denoised_volume[slice_idx, volume_idx, :, :], cmap="gray")
+        axes[2].set_title("Denoised")
+        axes[2].axis("off")
+
+        rms_diff = np.sqrt(
+            (
+                original_volume[slice_idx, volume_idx, :, :]
+                - denoised_volume[slice_idx, volume_idx, :, :]
+            )
+            ** 2
+        )
+        axes[3].imshow(rms_diff, cmap="gray")
+        axes[3].set_title("RMS Diff Ground Truth vs Denoised")
+        axes[3].axis("off")
+
+        fig.tight_layout()
+        if file_name:
+            fig.savefig(file_name, bbox_inches="tight")
+        else:
+            plt.show()
+    finally:
+        plt.close(fig)
 
 
 def visualize_single_volume(
@@ -254,12 +262,17 @@ def visualize_single_volume(
 ):
     if slice_idx is None:
         print(source_volume.shape)
-        slice_idx = source_volume.shape[0] // 2  # Middle slice by default
+        slice_idx = source_volume.shape[0] // 2
 
-    plt.imshow(source_volume[slice_idx, volume_idx, :, :], cmap="gray")
-    plt.axis("off")
+    fig, ax = plt.subplots()
+    try:
+        ax.imshow(source_volume[slice_idx, volume_idx, :, :], cmap="gray")
+        ax.axis("off")
 
-    plt.tight_layout()
-    if file_name:
-        plt.savefig(file_name, bbox_inches="tight")
-    plt.show()
+        fig.tight_layout()
+        if file_name:
+            fig.savefig(file_name, bbox_inches="tight")
+        else:
+            plt.show()
+    finally:
+        plt.close(fig)

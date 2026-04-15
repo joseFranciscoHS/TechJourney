@@ -5,10 +5,20 @@ wandb:
 
 dbrain:
   patch2self:
-    model: "ols"            # "ols" (default, more accurate) or "ridge" (faster)
-    shift_intensity: true   # shift intensities to avoid negatives before denoising
-    clip_negative_vals: false  # clip negatives in output; prefer shift_intensity instead
-    b0_threshold: 50        # bvals <= this are treated as b0; only bvals > threshold are denoised
+    # ---------- backend selection ----------------------------------------
+    # "dipy"             — DIPY's built-in patch2self (default)
+    # "sklearn_reference" — volume hold-out sklearn regression (MD-S2S style)
+    backend: "dipy"
+    # ---------- DIPY backend options ------------------------------------
+    model: "ols"            # "ols" (accurate) or "ridge" (faster)
+    shift_intensity: true   # shift intensities before denoising
+    clip_negative_vals: false
+    b0_threshold: 50        # bvals <= this are b0 (never denoised)
+    # ---------- sklearn_reference backend options -----------------------
+    sklearn_model: "ols"          # "ols" | "ridge" | "lasso" | "mlp"
+    patch_radius: [0, 0, 0]       # spatial half-width; [0,0,0] = per-voxel
+    patch_stride: 1               # >1 subsamples the patch grid (faster, lower quality)
+    use_b0_as_predictors: true    # include b0 vols as fixed predictor channels
   data:
     num_b0s: 6
     bvalue: 2500
@@ -28,10 +38,18 @@ dbrain:
 
 stanford:
   patch2self:
+    # ---------- backend selection ----------------------------------------
+    backend: "dipy"               # change to "sklearn_reference" to use MD-S2S style
+    # ---------- DIPY backend options ------------------------------------
     model: "ols"
     shift_intensity: true
     clip_negative_vals: false
     b0_threshold: 50
+    # ---------- sklearn_reference backend options -----------------------
+    sklearn_model: "ols"          # "ols" | "ridge" | "lasso" | "mlp"
+    patch_radius: [0, 0, 0]       # [0,0,0] = single-voxel patches (fast, low RAM)
+    patch_stride: 1               # increase to 2+ to subsample and cut memory usage
+    use_b0_as_predictors: true    # include b0 volumes as fixed predictor channels
   data:
     num_b0s: 10
     bvalue: 2000

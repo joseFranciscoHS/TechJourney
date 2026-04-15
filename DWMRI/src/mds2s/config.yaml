@@ -31,13 +31,13 @@ dbrain:
     bvecs_path: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
 stanford:
   train:
-    num_epochs: 1
+    num_epochs: 2000
     device: cuda
     mask_p: 0.3
     dropout_p: 0.3
     checkpoint_dir: "mds2s/checkpoints/stanford"
     learning_rate: 0.0003
-    batch_size: 128
+    batch_size: 256
     use_scheduler: false
     scheduler_step_size: 500
     scheduler_gamma: 0.5

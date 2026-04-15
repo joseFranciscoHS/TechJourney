@@ -27,6 +27,7 @@ from dipy.denoise.patch2self import patch2self
 from dipy.io.image import save_nifti, load_nifti
 from dipy.data import get_fnames
 
+from p2s.sklearn_patch2self import patch2self_sklearn
 from utils import setup_logging
 from utils.data import DBrainDataLoader, StanfordDataLoader
 from utils.metrics import (
@@ -79,43 +80,46 @@ def _output_subdir(settings):
     )
 
 
+def _log_gradient_split(bvals, b0_threshold):
+    n_b0 = int(np.sum(bvals <= b0_threshold))
+    n_dwi = int(np.sum(bvals > b0_threshold))
+    logging.info(
+        f"Gradient split: {len(bvals)} total, "
+        f"{n_b0} b0 (bval <= {b0_threshold}), "
+        f"{n_dwi} DWI (bval > {b0_threshold})"
+    )
+    return n_b0, n_dwi
+
+
 def denoise_dwi_patch2self(data_4d, bvals, p2s_cfg):
-    """
-    Run Patch2Self on the full 4D DWI dataset, denoising only DWI volumes
-    (bvals > b0_threshold) and leaving b0 volumes intact (b0_denoising=False).
+    """Run DIPY Patch2Self on the full 4D DWI dataset.
+
+    b0 volumes (bvals <= b0_threshold) are left intact (b0_denoising=False).
+    Only diffusion-weighted volumes are denoised.
 
     Args:
         data_4d:  np.ndarray shape (X, Y, Z, V) — normalized 4D data.
-        bvals:    1D array of b-values, length V, aligned to data_4d's last dim.
-        p2s_cfg:  Munch object with model, shift_intensity, clip_negative_vals,
+        bvals:    1D array of b-values, length V.
+        p2s_cfg:  Munch with model, shift_intensity, clip_negative_vals,
                   b0_threshold.
 
     Returns:
-        denoised_4d: np.ndarray same shape as data_4d, float32.
+        denoised_4d: np.ndarray same shape, float32.
     """
     b0_threshold = int(getattr(p2s_cfg, "b0_threshold", 50))
-    n_b0 = int(np.sum(bvals <= b0_threshold))
-    n_dwi = int(np.sum(bvals > b0_threshold))
-
-    logging.info(
-        f"Gradient split: {len(bvals)} total, "
-        f"{n_b0} b0 volumes (bval <= {b0_threshold}), "
-        f"{n_dwi} DWI volumes (bval > {b0_threshold})"
-    )
+    n_b0, n_dwi = _log_gradient_split(bvals, b0_threshold)
 
     if n_dwi == 0:
-        logging.warning(
-            "No DWI volumes found (all bvals <= b0_threshold). Returning original data."
-        )
+        logging.warning("No DWI volumes; returning input unchanged.")
         return data_4d.copy().astype(np.float32)
 
     logging.info(
-        f"Running patch2self on {data_4d.shape} — "
-        f"model='{p2s_cfg.model}', shift_intensity={p2s_cfg.shift_intensity}, "
+        f"Running DIPY patch2self on {data_4d.shape} — "
+        f"model='{p2s_cfg.model}', "
+        f"shift_intensity={p2s_cfg.shift_intensity}, "
         f"clip_negative_vals={p2s_cfg.clip_negative_vals}, "
-        f"b0_threshold={b0_threshold}, b0_denoising=False"
+        f"b0_threshold={b0_threshold}"
     )
-
     t0 = time.time()
     denoised = patch2self(
         data_4d.astype(np.float64),
@@ -127,13 +131,55 @@ def denoise_dwi_patch2self(data_4d, bvals, p2s_cfg):
         b0_denoising=False,
         verbose=True,
     )
-    elapsed = time.time() - t0
-    logging.info(f"patch2self completed in {elapsed:.1f}s")
+    logging.info(f"DIPY patch2self completed in {time.time() - t0:.1f}s")
     logging.info(
         f"Denoised stats — min: {denoised.min():.4f}, "
         f"max: {denoised.max():.4f}, mean: {denoised.mean():.4f}"
     )
     return denoised.astype(np.float32)
+
+
+def denoise_dwi_sklearn_reference(data_4d, bvals, p2s_cfg):
+    """Run the sklearn reference Patch2Self (MD-S2S volume hold-out) on 4D DWI.
+
+    Dispatches to :func:`p2s.sklearn_patch2self.patch2self_sklearn`.
+    Config keys read from *p2s_cfg*:
+
+    * ``b0_threshold``        (default 50)
+    * ``sklearn_model``       (default ``"ols"``)
+    * ``patch_radius``        (default ``[0, 0, 0]``)
+    * ``patch_stride``        (default 1)
+    * ``use_b0_as_predictors`` (default ``True``)
+
+    Args:
+        data_4d:  np.ndarray shape (X, Y, Z, V) — normalized 4D data.
+        bvals:    1D array of b-values, length V.
+        p2s_cfg:  Munch with the keys above.
+
+    Returns:
+        denoised_4d: np.ndarray same shape, float32.
+    """
+    b0_threshold = int(getattr(p2s_cfg, "b0_threshold", 50))
+    model_name = str(getattr(p2s_cfg, "sklearn_model", "ols"))
+    patch_radius = list(getattr(p2s_cfg, "patch_radius", [0, 0, 0]))
+    stride = int(getattr(p2s_cfg, "patch_stride", 1))
+    use_b0 = bool(getattr(p2s_cfg, "use_b0_as_predictors", True))
+
+    _log_gradient_split(bvals, b0_threshold)
+    logging.info("Using sklearn reference backend (MD-S2S style)")
+
+    t0 = time.time()
+    denoised = patch2self_sklearn(
+        data_4d,
+        bvals,
+        b0_threshold=b0_threshold,
+        model_name=model_name,
+        patch_radius=patch_radius,
+        stride=stride,
+        use_b0_as_predictors=use_b0,
+    )
+    logging.info(f"sklearn reference completed in {time.time() - t0:.1f}s")
+    return denoised
 
 
 def main(
@@ -234,10 +280,22 @@ def main(
 
         subdir = _output_subdir(settings)
 
-        # Denoise — b0 volumes are kept intact via b0_denoising=False
-        logging.info("Starting Patch2Self denoising...")
+        # Denoise — backend selected by config (dipy | sklearn_reference)
+        backend = str(getattr(settings.patch2self, "backend", "dipy")).lower()
+        logging.info(f"Starting Patch2Self denoising (backend='{backend}')...")
         t_denoise = time.time()
-        denoised_data = denoise_dwi_patch2self(noisy_data, bvals, settings.patch2self)
+        if backend == "sklearn_reference":
+            denoised_data = denoise_dwi_sklearn_reference(
+                noisy_data, bvals, settings.patch2self
+            )
+        else:
+            if backend != "dipy":
+                logging.warning(
+                    f"Unknown backend '{backend}'; falling back to 'dipy'."
+                )
+            denoised_data = denoise_dwi_patch2self(
+                noisy_data, bvals, settings.patch2self
+            )
         denoise_seconds = time.time() - t_denoise
         logging.info(f"Denoised output shape: {denoised_data.shape}")
 
@@ -271,6 +329,13 @@ def main(
         # Metrics — DWI volumes only (b0s excluded for fairness)
         b0_threshold = int(getattr(settings.patch2self, "b0_threshold", 50))
         dwi_mask = bvals > b0_threshold
+        den_dwi = denoised_data[..., dwi_mask]
+        logging.info(f"Reconstructed DWIs shape: {den_dwi.shape}")
+        logging.info(
+            f"Reconstructed DWIs min: {den_dwi.min():.4f}, "
+            f"max: {den_dwi.max():.4f}, mean: {den_dwi.mean():.4f}"
+        )
+        logging.info(f"Reconstructed DWIs dtype: {den_dwi.dtype}")
         metrics_dir = os.path.join(settings.reconstruct.metrics_dir, subdir)
         os.makedirs(metrics_dir, exist_ok=True)
 
@@ -278,10 +343,9 @@ def main(
         if original_data is not None:
             logging.info("Computing metrics against clean reference (dBrain)...")
             ref_dwi = original_data[..., dwi_mask]
-            den_dwi = denoised_data[..., dwi_mask]
 
             metrics = compute_metrics(ref_dwi, den_dwi)
-            logging.info(f"Full-image metrics: {metrics}")
+            logging.info(f"Metrics: {metrics}")
             save_metrics(metrics, metrics_dir, filename="metrics.json")
 
             roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
@@ -289,18 +353,37 @@ def main(
                 roi_mask_3d = (ref_dwi > roi_threshold).any(axis=-1)
                 n_roi = int(np.sum(roi_mask_3d))
                 logging.info(
-                    f"ROI mask: ref_dwi > {roi_threshold}, "
+                    f"ROI mask: original > {roi_threshold}, "
                     f"{n_roi} voxels ({100.0 * n_roi / roi_mask_3d.size:.1f}%)"
                 )
                 metrics_roi = compute_metrics(ref_dwi, den_dwi, mask=roi_mask_3d)
-                logging.info(f"ROI metrics: {metrics_roi}")
+                logging.info(
+                    f"Metrics (ROI, brain/tissue only): {metrics_roi}"
+                )
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
         else:
             logging.info(
                 "No clean reference available (Stanford self-supervised). "
-                "Skipping GT-based metrics."
+                "Computing proxy metrics vs noisy input."
             )
-            save_metrics({"note": "no_reference_available"}, metrics_dir, filename="metrics.json")
+            noisy_dwi = noisy_data[..., dwi_mask]
+            metrics = compute_metrics(noisy_dwi, den_dwi)
+            logging.info(f"Metrics: {metrics}")
+            save_metrics(metrics, metrics_dir, filename="metrics.json")
+
+            roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
+            if roi_threshold is not None:
+                roi_mask_3d = (noisy_dwi > roi_threshold).any(axis=-1)
+                n_roi = int(np.sum(roi_mask_3d))
+                logging.info(
+                    f"ROI mask: original > {roi_threshold}, "
+                    f"{n_roi} voxels ({100.0 * n_roi / roi_mask_3d.size:.1f}%)"
+                )
+                metrics_roi = compute_metrics(noisy_dwi, den_dwi, mask=roi_mask_3d)
+                logging.info(
+                    f"Metrics (ROI, brain/tissue only): {metrics_roi}"
+                )
+                save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
 
         if wandb_run is not None:
             if original_data is not None:
@@ -329,11 +412,16 @@ def main(
             logging.info(f"Saving comparison images to: {images_dir}")
 
             noisy_dwi = noisy_data[..., dwi_mask]
-            den_dwi = denoised_data[..., dwi_mask]
             n_img_vols = min(
                 int(getattr(settings.reconstruct, "num_image_volumes", 10)),
                 noisy_dwi.shape[-1],
             )
+
+            # Transpose (X,Y,Z,V) → (Z,V,X,Y) so that fully_compare_volumes
+            # and visualize_single_volume index [slice_z, vol, :, :] correctly,
+            # producing a full axial slice rather than a band artifact.
+            def _viz(arr):
+                return np.transpose(arr, (2, 3, 0, 1))
 
             wandb_images = []
             if original_data is not None:
@@ -341,9 +429,9 @@ def main(
                 for i in range(n_img_vols):
                     path = os.path.join(images_dir, f"comparison_volume_{i}.png")
                     fully_compare_volumes(
-                        original_volume=ref_dwi,
-                        noisy_volume=noisy_dwi,
-                        denoised_volume=den_dwi,
+                        original_volume=_viz(ref_dwi),
+                        noisy_volume=_viz(noisy_dwi),
+                        denoised_volume=_viz(den_dwi),
                         file_name=path,
                         volume_idx=i,
                     )
@@ -354,24 +442,32 @@ def main(
             else:
                 # Stanford: no ground truth — compare noisy vs denoised only
                 for i in range(n_img_vols):
-                    path = os.path.join(images_dir, f"noisy_vs_denoised_volume_{i}.png")
+                    path = os.path.join(
+                        images_dir, f"noisy_vs_denoised_volume_{i}.png"
+                    )
                     fully_compare_volumes(
-                        original_volume=noisy_dwi,
-                        noisy_volume=noisy_dwi,
-                        denoised_volume=den_dwi,
+                        original_volume=_viz(noisy_dwi),
+                        noisy_volume=_viz(noisy_dwi),
+                        denoised_volume=_viz(den_dwi),
                         file_name=path,
                         volume_idx=i,
                     )
                     if wandb_run is not None:
                         wandb_images.append(
-                            wandb.Image(path, caption=f"Noisy vs denoised, volume {i}")
+                            wandb.Image(
+                                path, caption=f"Noisy vs denoised, volume {i}"
+                            )
                         )
 
             single_path = os.path.join(images_dir, "denoised_single.png")
-            visualize_single_volume(den_dwi, file_name=single_path, volume_idx=0)
+            visualize_single_volume(
+                _viz(den_dwi), file_name=single_path, volume_idx=0
+            )
 
             noisy_path = os.path.join(images_dir, "noisy_single.png")
-            visualize_single_volume(noisy_dwi, file_name=noisy_path, volume_idx=0)
+            visualize_single_volume(
+                _viz(noisy_dwi), file_name=noisy_path, volume_idx=0
+            )
 
             if wandb_run is not None and wandb_images:
                 wandb.log({"reconstruct/comparison": wandb_images})

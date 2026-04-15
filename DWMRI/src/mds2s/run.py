@@ -76,6 +76,12 @@ def main(
         )
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
+        if original_data is None:
+            logging.info(
+                "original_data is None (Stanford loader has no separate GT); "
+                "using normalized volume as reference for metrics/visuals"
+            )
+            original_data = noisy_data
         logging.info(f"Noisy data shape: {noisy_data.shape}")
 
         # Permute from (X, Y, Z, Bvalues) to (Z, Bvalues, X, Y)
@@ -196,7 +202,7 @@ def main(
                 out_channel=settings.model.out_channel,
                 p=settings.train.dropout_p,
             )
-            reconstruct_model, _, _, _, _ = load_checkpoint(
+            reconstruct_model, _, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,
                 optimizer=optimizer,
                 filename=best_loss_checkpoint,
