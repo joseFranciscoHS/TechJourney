@@ -178,7 +178,8 @@ def main():
     )
     logging.info(
         "Logs also go to the file above; if the terminal looks empty, open that path "
-        "or run with: python -u runner_stanford.py"
+        "or run unbuffered, e.g.: python -u runner_stanford_restormer_rgs.py "
+        "or python -u -m restormer_hybrid_rgs.run_stanford_fewvol"
     )
 
     wandb_run = None
@@ -473,6 +474,9 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
+                pred_chunk_size=getattr(
+                    settings.reconstruct, "pred_chunk_size", None
+                ),
             )
         ref_for_metrics = full_orig
     else:
@@ -507,6 +511,9 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
+                pred_chunk_size=getattr(
+                    settings.reconstruct, "pred_chunk_size", None
+                ),
             )
         reconstructed = np.transpose(rec_vxyz, (1, 2, 3, 0))
         ref_for_metrics = train_orig

@@ -10,7 +10,15 @@ def _cuda_device(device) -> bool:
 
 
 def reconstruct_dwis(
-    model, data, device, mask_p=0.3, n_preds=10, patch_size=32, overlap=8, use_amp=True
+    model,
+    data,
+    device,
+    mask_p=0.3,
+    n_preds=10,
+    patch_size=32,
+    overlap=8,
+    use_amp=True,
+    pred_chunk_size=None,
 ):
     """
     Reconstruct full-size DWI data using sliding window approach.
@@ -28,14 +36,23 @@ def reconstruct_dwis(
         patch_size: Size of cubic patches for inference (default 32)
         overlap: Overlap between adjacent patches for blending (default 8)
         use_amp: Use automatic mixed precision for reduced memory (default True)
+        pred_chunk_size: if set, run mask passes in chunks of this batch size to limit
+            GPU memory (outputs are summed; same normalization as full batch).
 
     Returns:
         Reconstructed data of shape (Vols, X, Y, Z) as numpy array
     """
+    if pred_chunk_size is not None and int(pred_chunk_size) < 1:
+        raise ValueError("pred_chunk_size must be >= 1 when set")
+    _chunk = int(pred_chunk_size) if pred_chunk_size is not None else int(n_preds)
+
     logging.info(f"Starting DWI reconstruction on device: {device}")
     logging.info(f"Input data shape: {data.shape}")
     logging.info(f"Using sliding window: patch_size={patch_size}, overlap={overlap}")
-    logging.info(f"Mask probability: {mask_p}, n_preds: {n_preds}")
+    logging.info(
+        f"Mask probability: {mask_p}, n_preds: {n_preds}, "
+        f"pred_chunk_size={pred_chunk_size or 'full'} (chunk={_chunk})"
+    )
     amp_ok = bool(use_amp) and _cuda_device(device)
     if amp_ok:
         logging.info("Using AMP (float16) for reduced memory during inference")
@@ -71,59 +88,78 @@ def reconstruct_dwis(
     z_positions = list(range(0, padded_z - patch_size + 1, stride))
 
     total_patches = len(x_positions) * len(y_positions) * len(z_positions)
-    logging.info(f"Processing {total_patches} patches per volume per prediction")
+    logging.info(
+        f"Processing {total_patches} spatial patches per volume "
+        f"({n_preds} mask draws batched, chunk={_chunk})"
+    )
+
+    for x_start in x_positions:
+        for y_start in y_positions:
+            for z_start in z_positions:
+                weight_map[
+                    x_start : x_start + patch_size,
+                    y_start : y_start + patch_size,
+                    z_start : z_start + patch_size,
+                ] += blend_weights
 
     with torch.inference_mode():
         for vol_idx in tqdm(range(num_vols), desc="Processing volumes"):
             logging.info(f"Processing volume {vol_idx + 1}/{num_vols}")
 
-            for pred_idx in range(n_preds):
-                for x_start in x_positions:
-                    for y_start in y_positions:
-                        for z_start in z_positions:
-                            x_end = x_start + patch_size
-                            y_end = y_start + patch_size
-                            z_end = z_start + patch_size
+            for x_start in x_positions:
+                for y_start in y_positions:
+                    for z_start in z_positions:
+                        x_end = x_start + patch_size
+                        y_end = y_start + patch_size
+                        z_end = z_start + patch_size
 
-                            patch = data[
-                                :, x_start:x_end, y_start:y_end, z_start:z_end
-                            ].clone()
+                        patch = data[
+                            :, x_start:x_end, y_start:y_end, z_start:z_end
+                        ].clone().contiguous()
 
-                            mask = (
+                        pred_sum_t = None
+                        for start in range(0, n_preds, _chunk):
+                            bsz = min(_chunk, n_preds - start)
+                            masks = (
                                 torch.rand(
-                                    (patch_size, patch_size, patch_size),
+                                    bsz,
+                                    patch_size,
+                                    patch_size,
+                                    patch_size,
                                     dtype=torch.float32,
+                                    device=patch.device,
                                 )
                                 > mask_p
                             ).float()
-                            patch[vol_idx] = patch[vol_idx] * mask
-
-                            patch = patch.unsqueeze(0).to(device)
+                            patch_b = patch.unsqueeze(0).expand(
+                                bsz, -1, -1, -1, -1
+                            ).clone()
+                            patch_b[:, vol_idx] = (
+                                patch[vol_idx].unsqueeze(0) * masks
+                            )
+                            patch_b = patch_b.to(device)
 
                             if amp_ok:
                                 with torch.amp.autocast(
                                     device_type="cuda", dtype=torch.float16
                                 ):
-                                    pred = model(patch)
+                                    pred = model(patch_b)
                             else:
-                                pred = model(patch)
+                                pred = model(patch_b)
 
-                            pred_np = pred.float().squeeze(0).squeeze(0).cpu().numpy()
-                            sum_preds[
-                                vol_idx, x_start:x_end, y_start:y_end, z_start:z_end
-                            ] += (pred_np * blend_weights)
+                            part = pred.float().sum(dim=0)
+                            pred_sum_t = (
+                                part if pred_sum_t is None else pred_sum_t + part
+                            )
+                            del patch_b, pred, part
 
-                            del patch, pred
+                        pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
+                        del pred_sum_t
+                        sum_preds[
+                            vol_idx, x_start:x_end, y_start:y_end, z_start:z_end
+                        ] += pred_np * blend_weights
 
-                if pred_idx == 0:
-                    for x_start in x_positions:
-                        for y_start in y_positions:
-                            for z_start in z_positions:
-                                weight_map[
-                                    x_start : x_start + patch_size,
-                                    y_start : y_start + patch_size,
-                                    z_start : z_start + patch_size,
-                                ] += blend_weights
+                        del patch
 
             if _cuda_device(device):
                 torch.cuda.empty_cache()
@@ -351,6 +387,7 @@ def reconstruct_full_dwi_chunked(
     patch_size=32,
     overlap=8,
     use_amp=True,
+    pred_chunk_size=None,
 ):
     """
     Run reconstruct_dwis on contiguous blocks along the volume axis.
@@ -363,6 +400,7 @@ def reconstruct_full_dwi_chunked(
     Args:
         noisy_xyzv: (X, Y, Z, V) all diffusion-weighted volumes after b0s.
         train_num_volumes: Chunk size (must match training ``inp_channels``).
+        pred_chunk_size: forwarded to :func:`reconstruct_dwis` for GPU memory control.
 
     Returns:
         Array (X, Y, Z, V) with same V as ``noisy_xyzv``.
@@ -396,6 +434,7 @@ def reconstruct_full_dwi_chunked(
             patch_size=patch_size,
             overlap=overlap,
             use_amp=use_amp,
+            pred_chunk_size=pred_chunk_size,
         )
         chunks_out.append(np.transpose(rec_vxyz, (1, 2, 3, 0)))
 
