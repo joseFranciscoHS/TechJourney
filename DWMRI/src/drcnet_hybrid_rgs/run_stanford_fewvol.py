@@ -391,7 +391,7 @@ def _run_stanford_fewvol_body(
                 min_signal_threshold=min_signal_threshold,
                 **_dataset_kwargs(settings),
             )
-            subset_fraction = 0.6
+            subset_fraction = 0.8
             total_samples = len(train_set)
             num_samples = int(total_samples * subset_fraction)
             np.random.seed(getattr(settings.train, "seed", 42))

@@ -5,6 +5,7 @@ import shutil
 
 import numpy as np
 import torch
+import wandb
 from restormer_hybrid_rgs.data import TrainingDataSet
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model import Restormer3D
@@ -27,8 +28,6 @@ from utils.metrics import (
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
 
-import wandb
-
 
 def _is_rgs(settings) -> bool:
     return getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
@@ -36,9 +35,7 @@ def _is_rgs(settings) -> bool:
 
 def _volume_path_segment(settings) -> str:
     if _is_rgs(settings):
-        g = int(
-            getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
-        )
+        g = int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes))
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
         return f"rgs_G{g}_K{k}"
     return f"num_volumes_{settings.data.num_volumes}"
@@ -46,9 +43,7 @@ def _volume_path_segment(settings) -> str:
 
 def _patch_volume_dim(settings) -> int:
     if _is_rgs(settings):
-        return int(
-            getattr(settings.data, "num_input_volumes", settings.model.in_channel)
-        )
+        return int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
     return settings.data.num_volumes
 
 
@@ -134,7 +129,7 @@ def fit_progressive(
             **_dataset_kwargs(settings),
         )
 
-        subset_fraction = 0.6
+        subset_fraction = 1
         total_samples = len(train_set)
         num_samples = int(total_samples * subset_fraction)
         np.random.seed(subset_seed)
@@ -147,12 +142,8 @@ def fit_progressive(
             f"num_batches={len(train_loader)}, samples={len(train_set)}"
         )
 
-        optimizer = torch.optim.Adam(
-            model.parameters(), lr=settings.train.learning_rate
-        )
-        logging.info(
-            f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})"
-        )
+        optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
+        logging.info(f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})")
 
         scheduler = None
         if getattr(settings.train, "use_scheduler", False):
@@ -181,9 +172,7 @@ def fit_progressive(
             checkpoint_dir, f"stage_{stage_num}_patch{stage.patch_size}"
         )
         os.makedirs(stage_checkpoint_dir, exist_ok=True)
-        stage_loss_dir = os.path.join(
-            loss_dir, f"stage_{stage_num}_patch{stage.patch_size}"
-        )
+        stage_loss_dir = os.path.join(loss_dir, f"stage_{stage_num}_patch{stage.patch_size}")
         os.makedirs(stage_loss_dir, exist_ok=True)
 
         fit_model(
@@ -313,9 +302,7 @@ def main(
         take_volumes = _take_volumes_dwi(settings)
         logging.info(f"Taking volumes from {settings.data.num_b0s} to {take_volumes}")
         if _is_rgs(settings):
-            k = int(
-                getattr(settings.data, "num_input_volumes", settings.model.in_channel)
-            )
+            k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
             if k != settings.model.in_channel:
                 raise ValueError(
                     f"RGS: num_input_volumes ({k}) must match model.in_channel ({settings.model.in_channel})"

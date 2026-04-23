@@ -97,10 +97,10 @@ stanford:
     num_epochs: 100
     device: cuda
     mask_p: 0.3
-    learning_rate: 0.0004
+    learning_rate: 0.00044
     batch_size: 8
     use_amp: true
-    use_scheduler: false
+    use_scheduler: "step"
     checkpoint_dir: "restormer_hybrid_rgs/checkpoints/stanford"
     multi_gpu: false
     gpu_ids: [0, 1, 2]
@@ -111,7 +111,7 @@ stanford:
     eta_min_lr: 0.0001
     scheduler_T_mult: 2
     scheduler_step_size: 100
-    scheduler_gamma: 0.5
+    scheduler_gamma: 0.8
     scheduler_patience: 10
     scheduler_factor: 0.8
     min_lr: 0.0001
@@ -128,7 +128,7 @@ stanford:
           step: 6
         - patch_size: 16
           batch_size: 256
-          epochs: 100
+          epochs: 300
           step: 4
   model:
     in_channel: 10
@@ -159,8 +159,8 @@ stanford:
     take_x: 80
     take_y: 106
     take_z: 76
-    patch_filter_method: "none"
-    min_signal_threshold: 0.0
+    patch_filter_method: "threshold"
+    min_signal_threshold: 0.02
     otsu_median_radius: 2
     otsu_numpass: 1
   reconstruct:
