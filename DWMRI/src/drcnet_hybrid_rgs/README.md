@@ -58,5 +58,6 @@ python -m drcnet_hybrid_rgs.run_stanford_fewvol
 
 ## References
 
-- [`J_invariance_DWMRI_denoising_report.md`](../J_invariance_DWMRI_denoising_report.md) — Scheme 2
+- [`J_invariance_DWMRI_denoising_report.md`](../J_invariance_DWMRI_denoising_report.md) — Scheme 2 (classic hybrid)
+- [`J_invariance_DWMRI_denoising_report_hybrid_rgs.md`](../J_invariance_DWMRI_denoising_report_hybrid_rgs.md) — Hybrid RGS (this package)
 - Discussion: [`discussion/threads/`](../discussion/threads/)
