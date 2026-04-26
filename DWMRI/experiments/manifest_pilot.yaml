@@ -1,0 +1,49 @@
+jobs:
+  - id: drcnet_3d_selfsup_pilot
+    recipe: drcnet_3d_selfsup_pilot
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --set
+      - train.num_epochs=5
+      - --set
+      - data.shell_sampling_mode=sequential
+      - --regime
+      - self_supervised
+  - id: restormer_3d_selfsup_pilot
+    recipe: restormer_3d_selfsup_pilot
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --set
+      - train.num_epochs=5
+      - --set
+      - data.shell_sampling_mode=sequential
+      - --regime
+      - self_supervised
+  - id: drcnet_2d_selfsup_pilot
+    recipe: drcnet_2d_selfsup_pilot
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run2d
+      - --epochs
+      - "5"
+  - id: restormer_2d_selfsup_pilot
+    recipe: restormer_2d_selfsup_pilot
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run2d
+      - --epochs
+      - "5"

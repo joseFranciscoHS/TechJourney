@@ -170,6 +170,70 @@ def reconstruct_dwis_rgs(
     return sum_preds
 
 
+def reconstruct_dwis_sequential_sliding_k(
+    model,
+    data,
+    device,
+    mask_p=0.3,
+    n_preds=10,
+    num_input=10,
+    target_channel=9,
+):
+    """
+    Sequential-K inference over full shell G using sliding windows.
+
+    For each contiguous gradient window of size K, only the slot ``target_channel``
+    (typically K-1) is reconstructed. Outputs are written to the global shell
+    index corresponding to that slot.
+    """
+    if isinstance(data, np.ndarray):
+        data_t = torch.from_numpy(data.astype(np.float32))
+    else:
+        data_t = data.float()
+
+    num_vols, x_size, y_size, z_size = data_t.shape
+    if num_input > num_vols:
+        raise ValueError(f"num_input K={num_input} exceeds shell size G={num_vols}")
+    if not (0 <= target_channel < num_input):
+        raise ValueError(
+            f"target_channel={target_channel} must be in [0, {num_input - 1}]"
+        )
+
+    num_windows = num_vols - num_input + 1
+    sum_preds = np.zeros((num_vols, x_size, y_size, z_size), dtype=np.float32)
+    pred_counts = np.zeros((num_vols,), dtype=np.float32)
+    data_dev = data_t.to(device)
+    model.to(device)
+    model.eval()
+
+    with torch.inference_mode():
+        for win_start in tqdm(range(num_windows), desc="Sequential-K windows"):
+            order = np.arange(win_start, win_start + num_input, dtype=np.int64)
+            stack = data_dev[order]
+            global_target = int(order[target_channel])
+            for _pred in range(n_preds):
+                p_mtx = np.random.uniform(size=(x_size, y_size, z_size))
+                mask_np = (p_mtx > mask_p).astype(np.float32)
+                mask_tensor = torch.tensor(mask_np, device=device, dtype=torch.float32)
+                inp = stack.clone()
+                inp[target_channel] = inp[target_channel] * mask_tensor
+                out = model(inp.unsqueeze(0))
+                pred = out.squeeze(0).squeeze(0).detach().cpu().numpy()
+                sum_preds[global_target] += pred
+                pred_counts[global_target] += 1.0
+
+    # Preserve edge channels not covered by target_channel windows.
+    out_full = data_t.detach().cpu().numpy().copy()
+    valid = pred_counts > 0
+    out_full[valid] = sum_preds[valid] / pred_counts[valid, None, None, None]
+    logging.info(
+        "Sequential-K reconstruction done. covered=%d/%d volumes",
+        int(np.sum(valid)),
+        num_vols,
+    )
+    return out_full
+
+
 def reconstruct_dwis_index_volume(model, data, index, device, mask_p=0.3, n_preds=10):
     """
     Reconstruct full-size DWI data using hybrid MD-S2S approach.

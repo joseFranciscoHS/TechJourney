@@ -1,0 +1,17 @@
+jobs:
+  - id: drcnet_3d_selfsup
+    recipe: dual_regime_compare
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command: [python, -m, drcnet_hybrid_rgs.run, --dataset, dbrain, --regime, self_supervised]
+  - id: drcnet_3d_supervised
+    recipe: dual_regime_compare
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command: [python, -m, drcnet_hybrid_rgs.run, --dataset, dbrain, --regime, supervised, --set, train.supervised=true]
+  - id: restormer_3d_selfsup
+    recipe: dual_regime_compare
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command: [python, -m, restormer_hybrid_rgs.run, --dataset, dbrain, --regime, self_supervised]
+  - id: restormer_3d_supervised
+    recipe: dual_regime_compare
+    cwd: /Users/francisco/Documents/TechJourney/TechJourney/DWMRI/src
+    command: [python, -m, restormer_hybrid_rgs.run, --dataset, dbrain, --regime, supervised, --set, train.supervised=true]

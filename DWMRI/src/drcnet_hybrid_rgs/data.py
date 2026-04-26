@@ -103,8 +103,9 @@ class TrainingDataSet(torch.utils.data.Dataset):
     from the 4D volume in __getitem__, so the full patch array is never
     materialized in RAM.
 
-    **sequential** (default): Same as classic hybrid — all V volumes in the patch,
-    rotate target index over 0..V-1.
+    **sequential**: full shell G is loaded and K-sized sequential sliding windows
+    are formed over gradient indices. The supervised/masked target is always
+    ``target_channel`` (typically K-1, i.e. the last slot in each window).
 
     **rgs** (RGS–Hybrid): Full shell has G gradient volumes. Each sample draws K
     distinct indices without replacement (order = draw order), stacks K patches,
@@ -129,8 +130,9 @@ class TrainingDataSet(torch.utils.data.Dataset):
         Args:
             data: noisy 4D array (X, Y, Z, volumes)
             shell_sampling_mode: "sequential" or "rgs"
-            num_input_volumes: K stacked channels (required for rgs); must be <= G
-            target_channel: 0-based channel index for mask + loss (rgs: typically K-1)
+            num_input_volumes: K stacked channels (required for rgs and sequential)
+                must be <= G.
+            target_channel: 0-based channel index for mask + loss (typically K-1)
         """
         self.shell_sampling_mode = shell_sampling_mode
         self.target_channel = int(target_channel)
@@ -151,7 +153,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
             logging.info(f"Clean data transposed to: {clean_data_transposed.shape}")
 
         if isinstance(patch_size, int):
-            if shell_sampling_mode == "rgs":
+            if shell_sampling_mode in {"rgs", "sequential"}:
                 k = num_input_volumes if num_input_volumes is not None else 10
                 patch_size_tuple = (k, patch_size, patch_size, patch_size)
             else:
@@ -159,7 +161,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         else:
             patch_size_tuple = patch_size
 
-        if shell_sampling_mode == "rgs":
+        if shell_sampling_mode in {"rgs", "sequential"}:
             self.num_input_volumes = int(
                 num_input_volumes
                 if num_input_volumes is not None
@@ -192,8 +194,15 @@ class TrainingDataSet(torch.utils.data.Dataset):
             )
 
         self.n_volumes = self.n_vols
+        self.n_windows = max(0, self.n_vols - self.num_input_volumes + 1)
         if shell_sampling_mode == "rgs":
             self.total_samples = len(self.valid_coords)
+        elif shell_sampling_mode == "sequential":
+            if self.n_windows <= 0:
+                raise ValueError(
+                    f"sequential mode requires K<=G, got K={self.num_input_volumes}, G={self.n_vols}"
+                )
+            self.total_samples = len(self.valid_coords) * self.n_windows
         else:
             self.total_samples = len(self.valid_coords) * self.n_volumes
 
@@ -220,6 +229,17 @@ class TrainingDataSet(torch.utils.data.Dataset):
                 indices, x : x + px, y : y + py, z : z + pz
             ].copy()
             window = torch.from_numpy(window).float()
+        elif self.shell_sampling_mode == "sequential":
+            window_idx = index // self.n_windows
+            grad_window_start = index % self.n_windows
+            x, y, z = self.valid_coords[window_idx]
+            grad_idx = slice(
+                grad_window_start, grad_window_start + self.num_input_volumes
+            )
+            window = self.data_transposed[
+                grad_idx, x : x + px, y : y + py, z : z + pz
+            ].copy()
+            window = torch.from_numpy(window).float()
         else:
             window_idx = index // self.n_volumes
             target_volume_idx = index % self.n_volumes
@@ -233,7 +253,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         mask = torch.tensor(mask, dtype=torch.float32).unsqueeze(0)
 
         x_masked = window.clone()
-        if self.shell_sampling_mode == "rgs":
+        if self.shell_sampling_mode in {"rgs", "sequential"}:
             tc = self.target_channel
             volume_masked = x_masked[tc] * mask.squeeze(0)
             x_masked[tc] = volume_masked

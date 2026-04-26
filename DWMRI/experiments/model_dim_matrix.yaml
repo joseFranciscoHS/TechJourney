@@ -1,0 +1,11 @@
+matrix:
+  datasets: [dbrain]
+  regimes: [self_supervised, supervised]
+  models:
+    - {architecture: drcnet, dimensionality: 2d}
+    - {architecture: drcnet, dimensionality: 3d}
+    - {architecture: restormer, dimensionality: 2d}
+    - {architecture: restormer, dimensionality: 3d}
+pilot_gate:
+  epochs: 5
+  run_only: self_supervised

@@ -1,7 +1,9 @@
 import gc
+import argparse
 import logging
 import os
 import shutil
+import time
 
 import numpy as np
 import torch
@@ -9,7 +11,11 @@ import wandb
 from restormer_hybrid_rgs.data import TrainingDataSet
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model import Restormer3D
-from restormer_hybrid_rgs.reconstruction import reconstruct_dwis, reconstruct_dwis_rgs
+from restormer_hybrid_rgs.reconstruction import (
+    reconstruct_dwis,
+    reconstruct_dwis_rgs,
+    reconstruct_dwis_sequential_sliding_k,
+)
 from torch.utils.data import DataLoader, Subset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
@@ -25,6 +31,14 @@ from utils.metrics import (
     save_metrics,
     visualize_single_volume,
 )
+from utils.experiment_runtime import (
+    append_registry_line,
+    apply_output_root,
+    apply_overrides,
+    gpu_peak_mem_mb,
+    hardware_info,
+    now_utc_iso,
+)
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
 
@@ -33,22 +47,30 @@ def _is_rgs(settings) -> bool:
     return getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
 
 
+def _is_sequential(settings) -> bool:
+    return getattr(settings.data, "shell_sampling_mode", "sequential") == "sequential"
+
+
 def _volume_path_segment(settings) -> str:
     if _is_rgs(settings):
         g = int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes))
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
         return f"rgs_G{g}_K{k}"
+    if _is_sequential(settings):
+        g = int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes))
+        k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
+        return f"sequential_G{g}_K{k}"
     return f"num_volumes_{settings.data.num_volumes}"
 
 
 def _patch_volume_dim(settings) -> int:
-    if _is_rgs(settings):
+    if _is_rgs(settings) or _is_sequential(settings):
         return int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
     return settings.data.num_volumes
 
 
 def _take_volumes_dwi(settings) -> int:
-    if _is_rgs(settings):
+    if _is_rgs(settings) or _is_sequential(settings):
         return settings.data.num_b0s + int(
             getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
         )
@@ -58,7 +80,7 @@ def _take_volumes_dwi(settings) -> int:
 def _dataset_kwargs(settings):
     mode = getattr(settings.data, "shell_sampling_mode", "sequential")
     kw = {"shell_sampling_mode": mode}
-    if mode == "rgs":
+    if mode in {"rgs", "sequential"}:
         kw["num_input_volumes"] = int(
             getattr(settings.data, "num_input_volumes", settings.model.in_channel)
         )
@@ -185,6 +207,7 @@ def fit_progressive(
             checkpoint_dir=stage_checkpoint_dir,
             loss_dir=stage_loss_dir,
             use_amp=use_amp,
+            supervised_mode=bool(getattr(settings.train, "supervised", False)),
         )
 
         logging.info(f"Stage {stage_num}/{total_stages} completed")
@@ -221,17 +244,27 @@ def main(
     noise_sigma=None,
     noise_type=None,
     noise_n_coils=None,
+    config_path: str = None,
+    overrides=None,
+    output_root: str = None,
+    registry_path: str = None,
+    exp_id: str = None,
+    job_id: str = None,
+    recipe: str = None,
+    regime: str = "self_supervised",
 ):
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting Restormer3D-hybrid-RGS with dataset: {dataset}")
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(script_dir, "config.yaml")
+    config_path = config_path or os.path.join(script_dir, "config.yaml")
 
     logging.info(f"Loading config from: {config_path}")
 
     settings = load_config(config_path)
     logging.info("Configuration loaded successfully")
+    if overrides:
+        apply_overrides(settings, overrides)
 
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
@@ -263,6 +296,18 @@ def main(
         logging.info("StanfordDataLoader initialized")
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
+    apply_output_root(settings, output_root)
+    started_at = now_utc_iso()
+    wall_t0 = time.time()
+    train_secs = None
+    infer_secs = None
+    sec_per_epoch = None
+    sec_per_volume = None
+    metrics = None
+    metrics_roi = None
+    n_params = None
+    run_status = "success"
+    run_error = None
 
     logging.info("Setting up wandb...")
     wandb_run = None
@@ -360,7 +405,8 @@ def main(
         logging.info(
             f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
         )
-        logging.info(f"Total model parameters: {sum(p.numel() for p in model.parameters()):,}")
+        n_params = int(sum(p.numel() for p in model.parameters()))
+        logging.info(f"Total model parameters: {n_params:,}")
 
         progressive_enabled = hasattr(settings.train, "progressive") and getattr(
             settings.train.progressive, "enabled", False
@@ -454,6 +500,7 @@ def main(
         os.makedirs(loss_dir, exist_ok=True)
 
         if train:
+            train_t0 = time.time()
             use_amp = getattr(settings.train, "use_amp", True)
 
             if progressive_enabled:
@@ -511,14 +558,18 @@ def main(
                     checkpoint_dir=checkpoint_dir,
                     loss_dir=loss_dir,
                     use_amp=use_amp,
+                    supervised_mode=bool(getattr(settings.train, "supervised", False)),
                 )
 
             logging.info("Training setup completed successfully")
             logging.info(f"Training completed. Log file: {log_file}")
+            train_secs = time.time() - train_t0
+            sec_per_epoch = float(train_secs) / float(settings.train.num_epochs)
 
             del model
 
         if reconstruct:
+            infer_t0 = time.time()
             logging.info("Reconstructing DWIs...")
             best_loss_checkpoint = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
             reconstruct_model = Restormer3D(
@@ -541,6 +592,8 @@ def main(
                 device=settings.reconstruct.device,
                 strict=False,
             )
+            if n_params is None:
+                n_params = int(sum(p.numel() for p in reconstruct_model.parameters()))
             x_reconstruct = torch.from_numpy(np.transpose(noisy_data, (3, 0, 1, 2))).type(
                 torch.float
             )
@@ -559,6 +612,26 @@ def main(
                     mask_p=settings.reconstruct.mask_p,
                     n_preds=settings.reconstruct.n_preds,
                     n_context=n_ctx,
+                    target_channel=int(getattr(settings.data, "target_channel", 9)),
+                    num_input=int(
+                        getattr(
+                            settings.data,
+                            "num_input_volumes",
+                            settings.model.in_channel,
+                        )
+                    ),
+                    patch_size=patch_sz,
+                    overlap=overlap,
+                    use_amp=rec_use_amp,
+                    pred_chunk_size=pred_chunk,
+                )
+            elif _is_sequential(settings):
+                reconstructed_dwis = reconstruct_dwis_sequential_sliding_k(
+                    model=reconstruct_model,
+                    data=x_reconstruct,
+                    device=settings.reconstruct.device,
+                    mask_p=settings.reconstruct.mask_p,
+                    n_preds=settings.reconstruct.n_preds,
                     target_channel=int(getattr(settings.data, "target_channel", 9)),
                     num_input=int(
                         getattr(
@@ -665,6 +738,8 @@ def main(
                             "reconstruct/metrics_roi_psnr": metrics_roi["psnr"],
                         }
                     )
+            infer_secs = time.time() - infer_t0
+            sec_per_volume = float(infer_secs) / float(reconstructed_dwis.shape[-1])
 
             if generate_images:
                 logging.info("Generating images...")
@@ -721,10 +796,84 @@ def main(
                     volume_idx=0,
                 )
 
+    except Exception as exc:
+        run_status = "failed"
+        run_error = str(exc)
+        raise
     finally:
+        payload = {
+            "schema_version": "v1",
+            "exp_id": exp_id,
+            "job_id": job_id,
+            "recipe": recipe,
+            "status": run_status,
+            "error": run_error,
+            "timestamps": {"start_utc": started_at, "end_utc": now_utc_iso()},
+            "duration_s": time.time() - wall_t0,
+            "stage": "train_reconstruct" if (train and reconstruct) else ("train" if train else "reconstruct"),
+            "dataset": dataset,
+            "regime": regime,
+            "architecture": "restormer",
+            "dimensionality": "3d",
+            "sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
+            "sampling_config": {
+                "g_shell": int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)),
+                "k_input": int(getattr(settings.data, "num_input_volumes", settings.model.in_channel)),
+                "target_channel": int(getattr(settings.data, "target_channel", 9)),
+                "window_policy": "sliding_last_target",
+            },
+            "inference_config": {
+                "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
+            },
+            "train_config": {
+                "epochs": int(getattr(settings.train, "num_epochs", 0)),
+                "batch_size": int(getattr(settings.train, "batch_size", 0)),
+                "lr": float(getattr(settings.train, "learning_rate", 0.0)),
+                "progressive_enabled": bool(getattr(getattr(settings.train, "progressive", {}), "enabled", False)),
+            },
+            "control_metrics": {
+                "n_params": int(n_params or 0),
+                "sec_per_epoch": sec_per_epoch,
+                "sec_per_volume": sec_per_volume,
+                "peak_gpu_mem_mb": gpu_peak_mem_mb(settings.reconstruct.device if reconstruct else settings.train.device),
+            },
+            "quality_metrics_full": metrics,
+            "quality_metrics_roi": metrics_roi,
+            "dti_metrics": None,
+            "hardware": hardware_info(settings.reconstruct.device if reconstruct else settings.train.device),
+        }
+        append_registry_line(registry_path, payload)
         if wandb_run is not None:
             wandb_run.finish()
 
 
 if __name__ == "__main__":
-    main(dataset="dbrain")
+    parser = argparse.ArgumentParser(description="Run Restormer hybrid experiments")
+    parser.add_argument("--dataset", default="dbrain", choices=["dbrain", "stanford"])
+    parser.add_argument("--config", default=None)
+    parser.add_argument("--set", dest="overrides", action="append", default=[])
+    parser.add_argument("--output-root", default=None)
+    parser.add_argument("--registry-path", default=None)
+    parser.add_argument("--exp-id", default=None)
+    parser.add_argument("--job-id", default=None)
+    parser.add_argument("--recipe", default=None)
+    parser.add_argument("--regime", default="self_supervised")
+    parser.add_argument("--skip-train", action="store_true")
+    parser.add_argument("--skip-reconstruct", action="store_true")
+    parser.add_argument("--no-images", action="store_true")
+    args = parser.parse_args()
+    main(
+        dataset=args.dataset,
+        train=not args.skip_train,
+        reconstruct=not args.skip_reconstruct,
+        generate_images=not args.no_images,
+        config_path=args.config,
+        overrides=args.overrides,
+        output_root=args.output_root,
+        registry_path=args.registry_path,
+        exp_id=args.exp_id,
+        job_id=args.job_id,
+        recipe=args.recipe,
+        regime=args.regime,
+    )

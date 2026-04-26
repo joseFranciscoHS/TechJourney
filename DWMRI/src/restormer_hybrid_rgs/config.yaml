@@ -96,6 +96,7 @@ stanford:
   train:
     num_epochs: 100
     device: cuda
+    supervised: false  # true => full MSE vs target volume (no masked J-invariant loss)
     mask_p: 0.3
     learning_rate: 0.00044
     batch_size: 8
@@ -144,7 +145,7 @@ stanford:
     scale_and_shift: true
   data:
     num_volumes: 10
-    shell_sampling_mode: rgs
+    shell_sampling_mode: rgs  # sequential (sliding-K over full shell) | rgs
     num_input_volumes: 10
     shell_gradient_volumes: 150
     target_channel: 9

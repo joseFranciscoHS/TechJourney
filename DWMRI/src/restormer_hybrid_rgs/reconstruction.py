@@ -377,6 +377,67 @@ def reconstruct_dwis_rgs(
     return reconstructed
 
 
+def reconstruct_dwis_sequential_sliding_k(
+    model,
+    data,
+    device,
+    mask_p=0.3,
+    n_preds=10,
+    num_input=10,
+    target_channel=9,
+    patch_size=32,
+    overlap=8,
+    use_amp=True,
+    pred_chunk_size=None,
+):
+    """
+    Sequential-K inference over full shell G using contiguous sliding windows.
+    """
+    if isinstance(data, np.ndarray):
+        data = torch.from_numpy(data.astype(np.float32))
+    else:
+        data = data.float()
+
+    num_vols = data.shape[0]
+    if num_input > num_vols:
+        raise ValueError(f"num_input K={num_input} exceeds shell size G={num_vols}")
+    if not (0 <= target_channel < num_input):
+        raise ValueError(
+            f"target_channel={target_channel} must be in [0, {num_input - 1}]"
+        )
+
+    num_windows = num_vols - num_input + 1
+    out_full = data.detach().cpu().numpy().copy()
+    counts = np.zeros((num_vols,), dtype=np.float32)
+    sums = np.zeros_like(out_full, dtype=np.float32)
+    for win_start in range(num_windows):
+        order = np.arange(win_start, win_start + num_input, dtype=np.int64)
+        x_win = data[torch.from_numpy(order).long()]
+        rec_win = reconstruct_dwis(
+            model=model,
+            data=x_win,
+            device=device,
+            mask_p=mask_p,
+            n_preds=n_preds,
+            patch_size=patch_size,
+            overlap=overlap,
+            use_amp=use_amp,
+            pred_chunk_size=pred_chunk_size,
+        )
+        global_target = int(order[target_channel])
+        sums[global_target] += rec_win[target_channel]
+        counts[global_target] += 1.0
+
+    valid = counts > 0
+    out_full[valid] = sums[valid] / counts[valid, None, None, None]
+    logging.info(
+        "Sequential-K reconstruction done. covered=%d/%d volumes",
+        int(np.sum(valid)),
+        num_vols,
+    )
+    return out_full
+
+
 def reconstruct_full_dwi_chunked(
     model,
     noisy_xyzv,

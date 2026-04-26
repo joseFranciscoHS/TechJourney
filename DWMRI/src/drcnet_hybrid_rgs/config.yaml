@@ -2,6 +2,7 @@ dbrain:
   train:
     num_epochs: 20  # Increased for better convergence
     device: cuda:0
+    supervised: false  # true => full MSE vs target volume (no masked J-invariant loss)
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00045  # Base learning rate for single GPU
     batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
@@ -82,7 +83,7 @@ dbrain:
     num_b0s: 6
     num_volumes: 24  # DWI count in slice when shell_sampling_mode is sequential
     # RGS–Hybrid (Random Gradient Subset): random K-tuples from full shell G (see README)
-    shell_sampling_mode: rgs  # sequential | rgs
+    shell_sampling_mode: rgs  # sequential (sliding-K over full shell) | rgs
     num_input_volumes: 24  # K; must match model.in_channel
     shell_gradient_volumes: 60  # G — DWI count after b0s when mode=rgs
     target_channel: 23  # 0-based; mask + loss on this channel (K-th slot)

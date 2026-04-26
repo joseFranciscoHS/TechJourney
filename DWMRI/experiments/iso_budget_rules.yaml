@@ -1,0 +1,12 @@
+iso_budget:
+  primary:
+    param_tolerance_pct: 15
+    sec_per_epoch_tolerance_pct: 15
+  secondary:
+    mode: iso_config
+    note: "Use nominal equal hyperparameters across 2D and 3D variants."
+required_control_metrics:
+  - n_params
+  - sec_per_epoch
+  - sec_per_volume
+  - peak_gpu_mem_mb

@@ -21,6 +21,7 @@ def fit_model(
     checkpoint_dir=".",
     loss_dir=None,
     use_amp=True,
+    supervised_mode=False,
 ):
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
@@ -100,11 +101,14 @@ def fit_model(
 
             with torch.amp.autocast(device_type="cuda", enabled=amp_enabled):
                 x_recon = model(x)
-                loss = torch.sum(
-                    (x_recon - noisy_target_volume)
-                    * (x_recon - noisy_target_volume)
-                    * (1 - mask)
-                ) / torch.sum(1 - mask)
+                if supervised_mode:
+                    loss = torch.mean((x_recon - noisy_target_volume) ** 2)
+                else:
+                    loss = torch.sum(
+                        (x_recon - noisy_target_volume)
+                        * (x_recon - noisy_target_volume)
+                        * (1 - mask)
+                    ) / torch.sum(1 - mask)
 
             if amp_enabled:
                 scaler.scale(loss).backward()

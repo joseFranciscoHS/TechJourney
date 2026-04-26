@@ -22,6 +22,7 @@ def fit_model(
     checkpoint_dir=".",
     loss_dir=None,
     use_amp=True,
+    supervised_mode=False,
 ):
     # Enable cuDNN benchmark for optimal kernel selection
     torch.backends.cudnn.enabled = True
@@ -115,12 +116,15 @@ def fit_model(
             # forward pass with AMP autocast
             with torch.amp.autocast(device_type="cuda", enabled=amp_enabled):
                 x_recon = model(x)
-                # loss: compute only on masked pixels (J-invariant loss)
-                loss = torch.sum(
-                    (x_recon - noisy_target_volume)
-                    * (x_recon - noisy_target_volume)
-                    * (1 - mask)
-                ) / torch.sum(1 - mask)
+                if supervised_mode:
+                    loss = torch.mean((x_recon - noisy_target_volume) ** 2)
+                else:
+                    # loss: compute only on masked pixels (J-invariant loss)
+                    loss = torch.sum(
+                        (x_recon - noisy_target_volume)
+                        * (x_recon - noisy_target_volume)
+                        * (1 - mask)
+                    ) / torch.sum(1 - mask)
 
             # backward pass + step (scaled if AMP enabled)
             if amp_enabled:
