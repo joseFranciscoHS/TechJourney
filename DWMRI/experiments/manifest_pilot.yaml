@@ -9,9 +9,11 @@ jobs:
       - --dataset
       - dbrain
       - --set
-      - train.num_epochs=5
+      - dbrain.train.progressive.enabled=false
       - --set
-      - data.shell_sampling_mode=sequential
+      - dbrain.train.num_epochs=5
+      - --set
+      - dbrain.data.shell_sampling_mode=sequential
       - --regime
       - self_supervised
   - id: restormer_3d_selfsup_pilot
@@ -24,9 +26,11 @@ jobs:
       - --dataset
       - dbrain
       - --set
-      - train.num_epochs=5
+      - dbrain.train.progressive.enabled=false
       - --set
-      - data.shell_sampling_mode=sequential
+      - dbrain.train.num_epochs=5
+      - --set
+      - dbrain.data.shell_sampling_mode=sequential
       - --regime
       - self_supervised
   - id: drcnet_2d_selfsup_pilot

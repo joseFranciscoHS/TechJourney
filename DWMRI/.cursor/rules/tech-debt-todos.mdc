@@ -1,0 +1,39 @@
+---
+description: Require explicit tech-debt TODO comments when code relies on unvalidated assumptions or is not production-ready
+globs:
+  - "src/**/*.py"
+  - "experiments/**/*.py"
+  - "setup.py"
+  - "DWMRI/src/**/*.py"
+  - "DWMRI/experiments/**/*.py"
+  - "DWMRI/setup.py"
+alwaysApply: false
+---
+
+# Tech-debt TODO markers (DWMRI)
+
+When you **add or materially change** Python code in this project, you **must** leave an inline comment **at the site of the concern** (not only at file bottom) if **any** of the following is true:
+
+- The logic depends on **assumptions** that were **not verified** in this change (data layout, units, config keys, GPU/memory behavior, numerical stability, etc.).
+- The change is a **shortcut** acceptable for a pilot or unblock merge but **not** something you would ship without a second review (error handling, edge cases, security, logging, performance).
+- Behavior is **provisional** (placeholder thresholds, heuristic constants, “works on my machine” paths).
+
+## Required format
+
+Use **exactly** this prefix so humans can grep the repo:
+
+```text
+# TODO: tech debt — <clear description of what to validate or harden>
+```
+
+- Use an **em dash** (`—`) after `tech debt`.
+- Keep **one line** when possible; English, concrete, actionable.
+- Place the comment **immediately above** the block it refers to (function, branch, or non-obvious constant).
+
+## Do not use this for
+
+- Routine, fully-specified implementations with no extra assumptions.
+- Obvious refactors or naming-only changes.
+- Spamming multiple identical TODOs; **one** well-placed comment is enough for a related block.
+
+If the user explicitly asks for a **quick throwaway** or **notebook-only** change, still add the TODO unless they explicitly say not to.

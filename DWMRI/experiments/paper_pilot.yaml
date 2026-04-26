@@ -1,0 +1,67 @@
+# Paper pilot manifest (run from DWMRI repo root).
+#
+#   export EXP_ID=pilot_1 OUT=/tmp/paper_pilot_out
+#   python experiments/driver.py --manifest experiments/paper_pilot.yaml \
+#     --exp-id "$EXP_ID" --output-root "$OUT" --registry-path "$OUT/registry.jsonl" --fail-fast
+#
+# Optional MP-PCA (add --bvecs-path /path/to/b_matrix.txt to enable DTI):
+#   python -m paper_eval.baselines.mppca_run --noisy "$OUT/shared/noisy_dwi_xyzv.npy" \
+#     --gt "$OUT/shared/gt_dwi_xyzv.npy" --out-dir "$OUT/mppca" --bvecs-path /path/to/b_matrix.txt
+#
+# Merge tables:
+#   python experiments/merge_pilot_metrics.py --output "$OUT/pilot_summary.json" \
+#     --inputs drcnet="$OUT/.../drcnet_hybrid_rgs/metrics/dbrain/..."
+
+jobs:
+  - id: export_dbrain_npy
+    recipe: export_dbrain_npy
+    cwd: repo_root
+    append_registry_flags: false
+    command:
+      - python
+      - experiments/paper_export_dbrain_volume_pair.py
+      - --config
+      - src/drcnet_hybrid_rgs/config.yaml
+      - --out-dir
+      - /tmp/paper_pilot_shared_npy
+  - id: mppca_baseline
+    recipe: mppca_baseline
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - paper_eval.baselines.mppca_run
+      - --noisy
+      - /tmp/paper_pilot_shared_npy/noisy_dwi_xyzv.npy
+      - --gt
+      - /tmp/paper_pilot_shared_npy/gt_dwi_xyzv.npy
+      - --out-dir
+      - /tmp/paper_pilot_mppca_metrics
+  - id: drcnet_hybrid_pilot
+    recipe: drcnet_hybrid_pilot
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.progressive.enabled=false
+      - --set
+      - dbrain.train.num_epochs=2
+      - --skip-reconstruct
+  - id: drcnet_2d_hybrid_pilot
+    recipe: drcnet_2d_hybrid_pilot
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run2d_hybrid
+      - --set
+      - dbrain.train.num_epochs=1
+      - --set
+      - dbrain.reconstruct.n_context_samples=2
+      - --skip-reconstruct

@@ -1,0 +1,9 @@
+# Prefer reproducible installs via uv at the DWMRI/ root:
+#   cd ..   # parent of src/ = DWMRI/
+#   uv sync
+#   uv sync --extra dev
+# Lockfile: ../uv.lock
+#
+# Legacy pip pin workflow (optional):
+#   pip install -r requirements.txt
+#   pip freeze | grep -E '^(numpy|torch|dipy|PyYAML|munch|matplotlib|scikit-image|scikit-learn|einops|wandb|pandas|tqdm)==' > requirements.lock

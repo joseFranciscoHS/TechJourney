@@ -39,8 +39,16 @@ from utils.experiment_runtime import (
     hardware_info,
     now_utc_iso,
 )
+from utils.repro_seed import (
+    configure_cudnn,
+    log_runtime_env,
+    make_dataloader_generator,
+    set_seed,
+)
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
+
+from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
 
 
 def _is_rgs(settings) -> bool:
@@ -88,6 +96,12 @@ def _dataset_kwargs(settings):
     return kw
 
 
+def _training_sample_kwargs(settings):
+    kw = _dataset_kwargs(settings)
+    kw["sample_rng_seed"] = int(getattr(settings.train, "seed", 42))
+    return kw
+
+
 def fit_progressive(
     model,
     settings,
@@ -98,6 +112,8 @@ def fit_progressive(
     loss_dir,
     patch_filter_method,
     min_signal_threshold,
+    dl_generator,
+    cudnn_fast: bool,
 ):
     """
     Train model progressively with increasing patch sizes.
@@ -148,7 +164,7 @@ def fit_progressive(
             brain_mask=brain_mask,
             patch_filter_method=patch_filter_method,
             min_signal_threshold=min_signal_threshold,
-            **_dataset_kwargs(settings),
+            **_training_sample_kwargs(settings),
         )
 
         subset_fraction = 1
@@ -158,7 +174,12 @@ def fit_progressive(
         indices = np.random.choice(total_samples, size=num_samples, replace=False)
         train_set = Subset(train_set, indices)
 
-        train_loader = DataLoader(train_set, batch_size=stage.batch_size, shuffle=True)
+        train_loader = DataLoader(
+            train_set,
+            batch_size=stage.batch_size,
+            shuffle=True,
+            generator=dl_generator,
+        )
         logging.info(
             f"Stage {stage_num} DataLoader: batch_size={stage.batch_size}, "
             f"num_batches={len(train_loader)}, samples={len(train_set)}"
@@ -208,6 +229,7 @@ def fit_progressive(
             loss_dir=stage_loss_dir,
             use_amp=use_amp,
             supervised_mode=bool(getattr(settings.train, "supervised", False)),
+            cudnn_fast=cudnn_fast,
         )
 
         logging.info(f"Stage {stage_num}/{total_stages} completed")
@@ -252,6 +274,8 @@ def main(
     job_id: str = None,
     recipe: str = None,
     regime: str = "self_supervised",
+    use_wandb: bool = True,
+    checkpoint_path: str = None,
 ):
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting Restormer3D-hybrid-RGS with dataset: {dataset}")
@@ -297,6 +321,14 @@ def main(
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
     apply_output_root(settings, output_root)
+
+    train_seed = int(getattr(settings.train, "seed", 42))
+    cudnn_fast = not bool(getattr(settings.train, "reproducible", False))
+    set_seed(train_seed)
+    configure_cudnn(fast=cudnn_fast)
+    log_runtime_env(settings.train.device)
+    dl_generator = make_dataloader_generator(train_seed)
+
     started_at = now_utc_iso()
     wall_t0 = time.time()
     train_secs = None
@@ -305,9 +337,11 @@ def main(
     sec_per_volume = None
     metrics = None
     metrics_roi = None
+    dti_metrics = None
     n_params = None
     run_status = "success"
     run_error = None
+    original_xyzv_b0 = None
 
     logging.info("Setting up wandb...")
     wandb_run = None
@@ -336,7 +370,10 @@ def main(
             else:
                 wandb_kwargs["name"] = f"{dataset}_{vol_seg_wandb}"
                 wandb_kwargs["tags"] = [dataset, vol_seg_wandb]
-        wandb_run = wandb.init(**wandb_kwargs)
+        if use_wandb:
+            wandb_run = wandb.init(**wandb_kwargs)
+        else:
+            logging.info("WandB disabled (use_wandb=False / --no-wandb)")
         logging.info("Loading data...")
         original_data, noisy_data = data_loader.load_data()
         if original_data is None:
@@ -352,18 +389,10 @@ def main(
                 raise ValueError(
                     f"RGS: num_input_volumes ({k}) must match model.in_channel ({settings.model.in_channel})"
                 )
-        noisy_data = noisy_data[
-            : settings.data.take_x,
-            : settings.data.take_y,
-            : settings.data.take_z,
-            settings.data.num_b0s : take_volumes,
-        ]
-        original_data = original_data[
-            : settings.data.take_x,
-            : settings.data.take_y,
-            : settings.data.take_z,
-            settings.data.num_b0s : take_volumes,
-        ]
+        tx, ty, tz = settings.data.take_x, settings.data.take_y, settings.data.take_z
+        original_xyzv_b0 = original_data[:tx, :ty, :tz, :take_volumes]
+        noisy_data = noisy_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
+        original_data = original_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
         logging.info(f"Noisy data shape: {noisy_data.shape}")
         logging.info(
             f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
@@ -515,6 +544,8 @@ def main(
                     loss_dir=loss_dir,
                     patch_filter_method=patch_filter_method,
                     min_signal_threshold=min_signal_threshold,
+                    dl_generator=dl_generator,
+                    cudnn_fast=cudnn_fast,
                 )
             else:
                 logging.info("Using standard training (progressive learning disabled)")
@@ -533,17 +564,19 @@ def main(
                     brain_mask=brain_mask,
                     patch_filter_method=patch_filter_method,
                     min_signal_threshold=min_signal_threshold,
-                    **_dataset_kwargs(settings),
+                    **_training_sample_kwargs(settings),
                 )
                 subset_fraction = 0.6
                 total_samples = len(train_set)
                 num_samples = int(total_samples * subset_fraction)
+                np.random.seed(int(getattr(settings.train, "seed", 42)))
                 indices = np.random.choice(total_samples, size=num_samples, replace=False)
                 train_set = Subset(train_set, indices)
                 train_loader = DataLoader(
                     train_set,
                     batch_size=settings.train.batch_size,
                     shuffle=True,
+                    generator=dl_generator,
                 )
                 logging.info(
                     f"DataLoader created with batch_size={settings.train.batch_size}, num_batches={len(train_loader)}"
@@ -559,6 +592,7 @@ def main(
                     loss_dir=loss_dir,
                     use_amp=use_amp,
                     supervised_mode=bool(getattr(settings.train, "supervised", False)),
+                    cudnn_fast=cudnn_fast,
                 )
 
             logging.info("Training setup completed successfully")
@@ -571,7 +605,11 @@ def main(
         if reconstruct:
             infer_t0 = time.time()
             logging.info("Reconstructing DWIs...")
-            best_loss_checkpoint = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+            best_loss_checkpoint = checkpoint_path or os.path.join(
+                checkpoint_dir, "best_loss_checkpoint.pth"
+            )
+            if checkpoint_path:
+                logging.info("Using checkpoint: %s", best_loss_checkpoint)
             reconstruct_model = Restormer3D(
                 inp_channels=settings.model.in_channel,
                 out_channels=settings.model.out_channel,
@@ -738,6 +776,37 @@ def main(
                             "reconstruct/metrics_roi_psnr": metrics_roi["psnr"],
                         }
                     )
+
+            if (
+                original_xyzv_b0 is not None
+                and getattr(settings.reconstruct, "compute_dti", True)
+            ):
+                try:
+                    gtab = data_loader.load_gradient_table()
+                    bvals = np.asarray(gtab.bvals)[:take_volumes]
+                    bvecs = np.asarray(gtab.bvecs)[:take_volumes]
+                    nb0 = int(settings.data.num_b0s)
+                    gt_xyzv = original_xyzv_b0.astype(np.float64)
+                    den_xyzv = np.concatenate(
+                        [gt_xyzv[..., :nb0], reconstructed_dwis.astype(np.float64)],
+                        axis=-1,
+                    )
+                    roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", None)
+                    roi_mask = (
+                        (gt_xyzv > roi_thr).any(axis=-1)
+                        if roi_thr is not None
+                        else None
+                    )
+                    dti_metrics = compute_dti_errors(
+                        den_xyzv, gt_xyzv, bvals, bvecs, roi_mask=roi_mask
+                    )
+                    save_dti_metrics(dti_metrics, metrics_dir)
+                    logging.info("DTI metrics: %s", dti_metrics)
+                    if wandb_run is not None:
+                        wandb.log({f"dti/{k}": v for k, v in dti_metrics.items()})
+                except Exception as dti_exc:
+                    logging.warning("DTI metrics skipped: %s", dti_exc)
+
             infer_secs = time.time() - infer_t0
             sec_per_volume = float(infer_secs) / float(reconstructed_dwis.shape[-1])
 
@@ -840,7 +909,7 @@ def main(
             },
             "quality_metrics_full": metrics,
             "quality_metrics_roi": metrics_roi,
-            "dti_metrics": None,
+            "dti_metrics": dti_metrics,
             "hardware": hardware_info(settings.reconstruct.device if reconstruct else settings.train.device),
         }
         append_registry_line(registry_path, payload)
@@ -862,6 +931,16 @@ if __name__ == "__main__":
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
     parser.add_argument("--no-images", action="store_true")
+    parser.add_argument(
+        "--no-wandb",
+        action="store_true",
+        help="Do not initialize WandB (useful for batch/cluster without credentials).",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        default=None,
+        help="Path to best_loss_checkpoint.pth (for --skip-train / inference-only jobs).",
+    )
     args = parser.parse_args()
     main(
         dataset=args.dataset,
@@ -876,4 +955,6 @@ if __name__ == "__main__":
         job_id=args.job_id,
         recipe=args.recipe,
         regime=args.regime,
+        use_wandb=not args.no_wandb,
+        checkpoint_path=args.checkpoint,
     )

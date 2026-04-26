@@ -1,0 +1,281 @@
+"""
+DRCNet 2D hybrid RGS / sequential-K: config-driven training + reconstruction + metrics/DTI.
+
+Parity target: same crop, K, mask_p, and DTI assembly as ``drcnet_hybrid_rgs.run`` (3D),
+but convolution runs slice-wise with :class:`DenoiserNet2D`.
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import os
+import time
+
+import numpy as np
+import torch
+from torch.utils.data import DataLoader
+
+from drcnet_hybrid_rgs.data2d import TrainingDataSet2D
+from drcnet_hybrid_rgs.fit import fit_model
+from drcnet_hybrid_rgs.model2d import DenoiserNet2D, count_parameters
+from drcnet_hybrid_rgs.reconstruction2d import (
+    reconstruct_dwis_rgs_2d,
+    reconstruct_dwis_sequential_sliding_k_2d,
+)
+from utils import setup_logging
+from utils.data import DBrainDataLoader
+from utils.experiment_runtime import (
+    append_registry_line,
+    apply_output_root,
+    apply_overrides,
+    gpu_peak_mem_mb,
+    hardware_info,
+    now_utc_iso,
+)
+from utils.metrics import compute_metrics, save_metrics
+from utils.repro_seed import (
+    configure_cudnn,
+    log_runtime_env,
+    make_dataloader_generator,
+    set_seed,
+)
+from utils.utils import load_config
+
+from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
+
+
+def _is_rgs(settings) -> bool:
+    return getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
+
+
+def _take_volumes_dwi(settings) -> int:
+    if _is_rgs(settings) or getattr(settings.data, "shell_sampling_mode", "") == "sequential":
+        return settings.data.num_b0s + int(
+            getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+        )
+    return settings.data.num_b0s + settings.data.num_volumes
+
+
+def main():
+    parser = argparse.ArgumentParser(description="DRCNet hybrid 2D (RGS / sequential-K)")
+    parser.add_argument("--dataset", default="dbrain", choices=["dbrain"])
+    parser.add_argument("--config", default=None)
+    parser.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        help="Override config key=value (same as drcnet_hybrid_rgs.run)",
+    )
+    parser.add_argument("--output-root", default=None)
+    parser.add_argument("--registry-path", default=None)
+    parser.add_argument("--exp-id", default=None)
+    parser.add_argument("--job-id", default=None)
+    parser.add_argument("--recipe", default="drcnet_2d_hybrid")
+    parser.add_argument("--skip-train", action="store_true")
+    parser.add_argument("--skip-reconstruct", action="store_true")
+    parser.add_argument("--no-wandb", action="store_true", help="Unused placeholder")
+    parser.add_argument("--checkpoint", default=None)
+    args = parser.parse_args()
+
+    log_file = setup_logging(logging.INFO)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = args.config or os.path.join(script_dir, "config.yaml")
+    full_settings = load_config(config_path)
+    if args.overrides:
+        apply_overrides(full_settings, args.overrides)
+    settings = full_settings.dbrain
+    apply_output_root(settings, args.output_root)
+
+    train_seed = int(getattr(settings.train, "seed", 42))
+    cudnn_fast = not bool(getattr(settings.train, "reproducible", False))
+    set_seed(train_seed)
+    configure_cudnn(fast=cudnn_fast)
+    log_runtime_env(settings.train.device)
+    dl_generator = make_dataloader_generator(train_seed)
+
+    data_loader = DBrainDataLoader(
+        nii_path=settings.data.nii_path,
+        bvecs_path=settings.data.bvecs_path,
+        bvalue=settings.data.bvalue,
+        noise_sigma=settings.data.noise_sigma,
+        noise_type=getattr(settings.data, "noise_type", "rician"),
+        n_coils=getattr(settings.data, "noise_n_coils", 1),
+    )
+    original_data, noisy_data = data_loader.load_data()
+    take_volumes = _take_volumes_dwi(settings)
+    tx, ty, tz = settings.data.take_x, settings.data.take_y, settings.data.take_z
+    original_xyzv_b0 = original_data[:tx, :ty, :tz, :take_volumes]
+    noisy_data = noisy_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
+    original_data = original_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
+
+    k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
+    tc = int(getattr(settings.data, "target_channel", k - 1))
+    mode = getattr(settings.data, "shell_sampling_mode", "rgs")
+
+    train_set = TrainingDataSet2D(
+        noisy_data,
+        shell_sampling_mode=mode,
+        num_input_volumes=k,
+        target_channel=tc,
+        mask_p=settings.train.mask_p,
+        patch_hw=(
+            int(getattr(settings.data, "patch_2d_h", settings.data.patch_size)),
+            int(getattr(settings.data, "patch_2d_w", settings.data.patch_size)),
+        ),
+        step=int(getattr(settings.data, "patch_2d_step", settings.data.step)),
+        sample_rng_seed=train_seed,
+    )
+    train_loader = DataLoader(
+        train_set,
+        batch_size=settings.train.batch_size,
+        shuffle=True,
+        generator=dl_generator,
+    )
+
+    checkpoint_dir = os.path.join(
+        settings.train.checkpoint_dir,
+        f"b{settings.data.bvalue}",
+        f"2d_{mode}_K{k}",
+        f"lr_{settings.train.learning_rate}",
+    )
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    metrics_dir = os.path.join(
+        getattr(settings.reconstruct, "metrics_dir", "drcnet_hybrid_rgs/metrics/dbrain"),
+        "2d_hybrid",
+        f"b{settings.data.bvalue}",
+        f"{mode}_K{k}",
+    )
+    os.makedirs(metrics_dir, exist_ok=True)
+
+    device = settings.train.device
+    model = DenoiserNet2D(input_channels=k).to(device)
+    n_params = count_parameters(model)
+
+    wall_t0 = time.time()
+    started = now_utc_iso()
+    metrics = metrics_roi = dti_metrics = None
+
+    if not args.skip_train:
+        opt = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
+        fit_model(
+            model=model,
+            optimizer=opt,
+            scheduler=None,
+            train_loader=train_loader,
+            num_epochs=int(getattr(settings.train, "num_epochs", 5)),
+            device=device,
+            checkpoint_dir=checkpoint_dir,
+            loss_dir=os.path.join("drcnet_hybrid_rgs/losses/2d_hybrid", f"b{settings.data.bvalue}"),
+            use_amp=getattr(settings.train, "use_amp", True),
+            supervised_mode=bool(getattr(settings.train, "supervised", False)),
+            cudnn_fast=cudnn_fast,
+        )
+
+    recon_vxyz = None
+    if not args.skip_reconstruct:
+        ckpt = args.checkpoint or os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+        if os.path.isfile(ckpt):
+            try:
+                bundle = torch.load(ckpt, map_location=device, weights_only=False)
+            except TypeError:
+                bundle = torch.load(ckpt, map_location=device)
+            model.load_state_dict(bundle["model_state_dict"], strict=False)
+        noisy_v = np.transpose(noisy_data.astype(np.float32), (3, 0, 1, 2))
+        if _is_rgs(settings):
+            recon_vxyz = reconstruct_dwis_rgs_2d(
+                model,
+                noisy_v,
+                device,
+                mask_p=settings.reconstruct.mask_p,
+                n_preds=int(settings.reconstruct.n_preds),
+                n_context=int(getattr(settings.reconstruct, "n_context_samples", 4)),
+                target_channel=tc,
+                num_input=k,
+                seed=train_seed,
+            )
+        else:
+            recon_vxyz = reconstruct_dwis_sequential_sliding_k_2d(
+                model,
+                noisy_v,
+                device,
+                mask_p=settings.reconstruct.mask_p,
+                n_preds=int(settings.reconstruct.n_preds),
+                num_input=k,
+                target_channel=tc,
+            )
+        recon_xyzv = np.transpose(recon_vxyz, (1, 2, 3, 0))
+        metrics = compute_metrics(original_data, recon_xyzv)
+        save_metrics(metrics, metrics_dir, filename="metrics.json")
+        roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
+        if roi_thr is not None:
+            roi_mask = (original_xyzv_b0 > roi_thr).any(axis=-1)
+            metrics_roi = compute_metrics(original_data, recon_xyzv, mask=roi_mask)
+            save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
+        if getattr(settings.reconstruct, "compute_dti", True):
+            try:
+                gtab = data_loader.load_gradient_table()
+                bvals = np.asarray(gtab.bvals)[:take_volumes]
+                bvecs = np.asarray(gtab.bvecs)[:take_volumes]
+                nb0 = int(settings.data.num_b0s)
+                gt_xyzv = original_xyzv_b0.astype(np.float64)
+                den_xyzv = np.concatenate(
+                    [gt_xyzv[..., :nb0], recon_xyzv.astype(np.float64)], axis=-1
+                )
+                roi_m = (gt_xyzv > roi_thr).any(axis=-1) if roi_thr is not None else None
+                dti_metrics = compute_dti_errors(
+                    den_xyzv, gt_xyzv, bvals, bvecs, roi_mask=roi_m
+                )
+                save_dti_metrics(dti_metrics, metrics_dir)
+            except Exception as exc:
+                logging.warning("DTI skipped: %s", exc)
+                save_dti_metrics(
+                    {
+                        "fa_mae": None,
+                        "md_mae": None,
+                        "ad_mae": None,
+                        "rd_mae": None,
+                        "dti_skipped_reason": str(exc),
+                    },
+                    metrics_dir,
+                )
+
+    payload = {
+        "schema_version": "v1",
+        "exp_id": args.exp_id,
+        "job_id": args.job_id,
+        "recipe": args.recipe,
+        "status": "success",
+        "timestamps": {"start_utc": started, "end_utc": now_utc_iso()},
+        "duration_s": time.time() - wall_t0,
+        "architecture": "drcnet",
+        "dimensionality": "2d",
+        "sampling_mode": mode,
+        "sampling_config": {"k_input": k, "target_channel": tc},
+        "inference_config": {
+            "n_context_samples": int(
+                getattr(settings.reconstruct, "n_context_samples", 0)
+            ),
+            "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
+        },
+        "train_config": {
+            "epochs": int(getattr(settings.train, "num_epochs", 0)),
+            "batch_size": int(getattr(settings.train, "batch_size", 0)),
+            "lr": float(getattr(settings.train, "learning_rate", 0.0)),
+        },
+        "control_metrics": {
+            "n_params": n_params,
+            "peak_gpu_mem_mb": gpu_peak_mem_mb(device),
+        },
+        "quality_metrics_full": metrics,
+        "quality_metrics_roi": metrics_roi,
+        "dti_metrics": dti_metrics,
+        "hardware": hardware_info(device),
+    }
+    append_registry_line(args.registry_path, payload)
+    logging.info("2D hybrid run complete. log=%s", log_file)
+
+
+if __name__ == "__main__":
+    main()

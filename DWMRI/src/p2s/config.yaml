@@ -32,6 +32,7 @@ dbrain:
     metrics_dir: "p2s/metrics/dbrain"
     images_dir: "p2s/images/dbrain"
     output_dir: "p2s/output/dbrain"
+    compute_dti: true  # FA/MD/AD/RD MAE vs clean GT (DIPY); requires dBrain
     metrics_roi_threshold: 0.02  # ROI = voxels where original > threshold (tissue)
     generate_images: true
     num_image_volumes: 10   # number of DWI volumes to generate comparison images for
@@ -59,6 +60,7 @@ stanford:
     metrics_dir: "p2s/metrics/stanford"
     images_dir: "p2s/images/stanford"
     output_dir: "p2s/output/stanford"
+    compute_dti: false  # no clean GT; pipeline writes skipped dti_metrics.json
     metrics_roi_threshold: 0.02
     generate_images: true
     num_image_volumes: 10

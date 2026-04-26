@@ -2,6 +2,8 @@ dbrain:
   train:
     num_epochs: 20  # Increased for better convergence
     device: cuda:0
+    seed: 42  # RNG: torch/numpy/dataset RGS draws and spatial masks
+    reproducible: false  # true => cuDNN deterministic (slower; GPU still not bit-identical)
     supervised: false  # true => full MSE vs target volume (no masked J-invariant loss)
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00045  # Base learning rate for single GPU
@@ -67,6 +69,7 @@ dbrain:
     subtract_background_threshold: 0.02  # Voxels where original <= this are "background"
     # ROI metrics
     metrics_roi_threshold: 0.02  # Set to 0.02 to compute ROI metrics (original > threshold)
+    compute_dti: true  # Post-recon: FA/MD/AD/RD MAE vs GT (needs DIPY; uses bvecs from config)
     metrics_dir: "drcnet_hybrid_rgs/metrics/dbrain"
     images_dir: "drcnet_hybrid_rgs/images/dbrain"
   model:
@@ -112,6 +115,8 @@ stanford:
   train:
     num_epochs: 100
     device: cuda
+    seed: 42
+    reproducible: false
     mask_p: 0.3
     learning_rate: 0.0003
     batch_size: 8
@@ -181,5 +186,6 @@ stanford:
     subtract_background_estimate: false
     subtract_background_threshold: 0.02
     metrics_roi_threshold: 0.02
+    compute_dti: true
     metrics_dir: "drcnet_hybrid_rgs/metrics/stanford"
     images_dir: "drcnet_hybrid_rgs/images/stanford"

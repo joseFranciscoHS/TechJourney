@@ -1,6 +1,7 @@
 import json
+import logging
 import os
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import dipy.reconst.dti as dti
 import numpy as np
@@ -19,7 +20,7 @@ def compute_dti_errors(
     bvals: np.ndarray,
     bvecs: np.ndarray,
     roi_mask: Optional[np.ndarray] = None,
-) -> Dict[str, float]:
+) -> Dict[str, Any]:
     d_dti = compute_dti_maps(denoised_xyzv, bvals, bvecs)
     g_dti = compute_dti_maps(gt_xyzv, bvals, bvecs)
     if roi_mask is None:
@@ -36,7 +37,84 @@ def compute_dti_errors(
     }
 
 
-def save_dti_metrics(metrics: Dict[str, float], out_dir: str, name: str = "dti_metrics.json"):
+def roi_mask_from_gt_threshold(
+    gt_xyzv: np.ndarray, roi_threshold: Optional[float]
+) -> Optional[np.ndarray]:
+    """ROI = voxels where any channel exceeds threshold (same rule as hybrid reconstruct)."""
+    if roi_threshold is None:
+        return None
+    return (gt_xyzv > float(roi_threshold)).any(axis=-1)
+
+
+def bvals_bvecs_truncated_from_dbrain_matrix(
+    bvecs_path: str, bvalue: float, n_volumes: int
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Load HCP-style b-matrix file and return bvals/bvecs truncated to n_volumes (like hybrid)."""
+    from utils.data import DBrainDataLoader
+
+    dl = DBrainDataLoader(
+        nii_path="__unused__", bvecs_path=bvecs_path, bvalue=float(bvalue)
+    )
+    gtab = dl.load_gradient_table()
+    bvals = np.asarray(gtab.bvals, dtype=np.float64)[: int(n_volumes)]
+    bvecs = np.asarray(gtab.bvecs, dtype=np.float64)[: int(n_volumes)]
+    if len(bvals) != int(n_volumes):
+        logging.warning(
+            "Gradient table length %s != n_volumes %s (truncated)",
+            len(gtab.bvals),
+            n_volumes,
+        )
+    return bvals, bvecs
+
+
+def try_compute_dti_errors(
+    denoised_xyzv: np.ndarray,
+    gt_xyzv: np.ndarray,
+    bvals: np.ndarray,
+    bvecs: np.ndarray,
+    *,
+    roi_threshold: Optional[float] = 0.02,
+) -> Dict[str, Any]:
+    """
+    Compute FA/MD/AD/RD MAE vs GT on ROI; on failure return null metrics + reason.
+    """
+    base_null: Dict[str, Any] = {
+        "fa_mae": None,
+        "md_mae": None,
+        "ad_mae": None,
+        "rd_mae": None,
+    }
+    try:
+        nv = int(denoised_xyzv.shape[-1])
+        if gt_xyzv.shape[-1] != nv:
+            base_null["dti_skipped_reason"] = (
+                f"shape_mismatch denoised_V={nv} gt_V={gt_xyzv.shape[-1]}"
+            )
+            return base_null
+        bvals = np.asarray(bvals)[:nv]
+        bvecs = np.asarray(bvecs)[:nv]
+        if len(bvals) != nv:
+            base_null["dti_skipped_reason"] = (
+                f"bvals_len={len(bvals)} != V={nv}"
+            )
+            return base_null
+        roi = roi_mask_from_gt_threshold(gt_xyzv, roi_threshold)
+        out = compute_dti_errors(
+            denoised_xyzv.astype(np.float64),
+            gt_xyzv.astype(np.float64),
+            bvals,
+            bvecs,
+            roi_mask=roi,
+        )
+        out["dti_reference"] = "clean_gt"
+        return out
+    except Exception as exc:
+        logging.warning("DTI metrics failed: %s", exc)
+        base_null["dti_skipped_reason"] = str(exc)
+        return base_null
+
+
+def save_dti_metrics(metrics: Dict[str, Any], out_dir: str, name: str = "dti_metrics.json"):
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, name), "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)

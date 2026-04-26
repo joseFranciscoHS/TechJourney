@@ -39,6 +39,8 @@ from utils.metrics import (
 from utils.utils import load_config
 import wandb
 
+from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
+
 
 def _resolve_nii_path(settings_data):
     """
@@ -404,6 +406,42 @@ def main(
                     )
             else:
                 wandb.log({"reconstruct/no_reference_metrics": True})
+
+        if getattr(settings.reconstruct, "compute_dti", True) and dataset == "dbrain":
+            if original_data is not None:
+                bvals_full = np.asarray(gtab.bvals)[:n_vols]
+                bvecs_full = np.asarray(gtab.bvecs)[:n_vols]
+                roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
+                dti = try_compute_dti_errors(
+                    denoised_data.astype(np.float64),
+                    original_data.astype(np.float64),
+                    bvals_full,
+                    bvecs_full,
+                    roi_threshold=roi_thr,
+                )
+                save_dti_metrics(dti, metrics_dir)
+            else:
+                save_dti_metrics(
+                    {
+                        "fa_mae": None,
+                        "md_mae": None,
+                        "ad_mae": None,
+                        "rd_mae": None,
+                        "dti_skipped_reason": "no_clean_gt",
+                    },
+                    metrics_dir,
+                )
+        else:
+            save_dti_metrics(
+                {
+                    "fa_mae": None,
+                    "md_mae": None,
+                    "ad_mae": None,
+                    "rd_mae": None,
+                    "dti_skipped_reason": "compute_dti_false_or_non_dbrain",
+                },
+                metrics_dir,
+            )
 
         # Images
         if generate_images and getattr(settings.reconstruct, "generate_images", True):

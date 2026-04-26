@@ -11,19 +11,36 @@ A comprehensive Python package for Diffusion Weighted Magnetic Resonance Imaging
 
 ## Installation
 
-### From Source
+### From Source (uv, recommended)
+
+From the `DWMRI` directory (parent of this `src/` folder):
 
 ```bash
 git clone <repository-url>
-cd dwmri-processing
-pip install -e .
+cd TechJourney/DWMRI   # or your clone path ending in DWMRI
+uv sync --extra dev    # creates .venv, installs deps + dev tools, project in editable mode
 ```
 
-### Development Installation
+Dependencies come from `uv.lock`; the package is installed editable by default.
+
+### Pip (legacy)
 
 ```bash
-pip install -e .[dev]
+cd /path/to/DWMRI
+pip install -e ".[dev]"
 ```
+
+### Dependencies
+
+Runtime dependencies are defined in [pyproject.toml](../pyproject.toml) and pinned in [uv.lock](../uv.lock). **DIPY** is required for data loading, Patch2Self, MP-PCA, and DTI metrics. A pip-only list remains in [requirements.txt](requirements.txt).
+
+### Reproducibility (training)
+
+- **`train.seed`** in `drcnet_hybrid_rgs/config.yaml` / `restormer_hybrid_rgs/config.yaml` sets Python, NumPy, and PyTorch RNGs and seeds per-sample RGS / Bernoulli masks in the lazy dataset.
+- **`train.reproducible: true`** disables cuDNN autotune and enables deterministic algorithms where supported (slower; **GPU runs are still not guaranteed bit-identical**).
+- **Default** (`reproducible: false`): cuDNN benchmark on for throughput (`utils.repro_seed.configure_cudnn`).
+
+After a validated pilot, refresh the lockfile with `uv lock` at the `DWMRI/` root (see comments in `requirements.lock` here).
 
 ## Usage
 
@@ -71,9 +88,10 @@ src/
 │   ├── metrics.py   # Evaluation metrics
 │   ├── checkpoint.py # Model checkpointing
 │   └── img.py       # Image processing utilities
-├── setup.py         # Package setup
 └── README.md        # This file
 ```
+
+Project metadata and `uv.lock` live in the parent `DWMRI/` directory (`pyproject.toml`, `setup.py` shim).
 
 ## Configuration
 
@@ -108,16 +126,13 @@ data:
 pytest
 ```
 
-### Code Formatting
+### Format and lint (Ruff)
+
+From the `DWMRI` directory:
 
 ```bash
-black .
-```
-
-### Linting
-
-```bash
-flake8
+ruff check src experiments
+ruff format src experiments
 ```
 
 ## License

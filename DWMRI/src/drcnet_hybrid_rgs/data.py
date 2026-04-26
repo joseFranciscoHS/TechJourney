@@ -125,6 +125,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         shell_sampling_mode: str = "sequential",
         num_input_volumes: Optional[int] = None,
         target_channel: int = 9,
+        sample_rng_seed: Optional[int] = None,
     ):
         """
         Args:
@@ -133,9 +134,16 @@ class TrainingDataSet(torch.utils.data.Dataset):
             num_input_volumes: K stacked channels (required for rgs and sequential)
                 must be <= G.
             target_channel: 0-based channel index for mask + loss (typically K-1)
+            sample_rng_seed: Seed for per-sample RGS draws and Bernoulli spatial masks.
+                If None, uses an unseeded Generator (legacy behavior).
         """
         self.shell_sampling_mode = shell_sampling_mode
         self.target_channel = int(target_channel)
+        self._rng = (
+            np.random.default_rng(sample_rng_seed)
+            if sample_rng_seed is not None
+            else np.random.default_rng()
+        )
 
         logging.info(
             f"Initializing DataSet: data.shape={data.shape}, patch_size={patch_size}, "
@@ -223,8 +231,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
             window_idx = index
             x, y, z = self.valid_coords[window_idx]
             k = self.num_input_volumes
-            rng = np.random.default_rng()
-            indices = rng.choice(self.n_vols, size=k, replace=False)
+            indices = self._rng.choice(self.n_vols, size=k, replace=False)
             window = self.data_transposed[
                 indices, x : x + px, y : y + py, z : z + pz
             ].copy()
@@ -248,7 +255,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
             window = torch.from_numpy(window).float()
 
         window_shape = list(window.shape[1:])
-        p_mtx = np.random.uniform(size=window_shape)
+        p_mtx = self._rng.random(size=window_shape)
         mask = (p_mtx > self.mask_p).astype(np.double)
         mask = torch.tensor(mask, dtype=torch.float32).unsqueeze(0)
 

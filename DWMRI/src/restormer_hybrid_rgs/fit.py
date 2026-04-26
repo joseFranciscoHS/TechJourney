@@ -8,6 +8,7 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
 import wandb
 from utils.checkpoint import load_checkpoint, save_checkpoint
+from utils.repro_seed import configure_cudnn
 from utils.training_tracker import TrainingLossTracker
 
 
@@ -22,9 +23,9 @@ def fit_model(
     loss_dir=None,
     use_amp=True,
     supervised_mode=False,
+    cudnn_fast: bool = True,
 ):
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = True
+    configure_cudnn(fast=cudnn_fast)
 
     if device[:4] == "cuda":
         torch.cuda.empty_cache()

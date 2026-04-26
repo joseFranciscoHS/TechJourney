@@ -1,7 +1,3 @@
-dipy>=1.8.0
-numpy>=1.21.0
-torch>=1.12.0
-munch>=4.0.0
-pyyaml>=6.0
-scikit-learn>=1.0.0
-wandb>=0.16.0
+# Legacy pip: pip install -r requirements.txt (same pins as pyproject.toml).
+# Recommended: from this directory run `uv sync` and `uv sync --extra dev` for tooling.
+-r src/requirements.txt

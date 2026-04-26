@@ -20,6 +20,8 @@ from utils.metrics import (
 from utils.utils import load_config
 import wandb
 
+from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
+
 
 def main(
     dataset: str,
@@ -75,13 +77,16 @@ def main(
             },
         )
         logging.info("Loading data...")
-        original_data, noisy_data = data_loader.load_data()
-        if original_data is None:
+        original_from_loader, noisy_data = data_loader.load_data()
+        clean_reference = original_from_loader is not None
+        if original_from_loader is None:
             logging.info(
                 "original_data is None (Stanford loader has no separate GT); "
                 "using normalized volume as reference for metrics/visuals"
             )
             original_data = noisy_data
+        else:
+            original_data = original_from_loader
         logging.info(f"Noisy data shape: {noisy_data.shape}")
 
         # Permute from (X, Y, Z, Bvalues) to (Z, Bvalues, X, Y)
@@ -91,6 +96,11 @@ def main(
         logging.info(f"Transposing data with num_volumes={settings.data.num_volumes}")
         # omitting the b0s from the data
         take_volumes = settings.data.num_b0s + settings.data.num_volumes
+        gt_xyzv_for_dti = (
+            original_from_loader[..., :take_volumes].astype(np.float64).copy()
+            if clean_reference
+            else None
+        )
         noisy_data = np.transpose(
             noisy_data[..., settings.data.num_b0s : take_volumes],
             (2, 3, 0, 1),
@@ -269,6 +279,58 @@ def main(
             )
             os.makedirs(metrics_dir, exist_ok=True)
             save_metrics(metrics, metrics_dir)
+            if metrics_roi is not None:
+                save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
+
+            if (
+                gt_xyzv_for_dti is not None
+                and getattr(settings.reconstruct, "compute_dti", True)
+            ):
+                try:
+                    nb0 = int(settings.data.num_b0s)
+                    den_dwi_xyzv = np.transpose(
+                        reconstructed_dwis.astype(np.float64), (2, 3, 0, 1)
+                    )
+                    den_xyzv = np.concatenate(
+                        [gt_xyzv_for_dti[..., :nb0], den_dwi_xyzv], axis=-1
+                    )
+                    gtab = data_loader.load_gradient_table()
+                    bvals = np.asarray(gtab.bvals)[: int(take_volumes)]
+                    bvecs = np.asarray(gtab.bvecs)[: int(take_volumes)]
+                    roi_thr = getattr(
+                        settings.reconstruct, "metrics_roi_threshold", 0.02
+                    )
+                    dti = try_compute_dti_errors(
+                        den_xyzv,
+                        gt_xyzv_for_dti,
+                        bvals,
+                        bvecs,
+                        roi_threshold=roi_thr,
+                    )
+                    save_dti_metrics(dti, metrics_dir)
+                except Exception as dti_exc:
+                    logging.warning("DTI metrics skipped: %s", dti_exc)
+                    save_dti_metrics(
+                        {
+                            "fa_mae": None,
+                            "md_mae": None,
+                            "ad_mae": None,
+                            "rd_mae": None,
+                            "dti_skipped_reason": str(dti_exc),
+                        },
+                        metrics_dir,
+                    )
+            else:
+                save_dti_metrics(
+                    {
+                        "fa_mae": None,
+                        "md_mae": None,
+                        "ad_mae": None,
+                        "rd_mae": None,
+                        "dti_skipped_reason": "no_clean_gt_or_compute_dti_false",
+                    },
+                    metrics_dir,
+                )
 
             if generate_images:
                 logging.info("Generating images...")

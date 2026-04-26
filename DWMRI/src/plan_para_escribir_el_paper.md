@@ -16,16 +16,16 @@
 ### 1.1 Sequential vs RGS con mismo K
 
 **Pregunta que responde:**
-¿El muestreo aleatorio de gradientes en cada paso de entrenamiento (RGS) aporta mejor calidad que fijar un subconjunto secuencial de K volúmenes y rotar el objetivo entre ellos? En otras palabras, ¿la diversidad de contexto angular durante el entrenamiento tiene valor propio, o lo que importa es simplemente cuántos volúmenes se usan?
+¿El muestreo aleatorio de gradientes en cada paso de entrenamiento (RGS) aporta mejor calidad que recorrer el shell con ventanas deslizantes deterministas de tamaño K (cada ventana [t, t+K-1] sobre índices 0..G-1, supervisando el volumen del último índice de la ventana, coherente con `target_channel = K-1` en el layout de K canales)? En otras palabras, ¿la diversidad de contexto angular durante el entrenamiento tiene valor propio, o lo que importa es simplemente cuántos volúmenes se usan?
 
 **Configuraciones a comparar:**
 
-| Modo         | Descripción                                                                                                                                       | K   |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| `sequential` | El stack de entrada siempre contiene los mismos K volúmenes fijos (los primeros K del shell). El índice objetivo rota de 0 a K-1 en cada muestra. | 24  |
-| `rgs`        | En cada muestra se sortean K índices distintos sin reemplazo del shell completo G. El objetivo siempre está en `target_channel = K-1`.            | 24  |
+| Modo         | Descripción                                                                                                                                                                                                                                                                                                                                 | K   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| `sequential` | Ventanas deslizantes de tamaño K sobre el shell completo G (índices 0..G-1): cada muestra usa el bloque contiguo [t, t+K-1] con t ∈ {0,…,G-K}. Entrenamiento e inferencia tienen como objetivo el volumen en el último índice de la ventana (canal K-1 del stack; `target_channel = K-1`).                                                 | 24  |
+| `rgs`        | En cada muestra se sortean K índices distintos sin reemplazo del shell completo G. El objetivo siempre está en `target_channel = K-1`.                                                                                                                                                                                                       | 24  |
 
-**Valor de K a usar:** K=24. Es el valor configurado en ambas arquitecturas para D-Brain (G=60) y es lo suficientemente grande para que la diferencia entre "siempre los mismos 24" y "24 aleatorios de 60" sea medible. Si los recursos lo permiten, repetir con K=10.
+**Valor de K a usar:** K=24. Es el valor configurado en ambas arquitecturas para D-Brain (G=60) y es lo suficientemente grande para que la diferencia entre ventanas contiguas deslizantes sobre los G gradientes y subconjuntos de K índices aleatorios sin reemplazo sea medible. Si los recursos lo permiten, repetir con K=10.
 
 **Arquitecturas involucradas:** Ambas — DRCNet-hybrid-RGS y Restormer-hybrid-RGS. Correr el experimento con cada una de forma independiente para verificar que el hallazgo es robusto a la arquitectura.
 

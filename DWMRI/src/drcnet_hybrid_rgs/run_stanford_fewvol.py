@@ -412,6 +412,8 @@ def _run_stanford_fewvol_body(
                 checkpoint_dir=checkpoint_dir,
                 loss_dir=loss_dir,
                 use_amp=use_amp,
+                supervised_mode=bool(getattr(settings.train, "supervised", False)),
+                cudnn_fast=not bool(getattr(settings.train, "reproducible", False)),
             )
 
         del model
