@@ -14,6 +14,39 @@ def compute_dti_maps(data_xyzv: np.ndarray, bvals: np.ndarray, bvecs: np.ndarray
     return {"fa": tenfit.fa, "md": tenfit.md, "ad": tenfit.ad, "rd": tenfit.rd}
 
 
+def _validate_dti_inputs(
+    denoised_xyzv: np.ndarray,
+    gt_xyzv: np.ndarray,
+    bvals: np.ndarray,
+    bvecs: np.ndarray,
+) -> Optional[str]:
+    if denoised_xyzv.ndim != 4 or gt_xyzv.ndim != 4:
+        return "dti_invalid_ndim_expected_4d"
+    if denoised_xyzv.shape != gt_xyzv.shape:
+        return f"dti_shape_mismatch denoised={denoised_xyzv.shape} gt={gt_xyzv.shape}"
+    nv = int(denoised_xyzv.shape[-1])
+    if len(bvals) != nv:
+        return f"dti_bvals_len_mismatch bvals={len(bvals)} V={nv}"
+    if np.asarray(bvecs).shape != (nv, 3):
+        return f"dti_bvecs_shape_mismatch bvecs={np.asarray(bvecs).shape} expected=({nv},3)"
+    if not np.isfinite(denoised_xyzv).all() or not np.isfinite(gt_xyzv).all():
+        return "dti_non_finite_input_values"
+    if np.sum(np.asarray(bvals) <= 50) < 1:
+        return "dti_requires_b0_volume"
+    return None
+
+
+def _map_sanity(dti_maps: Dict[str, np.ndarray]) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+    fa = np.asarray(dti_maps["fa"])
+    md = np.asarray(dti_maps["md"])
+    out["fa_nonfinite"] = int(np.sum(~np.isfinite(fa)))
+    out["md_nonfinite"] = int(np.sum(~np.isfinite(md)))
+    out["fa_range"] = [float(np.nanmin(fa)), float(np.nanmax(fa))]
+    out["md_range"] = [float(np.nanmin(md)), float(np.nanmax(md))]
+    return out
+
+
 def compute_dti_errors(
     denoised_xyzv: np.ndarray,
     gt_xyzv: np.ndarray,
@@ -34,6 +67,8 @@ def compute_dti_errors(
         "md_mae": mae(d_dti["md"], g_dti["md"]),
         "ad_mae": mae(d_dti["ad"], g_dti["ad"]),
         "rd_mae": mae(d_dti["rd"], g_dti["rd"]),
+        "dti_sanity_denoised": _map_sanity(d_dti),
+        "dti_sanity_gt": _map_sanity(g_dti),
     }
 
 
@@ -86,17 +121,11 @@ def try_compute_dti_errors(
     }
     try:
         nv = int(denoised_xyzv.shape[-1])
-        if gt_xyzv.shape[-1] != nv:
-            base_null["dti_skipped_reason"] = (
-                f"shape_mismatch denoised_V={nv} gt_V={gt_xyzv.shape[-1]}"
-            )
-            return base_null
         bvals = np.asarray(bvals)[:nv]
         bvecs = np.asarray(bvecs)[:nv]
-        if len(bvals) != nv:
-            base_null["dti_skipped_reason"] = (
-                f"bvals_len={len(bvals)} != V={nv}"
-            )
+        reason = _validate_dti_inputs(denoised_xyzv, gt_xyzv, bvals, bvecs)
+        if reason is not None:
+            base_null["dti_skipped_reason"] = reason
             return base_null
         roi = roi_mask_from_gt_threshold(gt_xyzv, roi_threshold)
         out = compute_dti_errors(

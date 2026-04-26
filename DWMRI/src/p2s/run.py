@@ -30,12 +30,20 @@ from dipy.data import get_fnames
 from p2s.sklearn_patch2self import patch2self_sklearn
 from utils import setup_logging
 from utils.data import DBrainDataLoader, StanfordDataLoader
+from utils.eval_protocol import (
+    apply_reconstruction_eval_protocol,
+    compute_roi_mask,
+    metrics_policy_dict,
+    save_run_manifest,
+    summarize_roi,
+)
 from utils.metrics import (
     compute_metrics,
     save_metrics,
     fully_compare_volumes,
     visualize_single_volume,
 )
+from utils.repro_seed import configure_cudnn, set_seed
 from utils.utils import load_config
 import wandb
 
@@ -226,6 +234,10 @@ def main(
         )
     else:
         raise ValueError(f"Unknown dataset: '{dataset}'. Must be 'stanford' or 'dbrain'.")
+    seed = int(getattr(getattr(settings, "train", {}), "seed", 42))
+    reproducible = bool(getattr(getattr(settings, "train", {}), "reproducible", False))
+    set_seed(seed)
+    configure_cudnn(fast=not reproducible)
 
     logging.info("Setting up wandb...")
     wandb_run = None
@@ -345,18 +357,25 @@ def main(
         if original_data is not None:
             logging.info("Computing metrics against clean reference (dBrain)...")
             ref_dwi = original_data[..., dwi_mask]
+            den_dwi = apply_reconstruction_eval_protocol(
+                den_dwi,
+                ref_dwi,
+                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
+                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+            )
 
             metrics = compute_metrics(ref_dwi, den_dwi)
             logging.info(f"Metrics: {metrics}")
             save_metrics(metrics, metrics_dir, filename="metrics.json")
 
             roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
-            if roi_threshold is not None:
-                roi_mask_3d = (ref_dwi > roi_threshold).any(axis=-1)
-                n_roi = int(np.sum(roi_mask_3d))
+            roi_mask_3d = compute_roi_mask(ref_dwi, roi_threshold)
+            if roi_mask_3d is not None:
+                n_roi, roi_pct = summarize_roi(roi_mask_3d)
                 logging.info(
                     f"ROI mask: original > {roi_threshold}, "
-                    f"{n_roi} voxels ({100.0 * n_roi / roi_mask_3d.size:.1f}%)"
+                    f"{n_roi} voxels ({roi_pct:.1f}%)"
                 )
                 metrics_roi = compute_metrics(ref_dwi, den_dwi, mask=roi_mask_3d)
                 logging.info(
@@ -369,17 +388,24 @@ def main(
                 "Computing proxy metrics vs noisy input."
             )
             noisy_dwi = noisy_data[..., dwi_mask]
+            den_dwi = apply_reconstruction_eval_protocol(
+                den_dwi,
+                noisy_dwi,
+                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
+                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+            )
             metrics = compute_metrics(noisy_dwi, den_dwi)
             logging.info(f"Metrics: {metrics}")
             save_metrics(metrics, metrics_dir, filename="metrics.json")
 
             roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
-            if roi_threshold is not None:
-                roi_mask_3d = (noisy_dwi > roi_threshold).any(axis=-1)
-                n_roi = int(np.sum(roi_mask_3d))
+            roi_mask_3d = compute_roi_mask(noisy_dwi, roi_threshold)
+            if roi_mask_3d is not None:
+                n_roi, roi_pct = summarize_roi(roi_mask_3d)
                 logging.info(
                     f"ROI mask: original > {roi_threshold}, "
-                    f"{n_roi} voxels ({100.0 * n_roi / roi_mask_3d.size:.1f}%)"
+                    f"{n_roi} voxels ({roi_pct:.1f}%)"
                 )
                 metrics_roi = compute_metrics(noisy_dwi, den_dwi, mask=roi_mask_3d)
                 logging.info(
@@ -442,6 +468,26 @@ def main(
                 },
                 metrics_dir,
             )
+        metrics_policy = metrics_policy_dict(
+            reference_name="clean_gt" if original_data is not None else "self_reference_noisy",
+            rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
+            rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+            clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+            roi_threshold=getattr(settings.reconstruct, "metrics_roi_threshold", None),
+        )
+        save_run_manifest(
+            out_dir=metrics_dir,
+            seed=seed,
+            reproducible=reproducible,
+            runtime_device="cpu",
+            config={
+                "dataset": dataset,
+                "architecture": "patch2self",
+                "backend": str(getattr(settings.patch2self, "backend", "dipy")).lower(),
+                "b0_threshold": int(getattr(settings.patch2self, "b0_threshold", 50)),
+            },
+            metrics_policy=metrics_policy,
+        )
 
         # Images
         if generate_images and getattr(settings.reconstruct, "generate_images", True):

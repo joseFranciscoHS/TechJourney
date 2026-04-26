@@ -23,7 +23,13 @@ from utils.data import (
     DBrainDataLoader,
     StanfordDataLoader,
     compute_brain_mask,
-    rescale_reconstruction_to_01,
+)
+from utils.eval_protocol import (
+    apply_reconstruction_eval_protocol,
+    compute_roi_mask,
+    metrics_policy_dict,
+    save_run_manifest,
+    summarize_roi,
 )
 from utils.metrics import (
     compute_metrics,
@@ -704,15 +710,6 @@ def main(
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
-            if getattr(settings.reconstruct, "rescale_to_01", False):
-                rescale_mode = getattr(settings.reconstruct, "rescale_mode", "per_volume")
-                reference = original_data if rescale_mode == "match_gt" else None
-                reconstructed_dwis = rescale_reconstruction_to_01(
-                    reconstructed_dwis,
-                    mode=rescale_mode,
-                    reference=reference,
-                )
-
             if getattr(settings.reconstruct, "subtract_background_estimate", False):
                 thresh = getattr(settings.reconstruct, "subtract_background_threshold", 0.02)
                 bg_mask = (original_data <= thresh).all(axis=-1)
@@ -725,12 +722,16 @@ def main(
                     reconstructed_dwis = reconstructed_dwis.astype(np.float64) - shift
                     reconstructed_dwis = np.clip(reconstructed_dwis, 0, 1)
 
-            if getattr(settings.reconstruct, "clip_to_range", False):
-                reconstructed_dwis = np.clip(reconstructed_dwis, 0, 1)
-                logging.info(
-                    f"Clipped to [0, 1]: min={reconstructed_dwis.min():.4f}, "
-                    f"max={reconstructed_dwis.max():.4f}, mean={reconstructed_dwis.mean():.4f}"
-                )
+            rescale_to_01 = bool(getattr(settings.reconstruct, "rescale_to_01", False))
+            rescale_mode = str(getattr(settings.reconstruct, "rescale_mode", "per_volume"))
+            clip_to_range = bool(getattr(settings.reconstruct, "clip_to_range", False))
+            reconstructed_dwis = apply_reconstruction_eval_protocol(
+                reconstructed_dwis,
+                original_data,
+                rescale_to_01=rescale_to_01,
+                rescale_mode=rescale_mode,
+                clip_to_range=clip_to_range,
+            )
 
             metrics_dir = os.path.join(
                 settings.reconstruct.metrics_dir,
@@ -758,11 +759,11 @@ def main(
                 )
 
             roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
-            if roi_threshold is not None:
-                roi_mask = (original_data > roi_threshold).any(axis=-1)
-                n_roi = int(np.sum(roi_mask))
+            roi_mask = compute_roi_mask(original_data, roi_threshold)
+            if roi_mask is not None:
+                n_roi, roi_pct = summarize_roi(roi_mask)
                 logging.info(
-                    f"ROI mask: original > {roi_threshold}, {n_roi:,} voxels ({100.0 * n_roi / roi_mask.size:.1f}%)"
+                    f"ROI mask: original > {roi_threshold}, {n_roi:,} voxels ({roi_pct:.1f}%)"
                 )
                 metrics_roi = compute_metrics(original_data, reconstructed_dwis, mask=roi_mask)
                 logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
@@ -792,11 +793,7 @@ def main(
                         axis=-1,
                     )
                     roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", None)
-                    roi_mask = (
-                        (gt_xyzv > roi_thr).any(axis=-1)
-                        if roi_thr is not None
-                        else None
-                    )
+                    roi_mask = compute_roi_mask(gt_xyzv, roi_thr)
                     dti_metrics = compute_dti_errors(
                         den_xyzv, gt_xyzv, bvals, bvecs, roi_mask=roi_mask
                     )
@@ -806,6 +803,32 @@ def main(
                         wandb.log({f"dti/{k}": v for k, v in dti_metrics.items()})
                 except Exception as dti_exc:
                     logging.warning("DTI metrics skipped: %s", dti_exc)
+
+            policy = metrics_policy_dict(
+                reference_name="clean_gt" if dataset == "dbrain" else "self_reference_noisy",
+                rescale_to_01=rescale_to_01,
+                rescale_mode=rescale_mode,
+                clip_to_range=clip_to_range,
+                roi_threshold=roi_threshold,
+            )
+            save_run_manifest(
+                out_dir=metrics_dir,
+                seed=int(getattr(settings.train, "seed", 42)),
+                reproducible=bool(getattr(settings.train, "reproducible", False)),
+                runtime_device=str(settings.reconstruct.device),
+                config={
+                    "dataset": dataset,
+                    "architecture": "restormer_hybrid_rgs",
+                    "sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
+                    "k_input": int(getattr(settings.data, "num_input_volumes", settings.model.in_channel)),
+                    "g_shell": int(
+                        getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+                    ),
+                    "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                    "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
+                },
+                metrics_policy=policy,
+            )
 
             infer_secs = time.time() - infer_t0
             sec_per_volume = float(infer_secs) / float(reconstructed_dwis.shape[-1])

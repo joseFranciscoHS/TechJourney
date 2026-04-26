@@ -10,6 +10,13 @@ from torch.utils.data import DataLoader, TensorDataset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
+from utils.eval_protocol import (
+    apply_reconstruction_eval_protocol,
+    compute_roi_mask,
+    metrics_policy_dict,
+    save_run_manifest,
+    summarize_roi,
+)
 from utils.metrics import (
     compare_volumes,
     fully_compare_volumes,
@@ -17,6 +24,7 @@ from utils.metrics import (
     save_metrics,
     visualize_single_volume,
 )
+from utils.repro_seed import configure_cudnn, set_seed
 from utils.utils import load_config
 import wandb
 
@@ -64,6 +72,10 @@ def main(
         logging.info("StanfordDataLoader initialized")
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
+    seed = int(getattr(settings.train, "seed", 42))
+    reproducible = bool(getattr(settings.train, "reproducible", False))
+    set_seed(seed)
+    configure_cudnn(fast=not reproducible)
 
     logging.info("Setting up wandb...")
     wandb_run = None
@@ -234,17 +246,24 @@ def main(
                 f"mean: {reconstructed_dwis.mean():.4f}"
             )
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
+            reconstructed_dwis = apply_reconstruction_eval_protocol(
+                reconstructed_dwis,
+                original_data,
+                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
+                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+            )
 
             # Full-image metrics (background voxels can dominate and worsen PSNR/SSIM)
             metrics = compute_metrics(original_data, reconstructed_dwis)
             logging.info(f"Metrics: {metrics}")
             # ROI metrics: only over voxels where original > threshold (excludes air/background)
             roi_threshold = getattr(settings.reconstruct, "metrics_roi_threshold", None)
-            if roi_threshold is not None:
-                roi_mask = (original_data > roi_threshold).any(axis=-1)
-                n_roi = int(np.sum(roi_mask))
+            roi_mask = compute_roi_mask(original_data, roi_threshold)
+            if roi_mask is not None:
+                n_roi, roi_pct = summarize_roi(roi_mask)
                 logging.info(
-                    f"ROI mask: original > {roi_threshold}, {n_roi} voxels ({100.0 * n_roi / roi_mask.size:.1f}%)"
+                    f"ROI mask: original > {roi_threshold}, {n_roi} voxels ({roi_pct:.1f}%)"
                 )
                 metrics_roi = compute_metrics(
                     original_data, reconstructed_dwis, mask=roi_mask
@@ -331,6 +350,27 @@ def main(
                     },
                     metrics_dir,
                 )
+            metrics_policy = metrics_policy_dict(
+                reference_name="clean_gt" if clean_reference else "self_reference_noisy",
+                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
+                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+                roi_threshold=roi_threshold,
+            )
+            save_run_manifest(
+                out_dir=metrics_dir,
+                seed=seed,
+                reproducible=reproducible,
+                runtime_device=str(settings.reconstruct.device),
+                config={
+                    "dataset": dataset,
+                    "architecture": "mds2s",
+                    "num_volumes": int(settings.data.num_volumes),
+                    "num_b0s": int(settings.data.num_b0s),
+                    "n_preds": int(settings.reconstruct.n_preds),
+                },
+                metrics_policy=metrics_policy,
+            )
 
             if generate_images:
                 logging.info("Generating images...")
