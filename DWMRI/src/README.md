@@ -44,6 +44,67 @@ After a validated pilot, refresh the lockfile with `uv lock` at the `DWMRI/` roo
 
 ## Usage
 
+### Paper final protocol runbook
+
+Use this runbook to launch the frozen paper protocol (D-Brain + Stanford) with the final manifest.
+
+1) **Install/sync dependencies**
+
+```bash
+cd /path/to/DWMRI
+uv sync --extra dev
+```
+
+2) **Quick dependency checks**
+
+```bash
+PYTHONPATH=src uv run python -c "import numpy, torch; print('numpy/torch ok')"
+PYTHONPATH=src uv run python -c "import dipy; print('dipy ok')"
+```
+
+3) **Validate protocol/manfiest coherence**
+
+```bash
+python experiments/validate_protocol_final.py \
+  --protocol experiments/paper_protocol_final.yaml \
+  --manifest experiments/paper_manifest_final.yaml \
+  --out /tmp/paper_final_out/protocol_validation.json
+```
+
+4) **Launch full final campaign**
+
+```bash
+export EXP_ID=paper_final_v1
+export OUT=/tmp/paper_final_out
+
+python experiments/driver.py \
+  --manifest experiments/paper_manifest_final.yaml \
+  --exp-id "$EXP_ID" \
+  --output-root "$OUT" \
+  --registry-path "$OUT/registry.jsonl" \
+  --fail-fast
+```
+
+5) **Resume after interruption**
+
+```bash
+python experiments/driver.py \
+  --manifest experiments/paper_manifest_final.yaml \
+  --exp-id "$EXP_ID" \
+  --output-root "$OUT" \
+  --registry-path "$OUT/registry.jsonl" \
+  --resume --retry-failed --fail-fast
+```
+
+6) **Generate closure artifact**
+
+```bash
+python experiments/protocol_closure_report.py \
+  --validation-json "$OUT/protocol_validation.json" \
+  --dependency-json "$OUT/dependency_probe.json" \
+  --out "$OUT/protocol_closure_report.json"
+```
+
 ### Running MDS2S
 
 ```bash
