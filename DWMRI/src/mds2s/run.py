@@ -1,9 +1,9 @@
+import argparse
 import logging
 import os
 
 import numpy as np
 import torch
-import wandb
 from torch.utils.data import DataLoader, TensorDataset
 
 from mds2s.fit import fit_model
@@ -29,12 +29,20 @@ from utils.metrics import (
 from utils.repro_seed import configure_cudnn, set_seed
 from utils.utils import load_config
 
+try:
+    import wandb
+except ImportError:  # pragma: no cover - optional dependency in batch/smoke runs
+    wandb = None
+
 
 def main(
     dataset: str,
     train: bool = True,
     reconstruct: bool = True,
     generate_images: bool = True,
+    use_wandb: bool = True,
+    seed_override: int | None = None,
+    reproducible_override: bool | None = None,
 ):
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
@@ -71,22 +79,35 @@ def main(
         logging.info("StanfordDataLoader initialized")
     else:
         raise ValueError(f"Invalid dataset: {dataset}")
-    seed = int(getattr(settings.train, "seed", 42))
-    reproducible = bool(getattr(settings.train, "reproducible", False))
+    seed = int(
+        seed_override
+        if seed_override is not None
+        else getattr(settings.train, "seed", 42)
+    )
+    reproducible = bool(
+        reproducible_override
+        if reproducible_override is not None
+        else getattr(settings.train, "reproducible", False)
+    )
     set_seed(seed)
     configure_cudnn(fast=not reproducible)
 
+    if wandb is None:
+        use_wandb = False
     logging.info("Setting up wandb...")
     wandb_run = None
     try:
-        wandb_run = wandb.init(
-            project="DWMRI-Denoising",
-            config={
-                "dataset": dataset,
-                "model_name": "MDS2S",
-                **settings.toDict(),
-            },
-        )
+        if use_wandb:
+            wandb_run = wandb.init(
+                project="DWMRI-Denoising",
+                config={
+                    "dataset": dataset,
+                    "model_name": "MDS2S",
+                    **settings.toDict(),
+                },
+            )
+        else:
+            logging.info("wandb disabled (use_wandb=False).")
         logging.info("Loading data...")
         original_from_loader, noisy_data = data_loader.load_data()
         clean_reference = original_from_loader is not None
@@ -434,4 +455,24 @@ def main(
 
 
 if __name__ == "__main__":
-    main(dataset="dbrain")
+    parser = argparse.ArgumentParser(description="Run MDS2S baseline")
+    parser.add_argument("--dataset", default="dbrain", choices=["dbrain", "stanford"])
+    parser.add_argument("--skip-train", action="store_true")
+    parser.add_argument("--skip-reconstruct", action="store_true")
+    parser.add_argument("--no-images", action="store_true")
+    parser.add_argument("--no-wandb", action="store_true")
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--reproducible", choices=["true", "false"], default=None)
+    args = parser.parse_args()
+
+    main(
+        dataset=args.dataset,
+        train=not args.skip_train,
+        reconstruct=not args.skip_reconstruct,
+        generate_images=not args.no_images,
+        use_wandb=not args.no_wandb,
+        seed_override=args.seed,
+        reproducible_override=(
+            None if args.reproducible is None else args.reproducible == "true"
+        ),
+    )

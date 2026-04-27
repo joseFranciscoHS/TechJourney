@@ -17,13 +17,13 @@ Usage (CLI):
 
 from __future__ import annotations
 
+import argparse
 import logging
 import os
 import time
 from typing import Optional
 
 import numpy as np
-import wandb
 from dipy.data import get_fnames
 from dipy.denoise.patch2self import patch2self
 from dipy.io.image import load_nifti, save_nifti
@@ -47,6 +47,11 @@ from utils.metrics import (
 )
 from utils.repro_seed import configure_cudnn, set_seed
 from utils.utils import load_config
+
+try:
+    import wandb
+except ImportError:  # pragma: no cover - optional dependency in batch/smoke runs
+    wandb = None
 
 
 def _resolve_nii_path(settings_data):
@@ -210,6 +215,9 @@ def main(
     reconstruct: bool = True,
     generate_images: bool = True,
     use_wandb: Optional[bool] = None,
+    backend_override: Optional[str] = None,
+    seed_override: Optional[int] = None,
+    reproducible_override: Optional[bool] = None,
 ):
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting Patch2Self pipeline for dataset: {dataset}")
@@ -222,6 +230,8 @@ def main(
     wb_cfg = getattr(full_settings, "wandb", None)
     if use_wandb is None:
         use_wandb = bool(getattr(wb_cfg, "enabled", True)) if wb_cfg is not None else True
+    if wandb is None:
+        use_wandb = False
     wb_project = (
         getattr(wb_cfg, "project", "DWMRI-Denoising") if wb_cfg is not None else "DWMRI-Denoising"
     )
@@ -247,8 +257,25 @@ def main(
         )
     else:
         raise ValueError(f"Unknown dataset: '{dataset}'. Must be 'stanford' or 'dbrain'.")
-    seed = int(getattr(getattr(settings, "train", {}), "seed", 42))
-    reproducible = bool(getattr(getattr(settings, "train", {}), "reproducible", False))
+
+    if backend_override is not None:
+        settings.patch2self.backend = str(backend_override)
+        logging.info("Overriding patch2self backend to: %s", settings.patch2self.backend)
+
+    seed = int(
+        seed_override
+        if seed_override is not None
+        else getattr(getattr(settings, "train", {}), "seed", 42)
+    )
+    reproducible = bool(
+        reproducible_override
+        if reproducible_override is not None
+        else getattr(getattr(settings, "train", {}), "reproducible", False)
+    )
+    if seed_override is not None:
+        logging.info("Overriding seed to: %s", seed)
+    if reproducible_override is not None:
+        logging.info("Overriding reproducible to: %s", reproducible)
     set_seed(seed)
     configure_cudnn(fast=not reproducible)
 
@@ -594,4 +621,34 @@ def main(
 
 
 if __name__ == "__main__":
-    main(dataset="dbrain")
+    parser = argparse.ArgumentParser(description="Run Patch2Self baseline")
+    parser.add_argument("--dataset", default="dbrain", choices=["dbrain", "stanford"])
+    parser.add_argument(
+        "--backend",
+        default=None,
+        choices=["dipy", "sklearn_reference"],
+        help="Optional backend override without editing config.yaml",
+    )
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument(
+        "--reproducible",
+        choices=["true", "false"],
+        default=None,
+        help="Override reproducibility mode",
+    )
+    parser.add_argument("--no-reconstruct", action="store_true")
+    parser.add_argument("--no-images", action="store_true")
+    parser.add_argument("--no-wandb", action="store_true")
+    args = parser.parse_args()
+
+    main(
+        dataset=args.dataset,
+        reconstruct=not args.no_reconstruct,
+        generate_images=not args.no_images,
+        use_wandb=not args.no_wandb,
+        backend_override=args.backend,
+        seed_override=args.seed,
+        reproducible_override=(
+            None if args.reproducible is None else args.reproducible == "true"
+        ),
+    )

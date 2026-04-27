@@ -1,0 +1,72 @@
+protocol:
+  id: "paper_final_v1"
+  description: "Frozen protocol for real paper runs (D-Brain + Stanford, fixed split, full matrix)."
+  created_utc: "2026-04-27T00:00:00Z"
+
+reproducibility:
+  global_seed: 91021
+  fixed_split_strategy: "single_fixed_split"
+  deterministic:
+    reproducible: true
+    note: "Set train.reproducible=true in training configs for stronger determinism."
+
+splits:
+  dbrain:
+    split_id: "dbrain_fixed_v1"
+    definition:
+      volume_pair_source: "experiments/paper_export_dbrain_volume_pair.py"
+      num_b0s: 6
+      num_dwi_shell: 60
+      note: "Single canonical crop and noise generation setup from package config."
+  stanford:
+    split_id: "stanford_fixed_v1"
+    definition:
+      num_b0s: 10
+      num_dwi_shell: 150
+      note: "No clean GT; use proxy/qualitative + runtime comparisons."
+
+evaluation_policy:
+  metrics_roi_threshold: 0.02
+  rescale_to_01: true
+  rescale_mode: "per_volume"
+  clip_to_range: true
+  dti:
+    dbrain: true
+    stanford: false
+
+datasets:
+  dbrain:
+    seed: 91021
+    bvalue: 2500
+    noise_sigma: 0.1
+    shell_sampling_mode: "rgs"
+    k_input: 24
+    g_shell: 60
+    target_channel: 23
+  stanford:
+    seed: 91022
+    bvalue: 1000
+    noise_sigma: 0.01
+    shell_sampling_mode: "rgs"
+    k_input: 24
+    g_shell: 150
+    target_channel: 23
+
+matrix:
+  models:
+    - "drcnet_hybrid_rgs"
+    - "restormer_hybrid_rgs"
+  baselines:
+    - "mppca"
+    - "patch2self_dipy"
+    - "patch2self_sklearn_reference"
+  ablations:
+    - "sampling_sequential_vs_rgs"
+    - "k_sweep"
+    - "mask_p_sensitivity"
+    - "n_context_sensitivity"
+    - "progressive_vs_standard"
+
+manifest:
+  file: "experiments/paper_manifest_final.yaml"
+  smoke_file: "experiments/paper_manifest_smoke.yaml"

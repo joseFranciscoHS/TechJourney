@@ -1,0 +1,237 @@
+# Final production manifest (frozen by paper_protocol_final.yaml).
+# Run from DWMRI repo root:
+#   python experiments/driver.py --manifest experiments/paper_manifest_final.yaml \
+#     --exp-id paper_final_v1 --output-root /tmp/paper_final_out \
+#     --registry-path /tmp/paper_final_out/registry.jsonl --fail-fast
+
+jobs:
+  - id: export_dbrain_npy_final
+    recipe: export_dbrain_npy
+    cwd: repo_root
+    append_registry_flags: false
+    command:
+      - python
+      - experiments/paper_export_dbrain_volume_pair.py
+      - --config
+      - src/drcnet_hybrid_rgs/config.yaml
+      - --out-dir
+      - /tmp/paper_final_shared_npy
+
+  - id: mppca_dbrain_final
+    recipe: mppca_baseline
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - paper_eval.baselines.mppca_run
+      - --noisy
+      - /tmp/paper_final_shared_npy/noisy_dwi_xyzv.npy
+      - --gt
+      - /tmp/paper_final_shared_npy/gt_dwi_xyzv.npy
+      - --out-dir
+      - /tmp/paper_final_out/baselines/mppca/dbrain
+      - --metrics-roi-threshold
+      - "0.02"
+      - --rescale-mode
+      - per_volume
+
+  - id: drcnet_dbrain_rgs_final
+    recipe: drcnet_main
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: restormer_dbrain_rgs_final
+    recipe: restormer_main
+    cwd: null
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: drcnet_stanford_rgs_final
+    recipe: drcnet_main
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - stanford
+      - --no-wandb
+      - --set
+      - stanford.train.seed=91022
+      - --set
+      - stanford.train.reproducible=true
+      - --set
+      - stanford.data.shell_sampling_mode=rgs
+      - --set
+      - stanford.data.num_input_volumes=24
+      - --set
+      - stanford.data.shell_gradient_volumes=150
+      - --set
+      - stanford.data.target_channel=23
+      - --set
+      - stanford.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - stanford.reconstruct.rescale_to_01=true
+      - --set
+      - stanford.reconstruct.rescale_mode=per_volume
+      - --set
+      - stanford.reconstruct.clip_to_range=true
+      - --set
+      - stanford.reconstruct.compute_dti=false
+
+  - id: restormer_stanford_rgs_final
+    recipe: restormer_main
+    cwd: null
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run
+      - --dataset
+      - stanford
+      - --no-wandb
+      - --set
+      - stanford.train.seed=91022
+      - --set
+      - stanford.train.reproducible=true
+      - --set
+      - stanford.data.shell_sampling_mode=rgs
+      - --set
+      - stanford.data.num_input_volumes=24
+      - --set
+      - stanford.data.shell_gradient_volumes=150
+      - --set
+      - stanford.data.target_channel=23
+      - --set
+      - stanford.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - stanford.reconstruct.rescale_to_01=true
+      - --set
+      - stanford.reconstruct.rescale_mode=per_volume
+      - --set
+      - stanford.reconstruct.clip_to_range=true
+      - --set
+      - stanford.reconstruct.compute_dti=false
+
+  - id: p2s_dbrain_dipy_final
+    recipe: p2s_baseline
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - p2s.run
+      - --dataset
+      - dbrain
+      - --backend
+      - dipy
+      - --seed
+      - "91021"
+      - --reproducible
+      - "true"
+      - --no-wandb
+
+  - id: p2s_dbrain_sklearn_reference_final
+    recipe: p2s_baseline
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - p2s.run
+      - --dataset
+      - dbrain
+      - --backend
+      - sklearn_reference
+      - --seed
+      - "91021"
+      - --reproducible
+      - "true"
+      - --no-wandb
+
+  - id: mds2s_dbrain_final
+    recipe: mds2s_baseline
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - mds2s.run
+      - --dataset
+      - dbrain
+      - --seed
+      - "91021"
+      - --reproducible
+      - "true"
+      - --no-wandb
+
+  - id: mds2s_stanford_final
+    recipe: mds2s_baseline
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - mds2s.run
+      - --dataset
+      - stanford
+      - --seed
+      - "91022"
+      - --reproducible
+      - "true"
+      - --no-wandb

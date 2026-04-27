@@ -1,0 +1,38 @@
+jobs:
+  - id: validate_protocol_final
+    recipe: protocol_validation
+    cwd: repo_root
+    append_registry_flags: false
+    command:
+      - python
+      - experiments/validate_protocol_final.py
+      - --protocol
+      - experiments/paper_protocol_final.yaml
+      - --manifest
+      - experiments/paper_manifest_final.yaml
+      - --out
+      - /tmp/paper_protocol_smoke/protocol_validation.json
+
+  - id: smoke_baselines_protocol
+    recipe: dependency_probe
+    cwd: repo_root
+    append_registry_flags: false
+    command:
+      - python
+      - experiments/probe_protocol_dependencies.py
+      - --out
+      - /tmp/paper_protocol_smoke/dependency_probe.json
+
+  - id: smoke_manifest_parse
+    recipe: manifest_parse_smoke
+    cwd: repo_root
+    append_registry_flags: false
+    command:
+      - python
+      - experiments/validate_protocol_final.py
+      - --protocol
+      - experiments/paper_protocol_final.yaml
+      - --manifest
+      - experiments/paper_manifest_final.yaml
+      - --out
+      - /tmp/paper_protocol_smoke/manifest_parse_smoke.json
