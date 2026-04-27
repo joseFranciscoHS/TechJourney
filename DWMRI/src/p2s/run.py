@@ -218,6 +218,8 @@ def main(
     backend_override: Optional[str] = None,
     seed_override: Optional[int] = None,
     reproducible_override: Optional[bool] = None,
+    nii_path_override: Optional[str] = None,
+    bvecs_path_override: Optional[str] = None,
 ):
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting Patch2Self pipeline for dataset: {dataset}")
@@ -239,6 +241,12 @@ def main(
     if dataset == "dbrain":
         logging.info("Dataset: dBrain")
         settings = full_settings.dbrain
+        if nii_path_override is not None:
+            settings.data.nii_path = nii_path_override
+            settings.data.nii_path_lightning = nii_path_override
+        if bvecs_path_override is not None:
+            settings.data.bvecs_path = bvecs_path_override
+            settings.data.bvecs_path_lightning = bvecs_path_override
         nii_path = _resolve_nii_path(settings.data)
         bvecs_path = _resolve_bvecs_path(settings.data)
         data_loader = DBrainDataLoader(
@@ -630,6 +638,8 @@ if __name__ == "__main__":
         help="Optional backend override without editing config.yaml",
     )
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--nii-path", default=None)
+    parser.add_argument("--bvecs-path", default=None)
     parser.add_argument(
         "--reproducible",
         choices=["true", "false"],
@@ -648,6 +658,8 @@ if __name__ == "__main__":
         use_wandb=not args.no_wandb,
         backend_override=args.backend,
         seed_override=args.seed,
+        nii_path_override=args.nii_path,
+        bvecs_path_override=args.bvecs_path,
         reproducible_override=(
             None if args.reproducible is None else args.reproducible == "true"
         ),

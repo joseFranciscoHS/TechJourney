@@ -29,10 +29,11 @@ class DBrainDataLoader:
         b_matrix = np.loadtxt(self.bvecs_path)
         logging.info(f"B-matrix shape: {b_matrix.shape}")
 
+        # TODO: tech debt — verify B-matrix column conventions across external datasets.
         bvecs = np.zeros((b_matrix.shape[0], 3))
-        bvecs[:, 0] = bvecs[:, 3]  # xy component
-        bvecs[:, 1] = bvecs[:, 4]  # xz component
-        bvecs[:, 2] = bvecs[:, 5]  # yz component
+        bvecs[:, 0] = b_matrix[:, 3]  # xy component
+        bvecs[:, 1] = b_matrix[:, 4]  # xz component
+        bvecs[:, 2] = b_matrix[:, 5]  # yz component
         # Compute the magnitudes
         magnitudes = np.linalg.norm(bvecs, axis=1)
         # Identify non-zero magnitudes
@@ -223,12 +224,12 @@ def rescale_reconstruction_to_01(data, mode="per_volume", reference=None, eps=1e
 def compute_brain_mask(data, median_radius=2, numpass=1):
     """
     Compute brain mask using DIPY's median_otsu on the mean volume.
-    
+
     Args:
         data: 4D array (X, Y, Z, volumes) - clean (non-noisy) normalized data
         median_radius: radius for median filter (default: 2)
         numpass: number of median filter passes (default: 1)
-    
+
     Returns:
         mask: 3D boolean array (X, Y, Z) where True = brain tissue
     """
@@ -236,20 +237,20 @@ def compute_brain_mask(data, median_radius=2, numpass=1):
         f"Computing brain mask with median_otsu (radius={median_radius}, numpass={numpass})"
     )
     logging.info(f"Input data shape: {data.shape}")
-    
+
     mean_vol = data.mean(axis=-1)
     logging.info(
         f"Mean volume stats - min: {mean_vol.min():.4f}, max: {mean_vol.max():.4f}, mean: {mean_vol.mean():.4f}"
     )
-    
+
     _, mask = median_otsu(mean_vol, median_radius=median_radius, numpass=numpass)
-    
+
     mask_count = mask.sum()
     total_voxels = mask.size
     mask_pct = 100.0 * mask_count / total_voxels
     logging.info(
         f"Brain mask computed: {mask_count:,} voxels in mask ({mask_pct:.1f}% of total)"
     )
-    
+
     return mask
 

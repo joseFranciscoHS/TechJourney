@@ -43,6 +43,10 @@ def main(
     use_wandb: bool = True,
     seed_override: int | None = None,
     reproducible_override: bool | None = None,
+    nii_path_override: str | None = None,
+    bvecs_path_override: str | None = None,
+    device_override: str | None = None,
+    num_epochs_override: int | None = None,
 ):
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
@@ -60,6 +64,10 @@ def main(
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
         settings = settings.dbrain
+        if nii_path_override is not None:
+            settings.data.nii_path = nii_path_override
+        if bvecs_path_override is not None:
+            settings.data.bvecs_path = bvecs_path_override
         data_loader = DBrainDataLoader(
             nii_path=settings.data.nii_path,
             bvecs_path=settings.data.bvecs_path,
@@ -91,6 +99,11 @@ def main(
     )
     set_seed(seed)
     configure_cudnn(fast=not reproducible)
+    if device_override is not None:
+        settings.train.device = str(device_override)
+        settings.reconstruct.device = str(device_override)
+    if num_epochs_override is not None:
+        settings.train.num_epochs = int(num_epochs_override)
 
     if wandb is None:
         use_wandb = False
@@ -462,7 +475,11 @@ if __name__ == "__main__":
     parser.add_argument("--no-images", action="store_true")
     parser.add_argument("--no-wandb", action="store_true")
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--nii-path", default=None)
+    parser.add_argument("--bvecs-path", default=None)
     parser.add_argument("--reproducible", choices=["true", "false"], default=None)
+    parser.add_argument("--device", choices=["cpu", "cuda"], default=None)
+    parser.add_argument("--num-epochs", type=int, default=None)
     args = parser.parse_args()
 
     main(
@@ -472,6 +489,10 @@ if __name__ == "__main__":
         generate_images=not args.no_images,
         use_wandb=not args.no_wandb,
         seed_override=args.seed,
+        nii_path_override=args.nii_path,
+        bvecs_path_override=args.bvecs_path,
+        device_override=args.device,
+        num_epochs_override=args.num_epochs,
         reproducible_override=(
             None if args.reproducible is None else args.reproducible == "true"
         ),
