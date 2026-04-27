@@ -35,7 +35,6 @@ import numpy as np
 from sklearn import linear_model
 from sklearn.neural_network import MLPRegressor
 
-
 # ---------------------------------------------------------------------------
 # Patch extraction
 # ---------------------------------------------------------------------------
@@ -268,17 +267,15 @@ def patch2self_sklearn(
         # Supervision: central feature of the held-out volume
         Y_target = train[train_f, :, n_feat // 2]   # (n_patches,)
 
-        # Build X matching MD-S2S reference convention:
-        # cur_X = (n_other*n_patches, n_feat) → transposed → (n_feat, n_other*n_patches)
-        n_other_vols = other.shape[0]
-        cur_X = other.reshape(n_other_vols * n_patches, n_feat)
+        # TODO: tech debt — validate this sample/feature layout against the original MD-S2S reference on real D-Brain to confirm parity in final metrics.
+        # Build design matrix per voxel/patch center:
+        # X rows are patch centers; columns are features from all predictor volumes.
+        # This keeps sample axis aligned with Y_target (n_patches).
+        cur_X = np.transpose(other, (1, 0, 2)).reshape(n_patches, -1)
 
         reg = _build_model(model_name)
-        reg.fit(cur_X.T, Y_target)
-        # Predict only over the first n_patches positions (matching one
-        # predictor volume's worth), as in the MD-S2S reference which
-        # returns model.predict(cur_X.T) reshaped to data spatial shape.
-        pred_flat = reg.predict(cur_X.T)[:n_patches]
+        reg.fit(cur_X, Y_target)
+        pred_flat = reg.predict(cur_X)
 
         # Place predictions back into the correct spatial positions
         xs = np.clip(xi, 0, X_dim - 1)

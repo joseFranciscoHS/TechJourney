@@ -73,6 +73,7 @@ def run_mppca(
             "md_mae": None,
             "ad_mae": None,
             "rd_mae": None,
+            "dti_reference": "clean_gt",
             "dti_skipped_reason": "no_bvecs_path",
         }
     save_dti_metrics(dti, out_dir)
@@ -81,7 +82,12 @@ def run_mppca(
         seed=None,
         reproducible=None,
         runtime_device="cpu",
-        config={"architecture": "mppca", "patch_radius": int(patch_radius)},
+        config={
+            "dataset": "dbrain",
+            "architecture": "mppca",
+            "backend": "dipy_localpca",
+            "patch_radius": int(patch_radius),
+        },
         metrics_policy=metrics_policy_dict(
             reference_name="clean_gt",
             rescale_to_01=rescale_to_01,

@@ -8,8 +8,31 @@ import numpy as np
 from dipy.core.gradients import gradient_table
 
 
+def _null_dti_metrics(reason: str, *, reference: str = "clean_gt") -> Dict[str, Any]:
+    return {
+        "fa_mae": None,
+        "md_mae": None,
+        "ad_mae": None,
+        "rd_mae": None,
+        "dti_reference": reference,
+        "dti_skipped_reason": str(reason),
+    }
+
+
+def _with_contract(metrics: Dict[str, Any]) -> Dict[str, Any]:
+    """Guarantee a stable JSON contract across all pipelines."""
+    out = dict(metrics)
+    out.setdefault("fa_mae", None)
+    out.setdefault("md_mae", None)
+    out.setdefault("ad_mae", None)
+    out.setdefault("rd_mae", None)
+    out.setdefault("dti_reference", "clean_gt")
+    out.setdefault("dti_skipped_reason", None)
+    return out
+
+
 def compute_dti_maps(data_xyzv: np.ndarray, bvals: np.ndarray, bvecs: np.ndarray):
-    gtab = gradient_table(bvals, bvecs)
+    gtab = gradient_table(bvals, bvecs=bvecs)
     tenfit = dti.TensorModel(gtab).fit(data_xyzv)
     return {"fa": tenfit.fa, "md": tenfit.md, "ad": tenfit.ad, "rd": tenfit.rd}
 
@@ -113,20 +136,13 @@ def try_compute_dti_errors(
     """
     Compute FA/MD/AD/RD MAE vs GT on ROI; on failure return null metrics + reason.
     """
-    base_null: Dict[str, Any] = {
-        "fa_mae": None,
-        "md_mae": None,
-        "ad_mae": None,
-        "rd_mae": None,
-    }
     try:
         nv = int(denoised_xyzv.shape[-1])
         bvals = np.asarray(bvals)[:nv]
         bvecs = np.asarray(bvecs)[:nv]
         reason = _validate_dti_inputs(denoised_xyzv, gt_xyzv, bvals, bvecs)
         if reason is not None:
-            base_null["dti_skipped_reason"] = reason
-            return base_null
+            return _null_dti_metrics(reason)
         roi = roi_mask_from_gt_threshold(gt_xyzv, roi_threshold)
         out = compute_dti_errors(
             denoised_xyzv.astype(np.float64),
@@ -136,14 +152,14 @@ def try_compute_dti_errors(
             roi_mask=roi,
         )
         out["dti_reference"] = "clean_gt"
-        return out
+        out["dti_skipped_reason"] = None
+        return _with_contract(out)
     except Exception as exc:
         logging.warning("DTI metrics failed: %s", exc)
-        base_null["dti_skipped_reason"] = str(exc)
-        return base_null
+        return _null_dti_metrics(str(exc))
 
 
 def save_dti_metrics(metrics: Dict[str, Any], out_dir: str, name: str = "dti_metrics.json"):
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, name), "w", encoding="utf-8") as f:
-        json.dump(metrics, f, indent=2)
+        json.dump(_with_contract(metrics), f, indent=2)

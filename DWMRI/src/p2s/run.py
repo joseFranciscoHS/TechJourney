@@ -23,11 +23,13 @@ import time
 from typing import Optional
 
 import numpy as np
-from dipy.denoise.patch2self import patch2self
-from dipy.io.image import save_nifti, load_nifti
+import wandb
 from dipy.data import get_fnames
+from dipy.denoise.patch2self import patch2self
+from dipy.io.image import load_nifti, save_nifti
 
 from p2s.sklearn_patch2self import patch2self_sklearn
+from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from utils import setup_logging
 from utils.data import DBrainDataLoader, StanfordDataLoader
 from utils.eval_protocol import (
@@ -39,15 +41,12 @@ from utils.eval_protocol import (
 )
 from utils.metrics import (
     compute_metrics,
-    save_metrics,
     fully_compare_volumes,
+    save_metrics,
     visualize_single_volume,
 )
 from utils.repro_seed import configure_cudnn, set_seed
 from utils.utils import load_config
-import wandb
-
-from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 
 
 def _resolve_nii_path(settings_data):
@@ -84,9 +83,23 @@ def _output_subdir(settings):
     Build dataset-specific subdirectory suffix consistent with other modules
     (bvalue / noise_sigma).
     """
+    backend = str(getattr(settings.patch2self, "backend", "dipy")).lower()
+    if backend == "sklearn_reference":
+        backend_suffix = (
+            f"backend_sklearn_reference"
+            f"_model_{getattr(settings.patch2self, 'sklearn_model', 'ols')}"
+            f"_stride_{int(getattr(settings.patch2self, 'patch_stride', 1))}"
+        )
+    else:
+        backend_suffix = (
+            f"backend_dipy"
+            f"_model_{getattr(settings.patch2self, 'model', 'ols')}"
+        )
+
     return os.path.join(
         f"bvalue_{settings.data.bvalue}",
         f"noise_sigma_{settings.data.noise_sigma}",
+        backend_suffix,
     )
 
 
@@ -453,6 +466,7 @@ def main(
                         "md_mae": None,
                         "ad_mae": None,
                         "rd_mae": None,
+                        "dti_reference": "self_reference_noisy",
                         "dti_skipped_reason": "no_clean_gt",
                     },
                     metrics_dir,
@@ -464,6 +478,9 @@ def main(
                     "md_mae": None,
                     "ad_mae": None,
                     "rd_mae": None,
+                    "dti_reference": "self_reference_noisy"
+                    if original_data is None
+                    else "clean_gt",
                     "dti_skipped_reason": "compute_dti_false_or_non_dbrain",
                 },
                 metrics_dir,

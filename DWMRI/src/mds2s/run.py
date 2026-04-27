@@ -3,10 +3,13 @@ import os
 
 import numpy as np
 import torch
+import wandb
+from torch.utils.data import DataLoader, TensorDataset
+
 from mds2s.fit import fit_model
 from mds2s.model import Self2self
 from mds2s.reconstruction import reconstruct_dwis
-from torch.utils.data import DataLoader, TensorDataset
+from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import DBrainDataLoader, StanfordDataLoader
@@ -18,17 +21,13 @@ from utils.eval_protocol import (
     summarize_roi,
 )
 from utils.metrics import (
-    compare_volumes,
-    fully_compare_volumes,
     compute_metrics,
+    fully_compare_volumes,
     save_metrics,
     visualize_single_volume,
 )
 from utils.repro_seed import configure_cudnn, set_seed
 from utils.utils import load_config
-import wandb
-
-from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 
 
 def main(
@@ -48,7 +47,7 @@ def main(
     logging.info(f"Loading config from: {config_path}")
 
     settings = load_config(config_path)
-    logging.info(f"Configuration loaded successfully")
+    logging.info("Configuration loaded successfully")
 
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
@@ -335,6 +334,7 @@ def main(
                             "md_mae": None,
                             "ad_mae": None,
                             "rd_mae": None,
+                            "dti_reference": "clean_gt",
                             "dti_skipped_reason": str(dti_exc),
                         },
                         metrics_dir,
@@ -346,6 +346,9 @@ def main(
                         "md_mae": None,
                         "ad_mae": None,
                         "rd_mae": None,
+                        "dti_reference": "self_reference_noisy"
+                        if not clean_reference
+                        else "clean_gt",
                         "dti_skipped_reason": "no_clean_gt_or_compute_dti_false",
                     },
                     metrics_dir,

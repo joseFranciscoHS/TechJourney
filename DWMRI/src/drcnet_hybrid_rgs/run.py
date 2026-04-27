@@ -1,5 +1,5 @@
-import gc
 import argparse
+import gc
 import logging
 import os
 import shutil
@@ -7,6 +7,9 @@ import time
 
 import numpy as np
 import torch
+import wandb
+from torch.utils.data import DataLoader, Subset
+
 from drcnet_hybrid_rgs.data import TrainingDataSet
 from drcnet_hybrid_rgs.fit import fit_model
 from drcnet_hybrid_rgs.model import DenoiserNet
@@ -15,7 +18,7 @@ from drcnet_hybrid_rgs.reconstruction import (
     reconstruct_dwis_rgs,
     reconstruct_dwis_sequential_sliding_k,
 )
-from torch.utils.data import DataLoader, Subset
+from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import (
@@ -30,12 +33,6 @@ from utils.eval_protocol import (
     save_run_manifest,
     summarize_roi,
 )
-from utils.metrics import (
-    compute_metrics,
-    fully_compare_volumes,
-    save_metrics,
-    visualize_single_volume,
-)
 from utils.experiment_runtime import (
     append_registry_line,
     apply_output_root,
@@ -44,17 +41,20 @@ from utils.experiment_runtime import (
     hardware_info,
     now_utc_iso,
 )
+from utils.metrics import (
+    compute_metrics,
+    fully_compare_volumes,
+    save_metrics,
+    visualize_single_volume,
+)
+from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.repro_seed import (
     configure_cudnn,
     log_runtime_env,
     make_dataloader_generator,
     set_seed,
 )
-from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
-
-import wandb
-from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
 
 
 def _is_rgs(settings) -> bool:
@@ -802,10 +802,13 @@ def main(
                         [gt_xyzv[..., :nb0], reconstructed_dwis.astype(np.float64)],
                         axis=-1,
                     )
-                    roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", None)
-                    roi_mask = compute_roi_mask(gt_xyzv, roi_thr)
-                    dti_metrics = compute_dti_errors(
-                        den_xyzv, gt_xyzv, bvals, bvecs, roi_mask=roi_mask
+                    roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
+                    dti_metrics = try_compute_dti_errors(
+                        den_xyzv,
+                        gt_xyzv,
+                        bvals,
+                        bvecs,
+                        roi_threshold=roi_thr,
                     )
                     save_dti_metrics(dti_metrics, metrics_dir)
                     logging.info("DTI metrics: %s", dti_metrics)
@@ -813,6 +816,27 @@ def main(
                         wandb.log({f"dti/{k}": v for k, v in dti_metrics.items()})
                 except Exception as dti_exc:
                     logging.warning("DTI metrics skipped: %s", dti_exc)
+                    dti_metrics = {
+                        "fa_mae": None,
+                        "md_mae": None,
+                        "ad_mae": None,
+                        "rd_mae": None,
+                        "dti_reference": "clean_gt",
+                        "dti_skipped_reason": str(dti_exc),
+                    }
+                    save_dti_metrics(dti_metrics, metrics_dir)
+            else:
+                dti_metrics = {
+                    "fa_mae": None,
+                    "md_mae": None,
+                    "ad_mae": None,
+                    "rd_mae": None,
+                    "dti_reference": "clean_gt"
+                    if original_xyzv_b0 is not None
+                    else "self_reference_noisy",
+                    "dti_skipped_reason": "no_clean_gt_or_compute_dti_false",
+                }
+                save_dti_metrics(dti_metrics, metrics_dir)
 
             policy = metrics_policy_dict(
                 reference_name="clean_gt" if dataset == "dbrain" else "self_reference_noisy",

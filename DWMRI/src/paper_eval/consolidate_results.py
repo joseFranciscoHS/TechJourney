@@ -37,6 +37,7 @@ def _collect_rows(root: Path) -> List[Dict[str, Any]]:
             "md_mae": dti.get("md_mae"),
             "ad_mae": dti.get("ad_mae"),
             "rd_mae": dti.get("rd_mae"),
+            "dti_reference": dti.get("dti_reference"),
             "dti_skipped_reason": dti.get("dti_skipped_reason"),
             "n_context_samples": (manifest.get("config", {}) or {}).get("n_context_samples"),
             "n_preds": (manifest.get("config", {}) or {}).get("n_preds"),
