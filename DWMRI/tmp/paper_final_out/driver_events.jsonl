@@ -1,0 +1,6 @@
+{"event": "job_started", "job_id": "export_dbrain_npy_final", "timestamp_utc": "2026-04-28T16:50:53.291287+00:00"}
+{"event": "job_finished", "job_id": "export_dbrain_npy_final", "status": "succeeded", "exit_code": 0, "duration_s": 20.392481088638306, "timestamp_utc": "2026-04-28T16:51:13.685636+00:00"}
+{"event": "job_started", "job_id": "mppca_dbrain_final", "timestamp_utc": "2026-04-28T16:51:13.687311+00:00"}
+{"event": "job_finished", "job_id": "mppca_dbrain_final", "status": "succeeded", "exit_code": 0, "duration_s": 2242.921467065811, "timestamp_utc": "2026-04-28T17:28:36.610814+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_rgs_final", "timestamp_utc": "2026-04-28T17:28:36.612351+00:00"}
+{"event": "job_interrupted", "job_id": "drcnet_dbrain_rgs_final", "signal": 15, "timestamp_utc": "2026-04-28T18:58:08.872217+00:00"}

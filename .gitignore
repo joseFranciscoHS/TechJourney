@@ -135,6 +135,7 @@ runs/
 wandb/
 mlruns/
 .mlflow/
+*.nii.gz
 
 # Data files
 *.csv
