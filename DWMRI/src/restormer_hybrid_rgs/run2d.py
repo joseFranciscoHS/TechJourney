@@ -10,6 +10,14 @@ from utils.data import DBrainDataLoader
 from utils.experiment_runtime import append_registry_line, gpu_peak_mem_mb, now_utc_iso
 
 
+def _auto_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda:0"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 class Sequential2DDataset(Dataset):
     def __init__(self, data_xyzv, k=24, target_channel=23, mask_p=0.3):
         self.data = np.transpose(data_xyzv, (3, 0, 1, 2))  # (V,X,Y,Z)
@@ -50,7 +58,7 @@ def main():
     args = p.parse_args()
     start = now_utc_iso()
     t0 = time.time()
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = _auto_device()
     loader = DBrainDataLoader()
     gt, noisy = loader.load_data()
     noisy = noisy[:128, :128, :96, 6:66]

@@ -6,7 +6,9 @@ from tqdm import tqdm
 
 
 def _cuda_device(device) -> bool:
-    return isinstance(device, str) and device[:4] == "cuda"
+    if isinstance(device, torch.device):
+        return device.type == "cuda"
+    return str(device).split(":", maxsplit=1)[0] == "cuda"
 
 
 def reconstruct_dwis(

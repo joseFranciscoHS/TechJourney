@@ -475,7 +475,8 @@ def main(
 
         scheduler = None
         if settings.train.use_scheduler:
-            if settings.train.scheduler_type == "step":
+            scheduler_type = str(getattr(settings.train, "scheduler_type", "step"))
+            if scheduler_type == "step":
                 scheduler = torch.optim.lr_scheduler.StepLR(
                     optimizer,
                     step_size=settings.train.scheduler_step_size,
@@ -485,7 +486,7 @@ def main(
                     f"Scheduler: StepLR(step_size={settings.train.scheduler_step_size}, "
                     f"gamma={settings.train.scheduler_gamma})"
                 )
-            elif settings.train.scheduler_type == "cosine":
+            elif scheduler_type == "cosine":
                 scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
                     optimizer,
                     T_0=settings.train.scheduler_T_0,
@@ -495,7 +496,7 @@ def main(
                 logging.info(
                     f"Scheduler: CosineAnnealingWarmRestarts(T_0={settings.train.scheduler_T_0}, T_mult={settings.train.scheduler_T_mult}, eta_min={settings.train.eta_min_lr})"
                 )
-            elif settings.train.scheduler_type == "reduceLROnPlateau":
+            elif scheduler_type == "reduceLROnPlateau":
                 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                     optimizer,
                     patience=settings.train.scheduler_patience,

@@ -12,6 +12,12 @@ from utils.repro_seed import configure_cudnn
 from utils.training_tracker import TrainingLossTracker
 
 
+def _device_type(device) -> str:
+    if isinstance(device, torch.device):
+        return device.type
+    return str(device).split(":", maxsplit=1)[0]
+
+
 def fit_model(
     model,
     optimizer: torch.optim.Optimizer,
@@ -27,10 +33,11 @@ def fit_model(
 ):
     configure_cudnn(fast=cudnn_fast)
 
-    if device[:4] == "cuda":
+    device_type = _device_type(device)
+    if device_type == "cuda":
         torch.cuda.empty_cache()
 
-    amp_enabled = bool(use_amp) and device[:4] == "cuda"
+    amp_enabled = bool(use_amp) and device_type == "cuda"
     scaler = torch.amp.GradScaler(enabled=amp_enabled)
     logging.info(f"AMP (Automatic Mixed Precision): {'enabled' if amp_enabled else 'disabled'}")
 
@@ -100,7 +107,7 @@ def fit_model(
 
             optimizer.zero_grad()
 
-            with torch.amp.autocast(device_type="cuda", enabled=amp_enabled):
+            with torch.amp.autocast(device_type=device_type, enabled=amp_enabled):
                 x_recon = model(x)
                 if supervised_mode:
                     loss = torch.mean((x_recon - noisy_target_volume) ** 2)

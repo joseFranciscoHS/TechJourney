@@ -12,6 +12,14 @@ from typing import Dict, List
 import torch
 
 
+def _resolve_run_device(prefer_mps: bool) -> str:
+    if torch.cuda.is_available():
+        return "cuda"
+    if prefer_mps and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 @dataclass(frozen=True)
 class PilotSpec:
     dataset_primary: str
@@ -26,6 +34,7 @@ class PilotSpec:
     epochs_short: int
     output_root: str
     registry_path: str
+    run_device: str
     dbrain_nii_path: str | None
     dbrain_bvecs_path: str | None
 
@@ -43,6 +52,7 @@ class PilotSpec:
             "epochs_short": self.epochs_short,
             "output_root": self.output_root,
             "registry_path": self.registry_path,
+            "run_device": self.run_device,
             "dbrain_nii_path": self.dbrain_nii_path,
             "dbrain_bvecs_path": self.dbrain_bvecs_path,
         }
@@ -50,6 +60,7 @@ class PilotSpec:
 
 def frozen_spec(
     output_root: str,
+    run_device: str,
     dbrain_nii_path: str | None = None,
     dbrain_bvecs_path: str | None = None,
 ) -> PilotSpec:
@@ -67,6 +78,7 @@ def frozen_spec(
         epochs_short=2,
         output_root=pilot_root,
         registry_path=os.path.join(pilot_root, "registry", "pilot_runtime.jsonl"),
+        run_device=run_device,
         dbrain_nii_path=dbrain_nii_path,
         dbrain_bvecs_path=dbrain_bvecs_path,
     )
@@ -79,9 +91,10 @@ def _add_overrides(cmd: List[str], overrides: List[str]) -> List[str]:
     return out
 
 
-def _base_overrides(spec: PilotSpec, sampling_mode: str, dataset_scope: str) -> List[str]:
+def _base_overrides(
+    spec: PilotSpec, sampling_mode: str, dataset_scope: str, run_device: str
+) -> List[str]:
     prefix = f"{dataset_scope}."
-    run_device = "cuda" if torch.cuda.is_available() else "cpu"
     overrides = [
         f"{prefix}train.device={run_device}",
         f"{prefix}reconstruct.device={run_device}",
@@ -147,6 +160,31 @@ def _run_cmd(cmd: List[str], execute: bool) -> int:
     return int(proc.returncode)
 
 
+def _with_cpu_fallback(cmd: List[str], run_device: str) -> List[str]:
+    if run_device != "mps":
+        return cmd
+    out: List[str] = []
+    idx = 0
+    while idx < len(cmd):
+        token = cmd[idx]
+        if token == "--set" and idx + 1 < len(cmd):
+            override = cmd[idx + 1]
+            if override.endswith("train.device=mps"):
+                override = override.replace("train.device=mps", "train.device=cpu")
+            elif override.endswith("reconstruct.device=mps"):
+                override = override.replace("reconstruct.device=mps", "reconstruct.device=cpu")
+            out.extend([token, override])
+            idx += 2
+            continue
+        if token == "--device" and idx + 1 < len(cmd):
+            out.extend([token, "cpu"])
+            idx += 2
+            continue
+        out.append(token)
+        idx += 1
+    return out
+
+
 def _phase_b_close_eval_gaps(spec: PilotSpec) -> List[List[str]]:
     common = [
         sys.executable,
@@ -165,7 +203,12 @@ def _phase_b_close_eval_gaps(spec: PilotSpec) -> List[List[str]]:
     return [
         _add_overrides(
             common,
-            _base_overrides(spec, sampling_mode="rgs", dataset_scope=spec.dataset_primary),
+            _base_overrides(
+                spec,
+                sampling_mode="rgs",
+                dataset_scope=spec.dataset_primary,
+                run_device=spec.run_device,
+            ),
         )
     ]
 
@@ -196,7 +239,10 @@ def _phase_c_core_matrix(spec: PilotSpec) -> List[List[str]]:
                 _add_overrides(
                     base,
                     _base_overrides(
-                        spec, sampling_mode=sampling, dataset_scope=spec.dataset_primary
+                        spec,
+                        sampling_mode=sampling,
+                        dataset_scope=spec.dataset_primary,
+                        run_device=spec.run_device,
                     ),
                 )
             )
@@ -219,7 +265,10 @@ def _phase_c_core_matrix(spec: PilotSpec) -> List[List[str]]:
                 _add_overrides(
                     base2d,
                     _base_overrides(
-                        spec, sampling_mode=sampling, dataset_scope=spec.dataset_primary
+                        spec,
+                        sampling_mode=sampling,
+                        dataset_scope=spec.dataset_primary,
+                        run_device=spec.run_device,
                     ),
                 )
             )
@@ -271,7 +320,7 @@ def _phase_c_core_matrix(spec: PilotSpec) -> List[List[str]]:
         "--no-images",
         "--no-wandb",
         "--device",
-        "cuda" if torch.cuda.is_available() else "cpu",
+        spec.run_device,
         "--num-epochs",
         str(spec.epochs_short),
         "--seed",
@@ -322,7 +371,12 @@ def _phase_d_core_ablations(spec: PilotSpec) -> List[List[str]]:
                 "--recipe",
                 f"pilot_phase_d_{arch}_k{k}",
             ]
-            ov = _base_overrides(spec, sampling_mode="rgs", dataset_scope=spec.dataset_primary)
+            ov = _base_overrides(
+                spec,
+                sampling_mode="rgs",
+                dataset_scope=spec.dataset_primary,
+                run_device=spec.run_device,
+            )
             ov.extend(
                 [
                     f"{spec.dataset_primary}.data.num_input_volumes={k}",
@@ -352,7 +406,12 @@ def _phase_d_core_ablations(spec: PilotSpec) -> List[List[str]]:
                 "--recipe",
                 f"pilot_phase_d_{arch}_mask{mask_p}",
             ]
-            ov = _base_overrides(spec, sampling_mode="rgs", dataset_scope=spec.dataset_primary)
+            ov = _base_overrides(
+                spec,
+                sampling_mode="rgs",
+                dataset_scope=spec.dataset_primary,
+                run_device=spec.run_device,
+            )
             ov.extend(
                 [
                     f"{spec.dataset_primary}.train.mask_p={mask_p}",
@@ -387,7 +446,12 @@ def _phase_e_stanford_smoke(spec: PilotSpec) -> List[List[str]]:
         cmds.append(
             _add_overrides(
                 base,
-                _base_overrides(spec, sampling_mode="rgs", dataset_scope=spec.dataset_smoke),
+                _base_overrides(
+                    spec,
+                    sampling_mode="rgs",
+                    dataset_scope=spec.dataset_smoke,
+                    run_device=spec.run_device,
+                ),
             )
         )
     return cmds
@@ -464,12 +528,19 @@ def main():
     )
     parser.add_argument("--dbrain-nii-path", default=None)
     parser.add_argument("--dbrain-bvecs-path", default=None)
+    parser.add_argument(
+        "--prefer-mps",
+        action="store_true",
+        help="Prefer MPS on Apple Silicon when CUDA is unavailable (else fallback to CPU).",
+    )
     args = parser.parse_args()
 
+    run_device = _resolve_run_device(prefer_mps=bool(args.prefer_mps))
     spec = frozen_spec(
         output_root=args.output_root,
         dbrain_nii_path=args.dbrain_nii_path,
         dbrain_bvecs_path=args.dbrain_bvecs_path,
+        run_device=run_device,
     )
     Path(spec.output_root).mkdir(parents=True, exist_ok=True)
     Path(os.path.dirname(spec.registry_path)).mkdir(parents=True, exist_ok=True)
@@ -485,6 +556,12 @@ def main():
         print(f"\n=== {phase} ===")
         for cmd in phases[phase]:
             rc = _run_cmd(cmd, execute=bool(args.execute))
+            # TODO: tech debt — classify MPS failures by exception type instead of retrying all non-zero exits.
+            if rc != 0 and args.execute and spec.run_device == "mps":
+                fallback_cmd = _with_cpu_fallback(cmd, run_device=spec.run_device)
+                if fallback_cmd != cmd:
+                    print("Retrying failed MPS command on CPU fallback.")
+                    rc = _run_cmd(fallback_cmd, execute=True)
             if rc != 0:
                 failures.append({"phase": phase, "cmd": cmd, "exit_code": rc})
                 if args.execute:

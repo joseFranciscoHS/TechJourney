@@ -35,6 +35,17 @@ except ImportError:  # pragma: no cover - optional dependency in batch/smoke run
     wandb = None
 
 
+def _resolve_device(device_value: str) -> str:
+    if device_value == "cuda" and not torch.cuda.is_available():
+        logging.warning("CUDA requested but unavailable; falling back to CPU.")
+        return "cpu"
+    if device_value == "mps":
+        if not hasattr(torch.backends, "mps") or not torch.backends.mps.is_available():
+            logging.warning("MPS requested but unavailable; falling back to CPU.")
+            return "cpu"
+    return device_value
+
+
 def main(
     dataset: str,
     train: bool = True,
@@ -100,8 +111,9 @@ def main(
     set_seed(seed)
     configure_cudnn(fast=not reproducible)
     if device_override is not None:
-        settings.train.device = str(device_override)
-        settings.reconstruct.device = str(device_override)
+        resolved_device = _resolve_device(str(device_override))
+        settings.train.device = resolved_device
+        settings.reconstruct.device = resolved_device
     if num_epochs_override is not None:
         settings.train.num_epochs = int(num_epochs_override)
 
@@ -478,7 +490,7 @@ if __name__ == "__main__":
     parser.add_argument("--nii-path", default=None)
     parser.add_argument("--bvecs-path", default=None)
     parser.add_argument("--reproducible", choices=["true", "false"], default=None)
-    parser.add_argument("--device", choices=["cpu", "cuda"], default=None)
+    parser.add_argument("--device", choices=["cpu", "cuda", "mps"], default=None)
     parser.add_argument("--num-epochs", type=int, default=None)
     args = parser.parse_args()
 
