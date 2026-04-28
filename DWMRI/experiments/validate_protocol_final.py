@@ -31,6 +31,7 @@ def validate(protocol_path: Path, manifest_path: Path):
     manifest = _load_yaml(manifest_path)
     jobs = _job_map(manifest)
     errors = []
+    warnings = []
 
     required_jobs = [
         "export_dbrain_npy_final",
@@ -297,6 +298,30 @@ def validate(protocol_path: Path, manifest_path: Path):
             if token not in cmd:
                 errors.append(f"{jid}:missing_token:{token}")
 
+    parity_cfg = protocol.get("matrix", {}).get("parity_2d_vs_3d", {})
+    parity_jobs = [str(j) for j in parity_cfg.get("required_jobs", [])]
+    pc = parity_cfg.get("constraints", {})
+    for jid in parity_jobs:
+        if jid not in jobs:
+            warnings.append(f"parity2d_missing_job:{jid}")
+            continue
+        cmd = _command_text(jobs[jid])
+        expected_tokens = (
+            f"dbrain.train.seed={pc.get('seed', dbrain_seed)}",
+            f"dbrain.data.shell_sampling_mode={pc.get('shell_sampling_mode', 'rgs')}",
+            f"dbrain.data.num_input_volumes={pc.get('k_input', 24)}",
+            f"dbrain.data.target_channel={pc.get('target_channel', 23)}",
+            f"dbrain.reconstruct.mask_p={pc.get('mask_p', 0.3)}",
+            f"dbrain.reconstruct.metrics_roi_threshold={pc.get('metrics_roi_threshold', roi_thr)}",
+            f"dbrain.reconstruct.rescale_mode={pc.get('rescale_mode', rescale_mode)}",
+            f"dbrain.reconstruct.clip_to_range={str(pc.get('clip_to_range', True)).lower()}",
+            f"dbrain.reconstruct.compute_dti={str(pc.get('compute_dti', True)).lower()}",
+            "--regime self_supervised",
+        )
+        for token in expected_tokens:
+            if token not in cmd:
+                warnings.append(f"parity2d_warning:{jid}:missing_token:{token}")
+
     status = "ok" if not errors else "failed"
     return {
         "status": status,
@@ -304,6 +329,7 @@ def validate(protocol_path: Path, manifest_path: Path):
         "manifest_path": str(manifest_path),
         "num_jobs": len(manifest.get("jobs", [])),
         "errors": errors,
+        "warnings": warnings,
     }
 
 

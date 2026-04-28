@@ -85,6 +85,29 @@ matrix:
         proposed_architectures: ["drcnet", "restormer"]
         baselines: ["mppca", "p2s_dipy", "p2s_sklearn_reference"]
     architectures: ["drcnet", "restormer"]
+  parity_2d_vs_3d:
+    dataset: "dbrain"
+    required_jobs:
+      - "drcnet_dbrain_2d_rgs_k24_ablation"
+      - "restormer_dbrain_2d_rgs_k24_ablation"
+    constraints:
+      seed: 91021
+      shell_sampling_mode: "rgs"
+      k_input: 24
+      target_channel: 23
+      mask_p: 0.3
+      metrics_roi_threshold: 0.02
+      rescale_mode: "per_volume"
+      clip_to_range: true
+      compute_dti: true
+      registry_fields:
+        - "regime"
+        - "sampling_config.g_shell"
+        - "sampling_config.k_input"
+        - "sampling_config.target_channel"
+        - "inference_config.n_context_samples"
+        - "inference_config.n_preds"
+        - "train_config.progressive_enabled"
 
 manifest:
   file: "experiments/paper_manifest_final.yaml"

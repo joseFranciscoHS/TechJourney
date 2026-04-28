@@ -51,6 +51,12 @@ When using the driver or ad hoc CLI:
 - [ ] Confirm **`--registry-path`** points to the JSONL you intend to append to.
 - [ ] Confirm **`--output-root`** if you are isolating checkpoints and metrics from the in-repo default paths.
 
-## “Hueco 2D” / plan §1.4 (paper `plan_para_escribir_el_paper.md`)
+## 2D vs 3D parity status (§1.4)
 
-**`run2d`** in this repo is a **pilot / engineering shakedown** only. It is **not** paper–parity for the ablation in **§1.4 (3D vs Conv2D slice-by-slice)** until the 2D path is fully aligned (same RGS+masking protocol, reporting, and registry conventions as 3D). Do not treat 2D pilot metrics as the published 2D-vs-3D ablation.
+`run2d_hybrid` is now intended for paper ablations when driven with the paper manifest:
+
+- Same dataset crop and RGS controls (`K`, `target_channel`, `shell_sampling_mode`) as 3D jobs.
+- Same reconstruction policy knobs (`mask_p`, `n_context_samples`, `n_preds`, ROI/rescale/clip, DTI toggle) pinned in manifest.
+- Same registry schema family (`sampling_config`, `inference_config`, `train_config`, `regime`) for cross-model comparisons.
+
+Parity is validated in `validate_protocol_final.py` as a **soft gate**: missing 2D parity tokens are emitted as structured `warnings` (non-blocking) so runs remain possible while drift is visible. For paper tables, treat non-empty parity warnings as a review item before freezing results.

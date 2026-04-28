@@ -100,8 +100,10 @@ def main():
     parser.add_argument("--exp-id", default=None)
     parser.add_argument("--job-id", default=None)
     parser.add_argument("--recipe", default="restormer_2d_hybrid")
+    parser.add_argument("--regime", default="self_supervised")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
+    parser.add_argument("--no-images", action="store_true", help="Unused parity placeholder")
     parser.add_argument("--no-wandb", action="store_true", help="Unused placeholder")
     parser.add_argument("--checkpoint", default=None)
     args = parser.parse_args()
@@ -373,8 +375,11 @@ def main():
             "error": run_error,
             "timestamps": {"start_utc": started, "end_utc": now_utc_iso()},
             "duration_s": time.time() - wall_t0,
+            "stage": "train_reconstruct"
+            if (not args.skip_train and not args.skip_reconstruct)
+            else ("train" if not args.skip_train else "reconstruct"),
             "dataset": "dbrain",
-            "regime": "self_supervised",
+            "regime": args.regime,
             "architecture": "restormer",
             "dimensionality": "2d",
             "sampling_mode": mode,
@@ -394,6 +399,9 @@ def main():
                 "epochs": int(getattr(settings.train, "num_epochs", 0)),
                 "batch_size": int(getattr(settings.train, "batch_size", 0)),
                 "lr": float(getattr(settings.train, "learning_rate", 0.0)),
+                "progressive_enabled": bool(
+                    getattr(getattr(settings.train, "progressive", {}), "enabled", False)
+                ),
             },
             "control_metrics": {
                 "n_params": int(n_params),

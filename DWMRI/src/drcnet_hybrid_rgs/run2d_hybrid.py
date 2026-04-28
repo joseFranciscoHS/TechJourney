@@ -47,7 +47,7 @@ from utils.repro_seed import (
     make_dataloader_generator,
     set_seed,
 )
-from utils.utils import load_config
+from utils.utils import load_config, noise_path_segment
 
 from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
 
@@ -80,8 +80,10 @@ def main():
     parser.add_argument("--exp-id", default=None)
     parser.add_argument("--job-id", default=None)
     parser.add_argument("--recipe", default="drcnet_2d_hybrid")
+    parser.add_argument("--regime", default="self_supervised")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
+    parser.add_argument("--no-images", action="store_true", help="Unused parity placeholder")
     parser.add_argument("--no-wandb", action="store_true", help="Unused placeholder")
     parser.add_argument("--checkpoint", default=None)
     args = parser.parse_args()
@@ -141,18 +143,26 @@ def main():
         generator=dl_generator,
     )
 
+    noise_segment = noise_path_segment(
+        getattr(settings.data, "noise_type", "rician"),
+        getattr(settings.data, "noise_sigma", 0.1),
+    )
+    bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
+    vol_seg = f"{mode}_G{int(getattr(settings.data, 'shell_gradient_volumes', settings.data.num_volumes))}_K{k}"
     checkpoint_dir = os.path.join(
         settings.train.checkpoint_dir,
-        f"b{settings.data.bvalue}",
-        f"2d_{mode}_K{k}",
-        f"lr_{settings.train.learning_rate}",
+        bvalue_segment,
+        f"2d_{vol_seg}",
+        noise_segment,
+        f"learning_rate_{settings.train.learning_rate}",
     )
     os.makedirs(checkpoint_dir, exist_ok=True)
     metrics_dir = os.path.join(
         getattr(settings.reconstruct, "metrics_dir", "drcnet_hybrid_rgs/metrics/dbrain"),
-        "2d_hybrid",
-        f"b{settings.data.bvalue}",
-        f"{mode}_K{k}",
+        bvalue_segment,
+        f"2d_{vol_seg}",
+        noise_segment,
+        f"learning_rate_{settings.train.learning_rate}",
     )
     os.makedirs(metrics_dir, exist_ok=True)
 
@@ -308,12 +318,22 @@ def main():
         "status": "success",
         "timestamps": {"start_utc": started, "end_utc": now_utc_iso()},
         "duration_s": time.time() - wall_t0,
+        "stage": "train_reconstruct"
+        if (not args.skip_train and not args.skip_reconstruct)
+        else ("train" if not args.skip_train else "reconstruct"),
         "dataset": "dbrain",
-        "regime": "self_supervised",
+        "regime": args.regime,
         "architecture": "drcnet",
         "dimensionality": "2d",
         "sampling_mode": mode,
-        "sampling_config": {"k_input": k, "target_channel": tc},
+        "sampling_config": {
+            "g_shell": int(
+                getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+            ),
+            "k_input": int(k),
+            "target_channel": int(tc),
+            "window_policy": "sliding_last_target",
+        },
         "inference_config": {
             "n_context_samples": int(
                 getattr(settings.reconstruct, "n_context_samples", 0)
@@ -324,6 +344,9 @@ def main():
             "epochs": int(getattr(settings.train, "num_epochs", 0)),
             "batch_size": int(getattr(settings.train, "batch_size", 0)),
             "lr": float(getattr(settings.train, "learning_rate", 0.0)),
+            "progressive_enabled": bool(
+                getattr(getattr(settings.train, "progressive", {}), "enabled", False)
+            ),
         },
         "control_metrics": {
             "n_params": n_params,
