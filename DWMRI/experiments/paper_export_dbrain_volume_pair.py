@@ -38,9 +38,17 @@ def main():
         help="YAML containing dbrain.data / dbrain.model (for RGS G,K)",
     )
     p.add_argument("--out-dir", required=True)
+    p.add_argument(
+        "--noise-sigma",
+        type=float,
+        default=None,
+        help="Optional override for dbrain.data.noise_sigma before export.",
+    )
     args = p.parse_args()
 
     settings = load_config(args.config).dbrain
+    if args.noise_sigma is not None:
+        settings.data.noise_sigma = float(args.noise_sigma)
     os.makedirs(args.out_dir, exist_ok=True)
 
     dl = DBrainDataLoader(

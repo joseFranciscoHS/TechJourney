@@ -18,6 +18,14 @@ def _command_text(job):
     return " ".join(str(x) for x in job.get("command", []))
 
 
+def _mask_tag(mask_p: float) -> str:
+    return str(mask_p).replace("0.", "0").replace(".", "")
+
+
+def _sigma_tag(sigma: float) -> str:
+    return f"{int(round(float(sigma) * 1000)):03d}"
+
+
 def validate(protocol_path: Path, manifest_path: Path):
     protocol = _load_yaml(protocol_path)
     manifest = _load_yaml(manifest_path)
@@ -51,9 +59,6 @@ def validate(protocol_path: Path, manifest_path: Path):
             "drcnet_dbrain_2d_rgs_k24_ablation",
             "restormer_dbrain_2d_rgs_k24_ablation",
         ],
-        "k_sweep": ["drcnet_dbrain_k10_ablation"],
-        "mask_p_sensitivity": ["drcnet_dbrain_maskp_02_ablation"],
-        "n_context_sensitivity": ["drcnet_dbrain_ncontext_12_ablation"],
         "progressive_vs_standard": [
             "drcnet_dbrain_progressive_off_ablation",
             "restormer_dbrain_progressive_off_ablation",
@@ -64,6 +69,143 @@ def validate(protocol_path: Path, manifest_path: Path):
         for jid in required_ablation_jobs.get(ablation, []):
             if jid not in jobs:
                 errors.append(f"missing_ablation_job:{ablation}:{jid}")
+
+    sweep_cfg = protocol.get("matrix", {}).get("sweep_coverage", {})
+    sweep_archs = [str(a) for a in sweep_cfg.get("architectures", [])]
+    k_sweep_cfg = sweep_cfg.get("k_sweep", {})
+    mask_values = [float(v) for v in sweep_cfg.get("mask_p_sensitivity", [])]
+    nctx_values = [int(v) for v in sweep_cfg.get("n_context_sensitivity", [])]
+
+    for arch in sweep_archs:
+        for dataset, k_values in k_sweep_cfg.items():
+            for k in [int(v) for v in k_values]:
+                jid = f"{arch}_{dataset}_k{k}_ablation"
+                if jid not in jobs:
+                    errors.append(f"missing_ablation_job:k_sweep:{jid}")
+                    continue
+                cmd = _command_text(jobs[jid])
+                for token in (
+                    f"{dataset}.data.shell_sampling_mode=rgs",
+                    f"{dataset}.model.in_channel={k}",
+                    f"{dataset}.data.num_input_volumes={k}",
+                    f"{dataset}.data.target_channel={k - 1}",
+                ):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
+    for arch in sweep_archs:
+        for dataset in k_sweep_cfg.keys():
+            for mask_p in mask_values:
+                jid = f"{arch}_{dataset}_maskp_{_mask_tag(mask_p)}_ablation"
+                if jid not in jobs:
+                    errors.append(f"missing_ablation_job:mask_p_sensitivity:{jid}")
+                    continue
+                cmd = _command_text(jobs[jid])
+                for token in (
+                    f"{dataset}.data.shell_sampling_mode=rgs",
+                    f"{dataset}.train.mask_p={mask_p}",
+                    f"{dataset}.reconstruct.mask_p={mask_p}",
+                ):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
+    for arch in sweep_archs:
+        for dataset in k_sweep_cfg.keys():
+            for nctx in nctx_values:
+                jid = f"{arch}_{dataset}_ncontext_{nctx}_ablation"
+                if jid not in jobs:
+                    errors.append(f"missing_ablation_job:n_context_sensitivity:{jid}")
+                    continue
+                cmd = _command_text(jobs[jid])
+                for token in (
+                    f"{dataset}.data.shell_sampling_mode=rgs",
+                    f"{dataset}.reconstruct.n_context_samples={nctx}",
+                ):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
+    npreds_cfg = sweep_cfg.get("n_preds_sensitivity", {})
+    npreds_values = [int(v) for v in npreds_cfg.get("dbrain", [])]
+    npreds_archs = [str(v) for v in npreds_cfg.get("architectures", [])]
+    fixed_nctx = int(npreds_cfg.get("fixed_n_context_samples", 24))
+    for arch in npreds_archs:
+        for npreds in npreds_values:
+            jid = f"{arch}_dbrain_npreds_{npreds}_ablation"
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:n_preds_sensitivity:{jid}")
+                continue
+            cmd = _command_text(jobs[jid])
+            for token in (
+                "dbrain.data.shell_sampling_mode=rgs",
+                f"dbrain.reconstruct.n_context_samples={fixed_nctx}",
+                f"dbrain.reconstruct.n_preds={npreds}",
+            ):
+                if token not in cmd:
+                    errors.append(f"{jid}:missing_token:{token}")
+
+    sigma_cfg = sweep_cfg.get("noise_sigma_sensitivity", {})
+    sigma_values = [float(v) for v in sigma_cfg.get("dbrain", [])]
+    sigma_archs = [
+        str(v) for v in sigma_cfg.get("methods", {}).get("proposed_architectures", [])
+    ]
+    sigma_baselines = [str(v) for v in sigma_cfg.get("methods", {}).get("baselines", [])]
+
+    for sigma in sigma_values:
+        stag = _sigma_tag(sigma)
+        export_jid = f"export_dbrain_npy_sigma_{stag}_final"
+        if export_jid not in jobs:
+            errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{export_jid}")
+        else:
+            cmd = _command_text(jobs[export_jid])
+            for token in ("experiments/paper_export_dbrain_volume_pair.py", f"--noise-sigma {sigma:.2f}"):
+                if token not in cmd:
+                    errors.append(f"{export_jid}:missing_token:{token}")
+
+        if "mppca" in sigma_baselines:
+            jid = f"mppca_dbrain_sigma_{stag}_final"
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{jid}")
+            else:
+                cmd = _command_text(jobs[jid])
+                for token in (
+                    "paper_eval.baselines.mppca_run",
+                    f"/tmp/paper_final_shared_npy_sigma_{stag}/noisy_dwi_xyzv.npy",
+                ):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
+        if "p2s_dipy" in sigma_baselines:
+            jid = f"p2s_dbrain_dipy_sigma_{stag}_final"
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{jid}")
+            else:
+                cmd = _command_text(jobs[jid])
+                for token in ("--backend dipy", f"--noise-sigma {sigma:.2f}"):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
+        if "p2s_sklearn_reference" in sigma_baselines:
+            jid = f"p2s_dbrain_sklearn_reference_sigma_{stag}_final"
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{jid}")
+            else:
+                cmd = _command_text(jobs[jid])
+                for token in ("--backend sklearn_reference", f"--noise-sigma {sigma:.2f}"):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
+        for arch in sigma_archs:
+            jid = f"{arch}_dbrain_sigma_{stag}_ablation"
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{jid}")
+                continue
+            cmd = _command_text(jobs[jid])
+            for token in (
+                "dbrain.data.shell_sampling_mode=rgs",
+                f"dbrain.data.noise_sigma={sigma:.2f}",
+            ):
+                if token not in cmd:
+                    errors.append(f"{jid}:missing_token:{token}")
 
     dbrain_seed = protocol["datasets"]["dbrain"]["seed"]
     stanford_seed = protocol["datasets"]["stanford"]["seed"]

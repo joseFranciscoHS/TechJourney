@@ -220,6 +220,7 @@ def main(
     reproducible_override: Optional[bool] = None,
     nii_path_override: Optional[str] = None,
     bvecs_path_override: Optional[str] = None,
+    noise_sigma_override: Optional[float] = None,
 ):
     log_file = setup_logging(log_level=logging.INFO)
     logging.info(f"Starting Patch2Self pipeline for dataset: {dataset}")
@@ -241,6 +242,9 @@ def main(
     if dataset == "dbrain":
         logging.info("Dataset: dBrain")
         settings = full_settings.dbrain
+        if noise_sigma_override is not None:
+            settings.data.noise_sigma = float(noise_sigma_override)
+            logging.info("Overriding dBrain noise_sigma to: %s", settings.data.noise_sigma)
         if nii_path_override is not None:
             settings.data.nii_path = nii_path_override
             settings.data.nii_path_lightning = nii_path_override
@@ -258,6 +262,9 @@ def main(
     elif dataset == "stanford":
         logging.info("Dataset: Stanford HARDI")
         settings = full_settings.stanford
+        if noise_sigma_override is not None:
+            settings.data.noise_sigma = float(noise_sigma_override)
+            logging.info("Overriding Stanford noise_sigma to: %s", settings.data.noise_sigma)
         nii_path = None
         data_loader = StanfordDataLoader(
             bvalue=settings.data.bvalue,
@@ -638,6 +645,7 @@ if __name__ == "__main__":
         help="Optional backend override without editing config.yaml",
     )
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--noise-sigma", type=float, default=None)
     parser.add_argument("--nii-path", default=None)
     parser.add_argument("--bvecs-path", default=None)
     parser.add_argument(
@@ -658,6 +666,7 @@ if __name__ == "__main__":
         use_wandb=not args.no_wandb,
         backend_override=args.backend,
         seed_override=args.seed,
+        noise_sigma_override=args.noise_sigma,
         nii_path_override=args.nii_path,
         bvecs_path_override=args.bvecs_path,
         reproducible_override=(

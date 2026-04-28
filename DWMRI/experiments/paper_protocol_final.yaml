@@ -69,6 +69,22 @@ matrix:
     - "mask_p_sensitivity"
     - "n_context_sensitivity"
     - "progressive_vs_standard"
+  sweep_coverage:
+    k_sweep:
+      dbrain: [5, 10, 15, 20, 24, 30]
+      stanford: [5, 10, 20, 30, 50]
+    mask_p_sensitivity: [0.1, 0.2, 0.3, 0.5, 0.7]
+    n_context_sensitivity: [1, 3, 5, 12, 24, 48]
+    n_preds_sensitivity:
+      dbrain: [1, 3, 5, 10, 15, 20]
+      fixed_n_context_samples: 24
+      architectures: ["drcnet", "restormer"]
+    noise_sigma_sensitivity:
+      dbrain: [0.05, 0.10, 0.15]
+      methods:
+        proposed_architectures: ["drcnet", "restormer"]
+        baselines: ["mppca", "p2s_dipy", "p2s_sklearn_reference"]
+    architectures: ["drcnet", "restormer"]
 
 manifest:
   file: "experiments/paper_manifest_final.yaml"
