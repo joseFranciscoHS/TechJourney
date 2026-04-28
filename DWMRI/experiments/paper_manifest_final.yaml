@@ -104,6 +104,92 @@ jobs:
       - --set
       - dbrain.reconstruct.compute_dti=true
 
+  - id: drcnet_dbrain_supervised_upperbound_final
+    recipe: supervised_upperbound
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --regime
+      - supervised
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.train.supervised=true
+      - --set
+      - dbrain.train.checkpoint_dir=drcnet_hybrid_rgs/checkpoints/dbrain_supervised
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.metrics_dir=drcnet_hybrid_rgs/metrics/dbrain_supervised
+      - --set
+      - dbrain.reconstruct.images_dir=drcnet_hybrid_rgs/images/dbrain_supervised
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: restormer_dbrain_supervised_upperbound_final
+    recipe: supervised_upperbound
+    cwd: null
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --regime
+      - supervised
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.train.supervised=true
+      - --set
+      - dbrain.train.checkpoint_dir=restormer_hybrid_rgs/checkpoints/dbrain_supervised
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.metrics_dir=restormer_hybrid_rgs/metrics/dbrain_supervised
+      - --set
+      - dbrain.reconstruct.images_dir=restormer_hybrid_rgs/images/dbrain_supervised
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
   - id: drcnet_stanford_rgs_final
     recipe: drcnet_main
     cwd: null

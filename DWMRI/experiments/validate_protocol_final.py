@@ -29,6 +29,8 @@ def validate(protocol_path: Path, manifest_path: Path):
         "mppca_dbrain_final",
         "drcnet_dbrain_rgs_final",
         "restormer_dbrain_rgs_final",
+        "drcnet_dbrain_supervised_upperbound_final",
+        "restormer_dbrain_supervised_upperbound_final",
         "drcnet_stanford_rgs_final",
         "restormer_stanford_rgs_final",
         "p2s_dbrain_dipy_final",
@@ -79,6 +81,35 @@ def validate(protocol_path: Path, manifest_path: Path):
             f"dbrain.reconstruct.rescale_mode={rescale_mode}",
             "dbrain.reconstruct.compute_dti=true",
         ):
+            if token not in cmd:
+                errors.append(f"{jid}:missing_token:{token}")
+
+    supervised_expected_dirs = {
+        "drcnet_dbrain_supervised_upperbound_final": (
+            "dbrain.train.checkpoint_dir=drcnet_hybrid_rgs/checkpoints/dbrain_supervised",
+            "dbrain.reconstruct.metrics_dir=drcnet_hybrid_rgs/metrics/dbrain_supervised",
+        ),
+        "restormer_dbrain_supervised_upperbound_final": (
+            "dbrain.train.checkpoint_dir=restormer_hybrid_rgs/checkpoints/dbrain_supervised",
+            "dbrain.reconstruct.metrics_dir=restormer_hybrid_rgs/metrics/dbrain_supervised",
+        ),
+    }
+    for jid in supervised_expected_dirs:
+        if jid not in jobs:
+            continue
+        cmd = _command_text(jobs[jid])
+        for token in (
+            f"dbrain.train.seed={dbrain_seed}",
+            "dbrain.train.reproducible=true",
+            "dbrain.train.supervised=true",
+            f"dbrain.reconstruct.metrics_roi_threshold={roi_thr}",
+            f"dbrain.reconstruct.rescale_mode={rescale_mode}",
+            "dbrain.reconstruct.compute_dti=true",
+            "--regime supervised",
+        ):
+            if token not in cmd:
+                errors.append(f"{jid}:missing_token:{token}")
+        for token in supervised_expected_dirs[jid]:
             if token not in cmd:
                 errors.append(f"{jid}:missing_token:{token}")
 

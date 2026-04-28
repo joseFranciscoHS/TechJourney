@@ -60,6 +60,8 @@ matrix:
     - "mppca"
     - "patch2self_dipy"
     - "patch2self_sklearn_reference"
+    - "drcnet_supervised_upperbound"
+    - "restormer_supervised_upperbound"
   ablations:
     - "sampling_sequential_vs_rgs"
     - "conv2d_vs_conv3d"
