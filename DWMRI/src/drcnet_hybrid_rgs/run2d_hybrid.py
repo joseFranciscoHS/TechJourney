@@ -218,6 +218,10 @@ def main():
                 target_channel=tc,
                 num_input=k,
                 seed=train_seed,
+                pred_chunk_size=int(
+                    getattr(settings.reconstruct, "pred_chunk_size", settings.reconstruct.n_preds)
+                ),
+                slice_chunk_size=int(getattr(settings.reconstruct, "slice_chunk_size", 0)) or None,
             )
         else:
             recon_vxyz = reconstruct_dwis_sequential_sliding_k_2d(
@@ -228,6 +232,11 @@ def main():
                 n_preds=int(settings.reconstruct.n_preds),
                 num_input=k,
                 target_channel=tc,
+                seed=train_seed,
+                pred_chunk_size=int(
+                    getattr(settings.reconstruct, "pred_chunk_size", settings.reconstruct.n_preds)
+                ),
+                slice_chunk_size=int(getattr(settings.reconstruct, "slice_chunk_size", 0)) or None,
             )
         recon_xyzv = np.transpose(recon_vxyz, (1, 2, 3, 0))
         sec_per_volume = float(time.time() - infer_t0) / float(recon_xyzv.shape[-1])
