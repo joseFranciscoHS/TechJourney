@@ -27,9 +27,7 @@ from drcnet_hybrid_rgs.data import TrainingDataSet
 from drcnet_hybrid_rgs.fit import fit_model
 from drcnet_hybrid_rgs.model import DenoiserNet
 from drcnet_hybrid_rgs.reconstruction import (
-    reconstruct_dwis,
-    reconstruct_dwis_rgs,
-    reconstruct_full_dwi_chunked,
+    reconstruct_dwis_rgs
 )
 from drcnet_hybrid_rgs.run import (
     _dataset_kwargs,
@@ -391,7 +389,7 @@ def _run_stanford_fewvol_body(
                 min_signal_threshold=min_signal_threshold,
                 **_dataset_kwargs(settings),
             )
-            subset_fraction = 0.8
+            subset_fraction = 1
             total_samples = len(train_set)
             num_samples = int(total_samples * subset_fraction)
             np.random.seed(getattr(settings.train, "seed", 42))
@@ -474,14 +472,7 @@ def _run_stanford_fewvol_body(
                 f"Reconstructing all {full_noisy.shape[-1]} DWI volumes via "
                 f"chunks of {train_num_volumes}..."
             )
-            reconstructed = reconstruct_full_dwi_chunked(
-                model=rec_model,
-                noisy_xyzv=full_noisy,
-                train_num_volumes=train_num_volumes,
-                device=rec_dev,
-                mask_p=settings.reconstruct.mask_p,
-                n_preds=settings.reconstruct.n_preds,
-            )
+            raise ValueError("Sequential reconstruction not supported for Stanford few-volume dataset.")
         ref_for_metrics = full_orig
     else:
         logging.info("Reconstructing training subset only.")
@@ -500,13 +491,7 @@ def _run_stanford_fewvol_body(
                 num_input=k_in,
             )
         else:
-            rec_vxyz = reconstruct_dwis(
-                model=rec_model,
-                data=x_t,
-                device=rec_dev,
-                mask_p=settings.reconstruct.mask_p,
-                n_preds=settings.reconstruct.n_preds,
-            )
+            raise ValueError("Sequential reconstruction not supported for Stanford few-volume dataset.")
         reconstructed = np.transpose(rec_vxyz, (1, 2, 3, 0))
         ref_for_metrics = train_orig
 

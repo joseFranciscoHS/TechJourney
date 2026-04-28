@@ -1,15 +1,15 @@
 dbrain:
   train:
-    num_epochs: 20  # Increased for better convergence
+    num_epochs: 300  # Increased for better convergence
     device: cuda:0
     seed: 42  # RNG: torch/numpy/dataset RGS draws and spatial masks
     reproducible: false  # true => cuDNN deterministic (slower; GPU still not bit-identical)
     supervised: false  # true => full MSE vs target volume (no masked J-invariant loss)
     mask_p: 0.3  # Mask probability for hybrid MD-S2S training
     learning_rate: 0.00045  # Base learning rate for single GPU
-    batch_size: 16  # Per-GPU batch size (32 volumes is memory-heavy)
+    batch_size: 128  # Per-GPU batch size (32 volumes is memory-heavy)
     use_amp: true  # Enable Automatic Mixed Precision for memory reduction
-    use_scheduler: true
+    use_scheduler: false
     scheduler_type: "step" # step, cosine, reduceLROnPlateau
     # Paths include bvalue (e.g. b2500) via run.py; we start with 2500
     checkpoint_dir: "drcnet_hybrid_rgs/checkpoints/dbrain"
@@ -24,7 +24,7 @@ dbrain:
     eta_min_lr: 0.0001  # Lower minimum LR
     scheduler_T_mult: 2
     ## stepLR
-    scheduler_step_size: 20
+    scheduler_step_size: 40
     scheduler_gamma: 0.8
     ## reduceLROnPlateau
     scheduler_patience: 30  # More aggressive reduction
@@ -59,6 +59,7 @@ dbrain:
     device: cuda:0
     mask_p: 0.3  # Mask probability (same as training)
     n_preds: 12  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
+    pred_chunk_size: 4  # Micro-batch size for parallel mask predictions in RGS inference
     # RGS inference: random 9-tuple + target k, averaged n_context times (then × n_preds inside)
     n_context_samples: 24
     # Post-reconstruction processing
@@ -81,8 +82,8 @@ dbrain:
     residual: true
     base_filters: 32  # Doubled for more model capacity
   data:
-    patch_size: 8  # Larger patches for better context
-    step: 2  # Larger step for more diverse training data
+    patch_size: 32  # Larger patches for better context
+    step: 8  # Larger step for more diverse training data
     num_b0s: 6
     num_volumes: 24  # DWI count in slice when shell_sampling_mode is sequential
     # RGS–Hybrid (Random Gradient Subset): random K-tuples from full shell G (see README)
@@ -113,13 +114,13 @@ dbrain:
     otsu_numpass: 1             # For "otsu" method: number of median filter passes
 stanford:
   train:
-    num_epochs: 100
+    num_epochs: 300
     device: cuda
     seed: 42
     reproducible: false
     mask_p: 0.3
-    learning_rate: 0.0003
-    batch_size: 8
+    learning_rate: 0.00045
+    batch_size: 24
     use_amp: true
     use_scheduler: false
     checkpoint_dir: "drcnet_hybrid_rgs/checkpoints/stanford"
@@ -178,8 +179,9 @@ stanford:
   reconstruct:
     device: cuda
     mask_p: 0.3
-    n_preds: 10
-    n_context_samples: 10
+    n_preds: 23
+    pred_chunk_size: 4
+    n_context_samples: 24
     rescale_to_01: true
     rescale_mode: "per_volume"
     clip_to_range: true

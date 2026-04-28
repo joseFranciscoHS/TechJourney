@@ -207,7 +207,7 @@ jobs:
   - --set
   - stanford.reconstruct.clip_to_range=true
   - --set
-  - stanford.reconstruct.compute_dti=false
+  - stanford.reconstruct.compute_dti=true
 - id: restormer_stanford_rgs_final
   recipe: restormer_main
   cwd: null
@@ -239,7 +239,7 @@ jobs:
   - --set
   - stanford.reconstruct.clip_to_range=true
   - --set
-  - stanford.reconstruct.compute_dti=false
+  - stanford.reconstruct.compute_dti=true
 - id: p2s_dbrain_dipy_final
   recipe: p2s_baseline
   cwd: null
@@ -271,6 +271,23 @@ jobs:
   - sklearn_reference
   - --seed
   - '91021'
+  - --reproducible
+  - 'true'
+  - --no-wandb
+- id: p2s_stanford_dipy_final
+  recipe: p2s_baseline
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - p2s.run
+  - --dataset
+  - stanford
+  - --backend
+  - dipy
+  - --seed
+  - '91022'
   - --reproducible
   - 'true'
   - --no-wandb
@@ -3695,6 +3712,390 @@ jobs:
   - dbrain.reconstruct.clip_to_range=true
   - --set
   - dbrain.reconstruct.compute_dti=true
+- id: drcnet_dbrain_arch_compare_parity_final
+  recipe: architecture_parity
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.data.shell_sampling_mode=rgs
+  - --set
+  - dbrain.data.num_input_volumes=24
+  - --set
+  - dbrain.data.shell_gradient_volumes=60
+  - --set
+  - dbrain.data.target_channel=23
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+  - --set
+  - dbrain.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - dbrain.reconstruct.rescale_to_01=true
+  - --set
+  - dbrain.reconstruct.rescale_mode=per_volume
+  - --set
+  - dbrain.reconstruct.clip_to_range=true
+  - --set
+  - dbrain.reconstruct.compute_dti=true
+- id: restormer_dbrain_arch_compare_parity_final
+  recipe: architecture_parity
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.data.shell_sampling_mode=rgs
+  - --set
+  - dbrain.data.num_input_volumes=24
+  - --set
+  - dbrain.data.shell_gradient_volumes=60
+  - --set
+  - dbrain.data.target_channel=23
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+  - --set
+  - dbrain.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - dbrain.reconstruct.rescale_to_01=true
+  - --set
+  - dbrain.reconstruct.rescale_mode=per_volume
+  - --set
+  - dbrain.reconstruct.clip_to_range=true
+  - --set
+  - dbrain.reconstruct.compute_dti=true
+- id: drcnet_dbrain_ncontext24_seed_91031_infer
+  recipe: n_context_stability
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91031
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+- id: drcnet_dbrain_ncontext24_seed_91041_infer
+  recipe: n_context_stability
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91041
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+- id: restormer_dbrain_ncontext24_seed_91031_infer
+  recipe: n_context_stability
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91031
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+- id: restormer_dbrain_ncontext24_seed_91041_infer
+  recipe: n_context_stability
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91041
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+- id: drcnet_dbrain_gap_standard_infer
+  recipe: training_inference_gap_proxy
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+  - --set
+  - dbrain.reconstruct.mask_p=0.3
+- id: drcnet_dbrain_gap_masked_proxy_infer
+  recipe: training_inference_gap_proxy
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+  - --set
+  - dbrain.reconstruct.mask_p=1.0
+- id: restormer_dbrain_gap_standard_infer
+  recipe: training_inference_gap_proxy
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+  - --set
+  - dbrain.reconstruct.mask_p=0.3
+- id: restormer_dbrain_gap_masked_proxy_infer
+  recipe: training_inference_gap_proxy
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=10
+  - --set
+  - dbrain.reconstruct.mask_p=1.0
+- id: drcnet_dbrain_inference_time_ctx5_pred5
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=5
+  - --set
+  - dbrain.reconstruct.n_preds=5
+- id: drcnet_dbrain_inference_time_ctx12_pred10
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=12
+  - --set
+  - dbrain.reconstruct.n_preds=10
+- id: drcnet_dbrain_inference_time_ctx24_pred12
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=12
+- id: drcnet_dbrain_inference_time_ctx48_pred20
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=48
+  - --set
+  - dbrain.reconstruct.n_preds=20
+- id: restormer_dbrain_inference_time_ctx5_pred5
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=5
+  - --set
+  - dbrain.reconstruct.n_preds=5
+- id: restormer_dbrain_inference_time_ctx12_pred10
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=12
+  - --set
+  - dbrain.reconstruct.n_preds=10
+- id: restormer_dbrain_inference_time_ctx24_pred12
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=24
+  - --set
+  - dbrain.reconstruct.n_preds=12
+- id: restormer_dbrain_inference_time_ctx48_pred20
+  recipe: inference_time_grid
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --skip-train
+  - --checkpoint
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - --no-wandb
+  - --set
+  - dbrain.reconstruct.n_context_samples=48
+  - --set
+  - dbrain.reconstruct.n_preds=20
 - id: summarize_registry_final
   recipe: artifact_summary
   cwd: null

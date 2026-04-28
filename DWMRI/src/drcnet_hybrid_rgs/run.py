@@ -14,7 +14,6 @@ from drcnet_hybrid_rgs.data import TrainingDataSet
 from drcnet_hybrid_rgs.fit import fit_model
 from drcnet_hybrid_rgs.model import DenoiserNet
 from drcnet_hybrid_rgs.reconstruction import (
-    reconstruct_dwis,
     reconstruct_dwis_rgs,
     reconstruct_dwis_sequential_sliding_k,
 )
@@ -173,7 +172,7 @@ def fit_progressive(
             **_training_sample_kwargs(settings),
         )
 
-        subset_fraction = 0.6
+        subset_fraction = 1
         total_samples = len(train_set)
         num_samples = int(total_samples * subset_fraction)
         np.random.seed(subset_seed)
@@ -680,6 +679,7 @@ def main(
                             settings.model.in_channel,
                         )
                     ),
+                    pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
                 )
             elif _is_sequential(settings):
                 reconstructed_dwis = reconstruct_dwis_sequential_sliding_k(
@@ -696,15 +696,11 @@ def main(
                             settings.model.in_channel,
                         )
                     ),
+                    seed=int(getattr(settings.train, "seed", 42)),
+                    pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
                 )
             else:
-                reconstructed_dwis = reconstruct_dwis(
-                    model=reconstruct_model,
-                    data=x_reconstruct,
-                    device=settings.reconstruct.device,
-                    mask_p=settings.reconstruct.mask_p,
-                    n_preds=settings.reconstruct.n_preds,
-                )
+                raise ValueError("Sequential reconstruction not supported for Stanford few-volume dataset.")
             # Transpose back to (X, Y, Z, Vols) for metrics and visualization
             reconstructed_dwis = np.transpose(reconstructed_dwis, (1, 2, 3, 0))
             logging.info(f"Reconstructed DWIs shape: {reconstructed_dwis.shape}")

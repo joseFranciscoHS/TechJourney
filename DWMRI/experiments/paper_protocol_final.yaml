@@ -32,7 +32,7 @@ evaluation_policy:
   clip_to_range: true
   dti:
     dbrain: true
-    stanford: false
+    stanford: true
 
 datasets:
   dbrain:
@@ -60,15 +60,24 @@ matrix:
     - "mppca"
     - "patch2self_dipy"
     - "patch2self_sklearn_reference"
+    - "mds2s"
     - "drcnet_supervised_upperbound"
     - "restormer_supervised_upperbound"
+  baseline_scope_notes:
+    mppca_stanford: "excluded from manifest due to lack of clean GT pair expected by current baseline runner"
+    bm4d: "optional baseline, explicitly out of scope for this manifest version"
   ablations:
     - "sampling_sequential_vs_rgs"
     - "conv2d_vs_conv3d"
     - "k_sweep"
     - "mask_p_sensitivity"
     - "n_context_sensitivity"
+    - "n_preds_sensitivity"
     - "progressive_vs_standard"
+    - "architecture_parity"
+    - "n_context_stability"
+    - "training_inference_gap_proxy"
+    - "inference_time_grid"
   sweep_coverage:
     k_sweep:
       dbrain: [5, 10, 15, 20, 24, 30]
