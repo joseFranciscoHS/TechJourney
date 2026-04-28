@@ -25,6 +25,13 @@ from drcnet_hybrid_rgs.reconstruction2d import (
 )
 from utils import setup_logging
 from utils.data import DBrainDataLoader
+from utils.eval_protocol import (
+    apply_reconstruction_eval_protocol,
+    compute_roi_mask,
+    metrics_policy_dict,
+    save_run_manifest,
+    summarize_roi,
+)
 from utils.experiment_runtime import (
     append_registry_line,
     apply_output_root,
@@ -156,8 +163,11 @@ def main():
     wall_t0 = time.time()
     started = now_utc_iso()
     metrics = metrics_roi = dti_metrics = None
+    sec_per_epoch = None
+    sec_per_volume = None
 
     if not args.skip_train:
+        train_t0 = time.time()
         opt = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
         fit_model(
             model=model,
@@ -172,6 +182,9 @@ def main():
             supervised_mode=bool(getattr(settings.train, "supervised", False)),
             cudnn_fast=cudnn_fast,
         )
+        sec_per_epoch = float(time.time() - train_t0) / float(
+            max(int(getattr(settings.train, "num_epochs", 1)), 1)
+        )
 
     recon_vxyz = None
     if not args.skip_reconstruct:
@@ -183,6 +196,7 @@ def main():
                 bundle = torch.load(ckpt, map_location=device)
             model.load_state_dict(bundle["model_state_dict"], strict=False)
         noisy_v = np.transpose(noisy_data.astype(np.float32), (3, 0, 1, 2))
+        infer_t0 = time.time()
         if _is_rgs(settings):
             recon_vxyz = reconstruct_dwis_rgs_2d(
                 model,
@@ -206,11 +220,21 @@ def main():
                 target_channel=tc,
             )
         recon_xyzv = np.transpose(recon_vxyz, (1, 2, 3, 0))
+        sec_per_volume = float(time.time() - infer_t0) / float(recon_xyzv.shape[-1])
+        recon_xyzv = apply_reconstruction_eval_protocol(
+            recon_xyzv,
+            original_data,
+            rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", False)),
+            rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+            clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", False)),
+        )
         metrics = compute_metrics(original_data, recon_xyzv)
         save_metrics(metrics, metrics_dir, filename="metrics.json")
         roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
-        if roi_thr is not None:
-            roi_mask = (original_xyzv_b0 > roi_thr).any(axis=-1)
+        roi_mask = compute_roi_mask(original_data, roi_thr)
+        if roi_mask is not None:
+            n_roi, roi_pct = summarize_roi(roi_mask)
+            logging.info("ROI mask for 2D DRCNet: %s voxels (%.1f%%)", n_roi, roi_pct)
             metrics_roi = compute_metrics(original_data, recon_xyzv, mask=roi_mask)
             save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
         if getattr(settings.reconstruct, "compute_dti", True):
@@ -240,6 +264,41 @@ def main():
                     },
                     metrics_dir,
                 )
+        else:
+            dti_metrics = {
+                "fa_mae": None,
+                "md_mae": None,
+                "ad_mae": None,
+                "rd_mae": None,
+                "dti_skipped_reason": "compute_dti_false",
+            }
+            save_dti_metrics(dti_metrics, metrics_dir)
+
+        save_run_manifest(
+            out_dir=metrics_dir,
+            seed=train_seed,
+            reproducible=bool(getattr(settings.train, "reproducible", False)),
+            runtime_device=str(device),
+            config={
+                "dataset": "dbrain",
+                "architecture": "drcnet_hybrid_rgs",
+                "sampling_mode": mode,
+                "k_input": int(k),
+                "g_shell": int(
+                    getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+                ),
+                "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
+                "dimensionality": "2d",
+            },
+            metrics_policy=metrics_policy_dict(
+                reference_name="clean_gt",
+                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", False)),
+                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", False)),
+                roi_threshold=roi_thr,
+            ),
+        )
 
     payload = {
         "schema_version": "v1",
@@ -249,6 +308,8 @@ def main():
         "status": "success",
         "timestamps": {"start_utc": started, "end_utc": now_utc_iso()},
         "duration_s": time.time() - wall_t0,
+        "dataset": "dbrain",
+        "regime": "self_supervised",
         "architecture": "drcnet",
         "dimensionality": "2d",
         "sampling_mode": mode,
@@ -266,6 +327,8 @@ def main():
         },
         "control_metrics": {
             "n_params": n_params,
+            "sec_per_epoch": sec_per_epoch,
+            "sec_per_volume": sec_per_volume,
             "peak_gpu_mem_mb": gpu_peak_mem_mb(device),
         },
         "quality_metrics_full": metrics,

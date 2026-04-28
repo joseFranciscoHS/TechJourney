@@ -1,4 +1,6 @@
 # Final production manifest (frozen by paper_protocol_final.yaml).
+# Scope: publication evidence matrix (main runs + baselines + ablations +
+# artifact summaries). Use paper_pilot.yaml only for smoke/preflight.
 # Run from DWMRI repo root:
 #   python experiments/driver.py --manifest experiments/paper_manifest_final.yaml \
 #     --exp-id paper_final_v1 --output-root /tmp/paper_final_out \
@@ -235,3 +237,343 @@ jobs:
       - --reproducible
       - "true"
       - --no-wandb
+
+  - id: drcnet_dbrain_seq_k24_ablation
+    recipe: sampling_sequential_vs_rgs
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=sequential
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: drcnet_dbrain_k10_ablation
+    recipe: k_sweep
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.model.in_channel=10
+      - --set
+      - dbrain.data.num_input_volumes=10
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=9
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: drcnet_dbrain_maskp_02_ablation
+    recipe: mask_p_sensitivity
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.train.mask_p=0.2
+      - --set
+      - dbrain.reconstruct.mask_p=0.2
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: drcnet_dbrain_ncontext_12_ablation
+    recipe: n_context_sensitivity
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.n_context_samples=12
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: drcnet_dbrain_progressive_off_ablation
+    recipe: progressive_vs_standard
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.train.progressive.enabled=false
+      - --set
+      - dbrain.train.num_epochs=300
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: restormer_dbrain_seq_k24_ablation
+    recipe: sampling_sequential_vs_rgs
+    cwd: null
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=sequential
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: restormer_dbrain_progressive_off_ablation
+    recipe: progressive_vs_standard
+    cwd: null
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.train.progressive.enabled=false
+      - --set
+      - dbrain.train.num_epochs=90
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: drcnet_dbrain_2d_rgs_k24_ablation
+    recipe: conv2d_vs_conv3d
+    cwd: null
+    command:
+      - python
+      - -m
+      - drcnet_hybrid_rgs.run2d_hybrid
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: restormer_dbrain_2d_rgs_k24_ablation
+    recipe: conv2d_vs_conv3d
+    cwd: null
+    command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run2d_hybrid
+      - --dataset
+      - dbrain
+      - --no-wandb
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=24
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=23
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
+
+  - id: summarize_registry_final
+    recipe: artifact_summary
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - -m
+      - paper_eval.summarize_registry
+      - --registry
+      - /tmp/paper_final_out/registry.jsonl
+      - --out
+      - /tmp/paper_final_out/paper_tables/registry_summary.csv
+
+  - id: collect_paper_artifacts_final
+    recipe: artifact_summary
+    cwd: null
+    append_registry_flags: false
+    command:
+      - python
+      - ../experiments/collect_paper_artifacts.py
+      - --output-root
+      - /tmp/paper_final_out
+      - --registry
+      - /tmp/paper_final_out/registry.jsonl
+      - --out-dir
+      - /tmp/paper_final_out/paper_tables

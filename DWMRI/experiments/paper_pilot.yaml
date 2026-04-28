@@ -1,4 +1,6 @@
 # Paper pilot manifest (run from DWMRI repo root).
+# Scope: smoke/preflight only. This file validates code-paths and dependency
+# wiring; it is not the publication evidence matrix.
 #
 #   export EXP_ID=pilot_1 OUT=/tmp/paper_pilot_out
 #   python experiments/driver.py --manifest experiments/paper_pilot.yaml \

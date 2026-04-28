@@ -1,0 +1,39 @@
+protocol_ablations:
+- sampling_sequential_vs_rgs
+- conv2d_vs_conv3d
+- k_sweep
+- mask_p_sensitivity
+- n_context_sensitivity
+- progressive_vs_standard
+manifest_job_count: 21
+manifest_ids:
+- export_dbrain_npy_final
+- mppca_dbrain_final
+- drcnet_dbrain_rgs_final
+- restormer_dbrain_rgs_final
+- drcnet_stanford_rgs_final
+- restormer_stanford_rgs_final
+- p2s_dbrain_dipy_final
+- p2s_dbrain_sklearn_reference_final
+- mds2s_dbrain_final
+- mds2s_stanford_final
+- drcnet_dbrain_seq_k24_ablation
+- drcnet_dbrain_k10_ablation
+- drcnet_dbrain_maskp_02_ablation
+- drcnet_dbrain_ncontext_12_ablation
+- drcnet_dbrain_progressive_off_ablation
+- restormer_dbrain_seq_k24_ablation
+- restormer_dbrain_progressive_off_ablation
+- drcnet_dbrain_2d_rgs_k24_ablation
+- restormer_dbrain_2d_rgs_k24_ablation
+- summarize_registry_final
+- collect_paper_artifacts_final
+matched_ablations_heuristic:
+- sampling_sequential_vs_rgs
+- conv2d_vs_conv3d
+- k_sweep
+- mask_p_sensitivity
+- n_context_sensitivity
+- progressive_vs_standard
+missing_ablations_heuristic: []
+recommendation: Manifest ablation coverage matches protocol matrix.

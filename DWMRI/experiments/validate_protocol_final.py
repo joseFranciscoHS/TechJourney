@@ -40,6 +40,29 @@ def validate(protocol_path: Path, manifest_path: Path):
         if jid not in jobs:
             errors.append(f"missing_job:{jid}")
 
+    required_ablation_jobs = {
+        "sampling_sequential_vs_rgs": [
+            "drcnet_dbrain_seq_k24_ablation",
+            "restormer_dbrain_seq_k24_ablation",
+        ],
+        "conv2d_vs_conv3d": [
+            "drcnet_dbrain_2d_rgs_k24_ablation",
+            "restormer_dbrain_2d_rgs_k24_ablation",
+        ],
+        "k_sweep": ["drcnet_dbrain_k10_ablation"],
+        "mask_p_sensitivity": ["drcnet_dbrain_maskp_02_ablation"],
+        "n_context_sensitivity": ["drcnet_dbrain_ncontext_12_ablation"],
+        "progressive_vs_standard": [
+            "drcnet_dbrain_progressive_off_ablation",
+            "restormer_dbrain_progressive_off_ablation",
+        ],
+    }
+    protocol_ablations = [str(a) for a in protocol.get("matrix", {}).get("ablations", [])]
+    for ablation in protocol_ablations:
+        for jid in required_ablation_jobs.get(ablation, []):
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:{ablation}:{jid}")
+
     dbrain_seed = protocol["datasets"]["dbrain"]["seed"]
     stanford_seed = protocol["datasets"]["stanford"]["seed"]
     roi_thr = protocol["evaluation_policy"]["metrics_roi_threshold"]

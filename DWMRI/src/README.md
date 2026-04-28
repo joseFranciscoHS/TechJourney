@@ -105,6 +105,43 @@ python experiments/protocol_closure_report.py \
   --out "$OUT/protocol_closure_report.json"
 ```
 
+### Paper pilot (end-to-end dry run)
+
+Short runs that exercise the same code paths as the full paper matrix (DRCNet, Restormer 2D/3D, baselines, consolidation) with reduced epochs and workload. Use this to validate your environment and dataset paths before a large campaign.
+
+From the `DWMRI` directory (after `uv sync --extra dev`):
+
+**Print the command runbook only (no execution):**
+
+```bash
+uv run python -m paper_eval.run_paper_pilot --output-root tmp
+```
+
+**Execute the full pilot** (pass D-Brain paths if they differ from `config.yaml`, e.g. local disk vs cloud):
+
+```bash
+uv run python -m paper_eval.run_paper_pilot \
+  --output-root tmp \
+  --execute \
+  --dbrain-nii-path "/path/to/D_BRAIN_b2500_6_60_14_HCP_nless.nii" \
+  --dbrain-bvecs-path "/path/to/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+```
+
+Example cloud layout: `/teamspace/s3_folders/dwmri-dataset/...` for both files.
+
+**Run a single phase** (`B_close_eval_gaps`, `C_core_matrix`, `D_core_ablations`, `E_stanford_smoke`, `F_consolidate`):
+
+```bash
+uv run python -m paper_eval.run_paper_pilot \
+  --output-root tmp \
+  --execute \
+  --only-phase C_core_matrix \
+  --dbrain-nii-path "/path/to/D_BRAIN_b2500_6_60_14_HCP_nless.nii" \
+  --dbrain-bvecs-path "/path/to/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
+```
+
+Artifacts land under `<output-root>/paper_pilot/` (metrics, checkpoints, `registry/pilot_runtime.jsonl`). Phase **F** writes consolidated CSVs under `paper_tables_dryrun/`. Without a GPU, training runs on CPU (slower but supported).
+
 ### Running MDS2S
 
 ```bash
@@ -181,11 +218,15 @@ data:
 
 ## Development
 
-### Running Tests
+### Running tests
+
+From the `DWMRI` directory (project root), after `uv sync --extra dev`:
 
 ```bash
 pytest
 ```
+
+This runs the test suite against the installed editable package. Use `uv run pytest` if you prefer not to activate the virtual environment manually.
 
 ### Format and lint (Ruff)
 

@@ -62,6 +62,7 @@ matrix:
     - "patch2self_sklearn_reference"
   ablations:
     - "sampling_sequential_vs_rgs"
+    - "conv2d_vs_conv3d"
     - "k_sweep"
     - "mask_p_sensitivity"
     - "n_context_sensitivity"
