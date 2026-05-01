@@ -210,6 +210,10 @@ def reconstruct_dwis_rgs(
     """
     if pred_chunk_size is not None and int(pred_chunk_size) < 1:
         raise ValueError("pred_chunk_size must be >= 1 when set")
+    if n_preds < 1:
+        raise ValueError(f"n_preds must be >= 1, got {n_preds}")
+    if n_context < 1:
+        raise ValueError(f"n_context must be >= 1, got {n_context}")
     _chunk = int(pred_chunk_size) if pred_chunk_size is not None else int(n_preds)
 
     logging.info(
@@ -244,10 +248,11 @@ def reconstruct_dwis_rgs(
 
     padded_x, padded_y, padded_z = data.shape[1], data.shape[2], data.shape[3]
 
-    sum_preds = np.zeros((num_vols, padded_x, padded_y, padded_z), dtype=np.float32)
-    weight_map = np.zeros((padded_x, padded_y, padded_z), dtype=np.float32)
+    sum_preds_t = None
+    weight_map_t = None
 
     blend_weights = _create_blend_weights(patch_size, overlap)
+    blend_weights_t = None
 
     x_positions = list(range(0, padded_x - patch_size + 1, stride))
     y_positions = list(range(0, padded_y - patch_size + 1, stride))
@@ -270,94 +275,102 @@ def reconstruct_dwis_rgs(
     if _cuda_device(device):
         torch.cuda.empty_cache()
 
+    # TODO: tech debt — data_dev and sum_preds_t assume the full padded shell fits device memory; add explicit fallback path if OOM appears on lower-VRAM GPUs.
+    data_dev = data.to(device)
+    blend_weights_t = torch.from_numpy(blend_weights).to(device=device, dtype=torch.float32)
+    weight_map_t = torch.zeros((padded_x, padded_y, padded_z), device=device, dtype=torch.float32)
+    sum_preds_t = torch.zeros(
+        (num_vols, padded_x, padded_y, padded_z), device=device, dtype=torch.float32
+    )
+
+    mask_generator = None
+    if seed is not None:
+        mask_generator = torch.Generator(device=device)
+        mask_generator.manual_seed(int(seed))
+
     for x_start in x_positions:
         for y_start in y_positions:
             for z_start in z_positions:
-                weight_map[
+                weight_map_t[
                     x_start : x_start + patch_size,
                     y_start : y_start + patch_size,
                     z_start : z_start + patch_size,
-                ] += blend_weights
+                ] += blend_weights_t
 
     with torch.inference_mode():
-        for vol_k in tqdm(range(num_vols), desc="RGS volumes"):
-            others = [i for i in range(num_vols) if i != vol_k]
-
+        others_by_vol = [[i for i in range(num_vols) if i != vol_k] for vol_k in range(num_vols)]
+        context_orders_by_vol = []
+        for vol_k in range(num_vols):
+            others = others_by_vol[vol_k]
+            vol_orders = []
             for _ctx in range(n_context):
                 ctx = rng.choice(others, size=num_input - 1, replace=False)
                 order_buf[:-1] = ctx
                 order_buf[-1] = vol_k
-                order_t = torch.from_numpy(order_buf.copy()).long()
+                vol_orders.append(
+                    torch.from_numpy(order_buf.copy()).to(device=device, dtype=torch.long)
+                )
+            context_orders_by_vol.append(vol_orders)
 
-                for x_start in x_positions:
-                    for y_start in y_positions:
-                        for z_start in z_positions:
-                            x_end = x_start + patch_size
-                            y_end = y_start + patch_size
-                            z_end = z_start + patch_size
+        with tqdm(total=total_patches, desc="RGS spatial patches") as pbar:
+            for x_start in x_positions:
+                for y_start in y_positions:
+                    for z_start in z_positions:
+                        x_end = x_start + patch_size
+                        y_end = y_start + patch_size
+                        z_end = z_start + patch_size
+                        patch_full = data_dev[:, x_start:x_end, y_start:y_end, z_start:z_end]
+                        patch_acc_t = torch.zeros(
+                            (num_vols, patch_size, patch_size, patch_size),
+                            device=device,
+                            dtype=torch.float32,
+                        )
 
-                            patch = (
-                                data[
-                                    order_t,
-                                    x_start:x_end,
-                                    y_start:y_end,
-                                    z_start:z_end,
-                                ]
-                                .clone()
-                                .contiguous()
-                            )
+                        for vol_k in range(num_vols):
+                            for order_t in context_orders_by_vol[vol_k]:
+                                patch = patch_full.index_select(0, order_t).contiguous()
 
-                            pred_sum_t = None
-                            for start in range(0, n_preds, _chunk):
-                                bsz = min(_chunk, n_preds - start)
-                                masks = (
-                                    torch.rand(
-                                        bsz,
-                                        patch_size,
-                                        patch_size,
-                                        patch_size,
-                                        dtype=torch.float32,
-                                        device=patch.device,
+                                for start in range(0, n_preds, _chunk):
+                                    bsz = min(_chunk, n_preds - start)
+                                    masks = (
+                                        torch.rand(
+                                            bsz,
+                                            patch_size,
+                                            patch_size,
+                                            patch_size,
+                                            dtype=torch.float32,
+                                            device=device,
+                                            generator=mask_generator,
+                                        )
+                                        > mask_p
+                                    ).to(torch.float32)
+                                    patch_b = (
+                                        patch.unsqueeze(0)
+                                        .expand(bsz, -1, -1, -1, -1)
+                                        .clone()
                                     )
-                                    > mask_p
-                                ).float()
-                                patch_b = patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
-                                patch_b[:, target_channel] = (
-                                    patch[target_channel].unsqueeze(0) * masks
-                                )
-                                patch_b = patch_b.to(device)
+                                    patch_b[:, target_channel] = (
+                                        patch[target_channel].unsqueeze(0) * masks
+                                    )
 
-                                if amp_ok:
-                                    with torch.amp.autocast(
-                                        device_type="cuda", dtype=torch.float16
-                                    ):
+                                    if amp_ok:
+                                        with torch.amp.autocast(
+                                            device_type="cuda", dtype=torch.float16
+                                        ):
+                                            pred = model(patch_b)
+                                    else:
                                         pred = model(patch_b)
-                                else:
-                                    pred = model(patch_b)
 
-                                part = pred.float().sum(dim=0)
-                                pred_sum_t = part if pred_sum_t is None else pred_sum_t + part
-                                del patch_b, pred, part
+                                    patch_acc_t[vol_k] += pred.float().sum(dim=0).squeeze(0)
 
-                            pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
-                            del pred_sum_t
-                            sum_preds[
-                                vol_k,
-                                x_start:x_end,
-                                y_start:y_end,
-                                z_start:z_end,
-                            ] += (
-                                pred_np * blend_weights
-                            )
+                        sum_preds_t[
+                            :, x_start:x_end, y_start:y_end, z_start:z_end
+                        ] += patch_acc_t * blend_weights_t.unsqueeze(0)
+                        pbar.update(1)
 
-                            del patch
-
-                if _cuda_device(device):
-                    torch.cuda.empty_cache()
-
-    weight_map = np.maximum(weight_map, 1e-8)
-    reconstructed = sum_preds / (weight_map[np.newaxis, ...] * denom)
-    reconstructed = reconstructed[:, :x_size, :y_size, :z_size]
+    weight_map_t = torch.clamp_min(weight_map_t, 1e-8)
+    reconstructed_t = sum_preds_t / (weight_map_t.unsqueeze(0) * denom)
+    reconstructed = reconstructed_t[:, :x_size, :y_size, :z_size].detach().cpu().numpy()
 
     logging.info(
         f"RGS reconstruction done. Min={reconstructed.min():.4f}, Max={reconstructed.max():.4f}, "
