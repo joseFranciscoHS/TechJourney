@@ -2,8 +2,8 @@
 Stanford HARDI (Restormer RGS): train on few DWI volumes or full shell (RGS); reconstruct all non-b0 DWI.
 
 ``inp_channels`` matches ``train_num_volumes`` (sequential) or ``num_input_volumes`` (RGS).
-Full-dataset inference: :func:`reconstruct_full_dwi_chunked` (sequential) or
-patch-based :func:`reconstruct_dwis_rgs` when ``shell_sampling_mode: rgs``.
+Full-dataset inference uses patch-based :func:`reconstruct_dwis_rgs` when
+``shell_sampling_mode: rgs``.
 
 Usage (from ``DWMRI/src`` with PYTHONPATH)::
 
@@ -29,11 +29,7 @@ from torch.utils.data import DataLoader, Subset
 from restormer_hybrid_rgs.data import TrainingDataSet
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model import Restormer3D
-from restormer_hybrid_rgs.reconstruction import (
-    reconstruct_dwis,
-    reconstruct_dwis_rgs,
-    reconstruct_full_dwi_chunked,
-)
+from restormer_hybrid_rgs.reconstruction import reconstruct_dwis_rgs
 from restormer_hybrid_rgs.run import (
     _dataset_kwargs,
     _is_rgs,
@@ -158,9 +154,7 @@ def main():
     config_path = os.path.join(script_dir, "config.yaml")
     settings = load_config(config_path).stanford
 
-    train_num_volumes = int(
-        getattr(settings.data, "train_num_volumes", settings.data.num_volumes)
-    )
+    train_num_volumes = int(getattr(settings.data, "train_num_volumes", settings.data.num_volumes))
     reconstruct_full = bool(getattr(settings.data, "reconstruct_full_dwi", True))
     use_rgs = getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
     k_in = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
@@ -193,9 +187,7 @@ def main():
             "dataset": "stanford_fewvol_restormer_rgs",
             "train_num_volumes": train_num_volumes,
             "reconstruct_full_dwi": reconstruct_full,
-            "shell_sampling_mode": getattr(
-                settings.data, "shell_sampling_mode", "sequential"
-            ),
+            "shell_sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
             "learning_rate": settings.train.learning_rate,
             "bvalue": getattr(settings.data, "bvalue", None),
             "noise_sigma": getattr(settings.data, "noise_sigma", None),
@@ -236,9 +228,7 @@ def _run_stanford_fewvol_body(
     if use_rgs:
         g_shell = int(full_noisy.shape[-1])
         if k_in > g_shell:
-            raise ValueError(
-                f"RGS: num_input_volumes K={k_in} exceeds shell G={g_shell}"
-            )
+            raise ValueError(f"RGS: num_input_volumes K={k_in} exceeds shell G={g_shell}")
         train_noisy = full_noisy
         train_orig = full_orig
 
@@ -257,9 +247,7 @@ def _run_stanford_fewvol_body(
 
     vol_key = k_in if use_rgs else train_num_volumes
     g_for_path = int(full_noisy.shape[-1]) if use_rgs else None
-    checkpoint_dir = _build_checkpoint_dir(
-        settings, vol_key, rgs=use_rgs, g_shell=g_for_path
-    )
+    checkpoint_dir = _build_checkpoint_dir(settings, vol_key, rgs=use_rgs, g_shell=g_for_path)
     os.makedirs(checkpoint_dir, exist_ok=True)
     best_ckpt = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
 
@@ -268,11 +256,7 @@ def _run_stanford_fewvol_body(
         getattr(settings.data, "noise_sigma", 0.1),
     )
     bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
-    vol_seg = (
-        f"rgs_G{g_for_path}_K{vol_key}"
-        if use_rgs
-        else f"num_volumes_{train_num_volumes}"
-    )
+    vol_seg = f"rgs_G{g_for_path}_K{vol_key}" if use_rgs else f"num_volumes_{train_num_volumes}"
     loss_dir = os.path.join(
         "restormer_hybrid_rgs/losses",
         "stanford_fewvol",
@@ -295,9 +279,7 @@ def _run_stanford_fewvol_body(
     inp_ch = k_in if use_rgs else train_num_volumes
 
     if do_train:
-        logging.info(
-            f"Initializing Restormer3D for training (inp_channels={inp_ch})..."
-        )
+        logging.info(f"Initializing Restormer3D for training (inp_channels={inp_ch})...")
         model = _make_model(settings, inp_ch)
 
         batch_for_multi_gpu = (
@@ -316,9 +298,7 @@ def _run_stanford_fewvol_body(
                 "memory_threshold": settings.train.memory_threshold,
             }
         )
-        model, effective_lr, effective_batch_size = setup_multi_gpu(
-            model, multi_gpu_config
-        )
+        model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
         logging.info(
             f"Optimizer prep: effective_lr={effective_lr:.6f}, "
             f"effective_batch_size={effective_batch_size}"
@@ -417,9 +397,7 @@ def _run_stanford_fewvol_body(
         return
 
     if not os.path.isfile(best_ckpt):
-        logging.error(
-            f"No checkpoint at {best_ckpt}; train first or use --force-train."
-        )
+        logging.error(f"No checkpoint at {best_ckpt}; train first or use --force-train.")
         sys.exit(1)
 
     rec_dev = settings.reconstruct.device
@@ -443,9 +421,7 @@ def _run_stanford_fewvol_body(
                 f"RGS patch reconstruct: all {full_noisy.shape[-1]} DWI volumes "
                 f"(K={k_in}, MC context + spatial masks)"
             )
-            x_t = torch.from_numpy(np.transpose(full_noisy, (3, 0, 1, 2))).type(
-                torch.float
-            )
+            x_t = torch.from_numpy(np.transpose(full_noisy, (3, 0, 1, 2))).type(torch.float)
             rec_vxyz = reconstruct_dwis_rgs(
                 model=rec_model,
                 data=x_t,
@@ -466,24 +442,13 @@ def _run_stanford_fewvol_body(
                 f"Reconstructing all {full_noisy.shape[-1]} DWI volumes via "
                 f"chunks of {train_num_volumes}..."
             )
-            reconstructed = reconstruct_full_dwi_chunked(
-                model=rec_model,
-                noisy_xyzv=full_noisy,
-                train_num_volumes=train_num_volumes,
-                device=rec_dev,
-                mask_p=settings.reconstruct.mask_p,
-                n_preds=settings.reconstruct.n_preds,
-                patch_size=psize,
-                overlap=overlap,
-                use_amp=use_amp_rec,
-                pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
+            raise ValueError(
+                "Sequential reconstruction not supported for Stanford few-volume dataset."
             )
         ref_for_metrics = full_orig
     else:
         logging.info("Reconstructing training subset only.")
-        x_t = torch.from_numpy(np.transpose(train_noisy, (3, 0, 1, 2))).type(
-            torch.float
-        )
+        x_t = torch.from_numpy(np.transpose(train_noisy, (3, 0, 1, 2))).type(torch.float)
         if use_rgs:
             rec_vxyz = reconstruct_dwis_rgs(
                 model=rec_model,
@@ -500,16 +465,8 @@ def _run_stanford_fewvol_body(
                 pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
             )
         else:
-            rec_vxyz = reconstruct_dwis(
-                model=rec_model,
-                data=x_t,
-                device=rec_dev,
-                mask_p=settings.reconstruct.mask_p,
-                n_preds=settings.reconstruct.n_preds,
-                patch_size=psize,
-                overlap=overlap,
-                use_amp=use_amp_rec,
-                pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
+            raise ValueError(
+                "Sequential reconstruction not supported for Stanford few-volume dataset."
             )
         reconstructed = np.transpose(rec_vxyz, (1, 2, 3, 0))
         ref_for_metrics = train_orig
@@ -517,18 +474,16 @@ def _run_stanford_fewvol_body(
     if getattr(settings.reconstruct, "rescale_to_01", False):
         mode = getattr(settings.reconstruct, "rescale_mode", "per_volume")
         reference = ref_for_metrics if mode == "match_gt" else None
-        reconstructed = rescale_reconstruction_to_01(
-            reconstructed, mode=mode, reference=reference
-        )
+        reconstructed = rescale_reconstruction_to_01(reconstructed, mode=mode, reference=reference)
 
     if getattr(settings.reconstruct, "subtract_background_estimate", False):
         thresh = getattr(settings.reconstruct, "subtract_background_threshold", 0.02)
         bg_mask = (ref_for_metrics <= thresh).all(axis=-1)
         if np.any(bg_mask):
             shift = float(np.median(reconstructed[bg_mask]))
-            reconstructed = np.clip(
-                reconstructed.astype(np.float64) - shift, 0, 1
-            ).astype(np.float32)
+            reconstructed = np.clip(reconstructed.astype(np.float64) - shift, 0, 1).astype(
+                np.float32
+            )
 
     if getattr(settings.reconstruct, "clip_to_range", False):
         reconstructed = np.clip(reconstructed, 0, 1)
@@ -595,9 +550,7 @@ def _run_stanford_fewvol_body(
                 file_name=comparison_path,
                 volume_idx=i,
             )
-            wandb_images.append(
-                wandb.Image(comparison_path, caption=f"Volume index {i}")
-            )
+            wandb_images.append(wandb.Image(comparison_path, caption=f"Volume index {i}"))
 
         if wandb_run is not None:
             wandb.log({"reconstruct/comparison": wandb_images})

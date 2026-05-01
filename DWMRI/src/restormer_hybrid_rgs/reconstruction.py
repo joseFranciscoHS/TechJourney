@@ -73,9 +73,7 @@ def reconstruct_dwis(
     pad_z = (stride - (z_size - patch_size) % stride) % stride
 
     if pad_x > 0 or pad_y > 0 or pad_z > 0:
-        data = torch.nn.functional.pad(
-            data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect"
-        )
+        data = torch.nn.functional.pad(data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect")
         logging.info(f"Padded data to shape: {data.shape}")
 
     padded_x, padded_y, padded_z = data.shape[1], data.shape[2], data.shape[3]
@@ -105,63 +103,58 @@ def reconstruct_dwis(
                 ] += blend_weights
 
     with torch.inference_mode():
-        for vol_idx in tqdm(range(num_vols), desc="Processing volumes"):
-            logging.info(f"Processing volume {vol_idx + 1}/{num_vols}")
-
+        with tqdm(total=total_patches, desc="Processing spatial patches") as pbar:
             for x_start in x_positions:
                 for y_start in y_positions:
                     for z_start in z_positions:
                         x_end = x_start + patch_size
                         y_end = y_start + patch_size
                         z_end = z_start + patch_size
-
                         patch = (
                             data[:, x_start:x_end, y_start:y_end, z_start:z_end]
                             .clone()
                             .contiguous()
                         )
 
-                        pred_sum_t = None
-                        for start in range(0, n_preds, _chunk):
-                            bsz = min(_chunk, n_preds - start)
-                            masks = (
-                                torch.rand(
-                                    bsz,
-                                    patch_size,
-                                    patch_size,
-                                    patch_size,
-                                    dtype=torch.float32,
-                                    device=patch.device,
-                                )
-                                > mask_p
-                            ).float()
-                            patch_b = (
-                                patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
-                            )
-                            patch_b[:, vol_idx] = patch[vol_idx].unsqueeze(0) * masks
-                            patch_b = patch_b.to(device)
+                        for vol_idx in range(num_vols):
+                            pred_sum_t = None
+                            for start in range(0, n_preds, _chunk):
+                                bsz = min(_chunk, n_preds - start)
+                                masks = (
+                                    torch.rand(
+                                        bsz,
+                                        patch_size,
+                                        patch_size,
+                                        patch_size,
+                                        dtype=torch.float32,
+                                        device=patch.device,
+                                    )
+                                    > mask_p
+                                ).float()
+                                patch_b = patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
+                                patch_b[:, vol_idx] = patch[vol_idx].unsqueeze(0) * masks
+                                patch_b = patch_b.to(device)
 
-                            if amp_ok:
-                                with torch.amp.autocast(
-                                    device_type="cuda", dtype=torch.float16
-                                ):
+                                if amp_ok:
+                                    with torch.amp.autocast(
+                                        device_type="cuda", dtype=torch.float16
+                                    ):
+                                        pred = model(patch_b)
+                                else:
                                     pred = model(patch_b)
-                            else:
-                                pred = model(patch_b)
 
-                            part = pred.float().sum(dim=0)
-                            pred_sum_t = (
-                                part if pred_sum_t is None else pred_sum_t + part
+                                part = pred.float().sum(dim=0)
+                                pred_sum_t = part if pred_sum_t is None else pred_sum_t + part
+                                del patch_b, pred, part
+
+                            pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
+                            del pred_sum_t
+                            sum_preds[vol_idx, x_start:x_end, y_start:y_end, z_start:z_end] += (
+                                pred_np * blend_weights
                             )
-                            del patch_b, pred, part
-
-                        pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
-                        del pred_sum_t
-                        sum_preds[
-                            vol_idx, x_start:x_end, y_start:y_end, z_start:z_end
-                        ] += pred_np * blend_weights
 
                         del patch
+                        pbar.update(1)
 
             if _cuda_device(device):
                 torch.cuda.empty_cache()
@@ -246,9 +239,7 @@ def reconstruct_dwis_rgs(
     pad_z = (stride - (z_size - patch_size) % stride) % stride
 
     if pad_x > 0 or pad_y > 0 or pad_z > 0:
-        data = torch.nn.functional.pad(
-            data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect"
-        )
+        data = torch.nn.functional.pad(data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect")
         logging.info(f"Padded data to shape: {data.shape}")
 
     padded_x, padded_y, padded_z = data.shape[1], data.shape[2], data.shape[3]
@@ -330,11 +321,7 @@ def reconstruct_dwis_rgs(
                                     )
                                     > mask_p
                                 ).float()
-                                patch_b = (
-                                    patch.unsqueeze(0)
-                                    .expand(bsz, -1, -1, -1, -1)
-                                    .clone()
-                                )
+                                patch_b = patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
                                 patch_b[:, target_channel] = (
                                     patch[target_channel].unsqueeze(0) * masks
                                 )
@@ -349,9 +336,7 @@ def reconstruct_dwis_rgs(
                                     pred = model(patch_b)
 
                                 part = pred.float().sum(dim=0)
-                                pred_sum_t = (
-                                    part if pred_sum_t is None else pred_sum_t + part
-                                )
+                                pred_sum_t = part if pred_sum_t is None else pred_sum_t + part
                                 del patch_b, pred, part
 
                             pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
@@ -361,7 +346,9 @@ def reconstruct_dwis_rgs(
                                 x_start:x_end,
                                 y_start:y_end,
                                 z_start:z_end,
-                            ] += pred_np * blend_weights
+                            ] += (
+                                pred_np * blend_weights
+                            )
 
                             del patch
 
@@ -404,9 +391,7 @@ def reconstruct_dwis_sequential_sliding_k(
     if num_input > num_vols:
         raise ValueError(f"num_input K={num_input} exceeds shell size G={num_vols}")
     if not (0 <= target_channel < num_input):
-        raise ValueError(
-            f"target_channel={target_channel} must be in [0, {num_input - 1}]"
-        )
+        raise ValueError(f"target_channel={target_channel} must be in [0, {num_input - 1}]")
 
     num_windows = num_vols - num_input + 1
     out_full = data.detach().cpu().numpy().copy()
@@ -438,71 +423,6 @@ def reconstruct_dwis_sequential_sliding_k(
         num_vols,
     )
     return out_full
-
-
-def reconstruct_full_dwi_chunked(
-    model,
-    noisy_xyzv,
-    train_num_volumes,
-    device,
-    mask_p=0.3,
-    n_preds=10,
-    patch_size=32,
-    overlap=8,
-    use_amp=True,
-    pred_chunk_size=None,
-):
-    """
-    Run reconstruct_dwis on contiguous blocks along the volume axis.
-
-    The model was trained with ``train_num_volumes`` input channels; the full
-    DWI stack (all non-b0 volumes) is split into chunks of that size, each
-    chunk is reconstructed independently, and results are concatenated along
-    the volume dimension.
-
-    Args:
-        noisy_xyzv: (X, Y, Z, V) all diffusion-weighted volumes after b0s.
-        train_num_volumes: Chunk size (must match training ``inp_channels``).
-        pred_chunk_size: forwarded to :func:`reconstruct_dwis` for GPU memory control.
-
-    Returns:
-        Array (X, Y, Z, V) with same V as ``noisy_xyzv``.
-    """
-    if train_num_volumes < 1:
-        raise ValueError("train_num_volumes must be >= 1")
-    v = noisy_xyzv.shape[-1]
-    pad = (train_num_volumes - (v % train_num_volumes)) % train_num_volumes
-    if pad > 0:
-        noisy_xyzv = np.pad(
-            noisy_xyzv,
-            ((0, 0), (0, 0), (0, 0), (0, pad)),
-            mode="edge",
-        )
-        logging.info(
-            f"Chunked reconstruction: padded last dim by {pad} (edge) so V is "
-            f"multiple of {train_num_volumes}"
-        )
-
-    v_padded = noisy_xyzv.shape[-1]
-    chunks_out = []
-    for start in range(0, v_padded, train_num_volumes):
-        block = noisy_xyzv[..., start : start + train_num_volumes]
-        x_t = torch.from_numpy(np.transpose(block, (3, 0, 1, 2))).type(torch.float)
-        rec_vxyz = reconstruct_dwis(
-            model=model,
-            data=x_t,
-            device=device,
-            mask_p=mask_p,
-            n_preds=n_preds,
-            patch_size=patch_size,
-            overlap=overlap,
-            use_amp=use_amp,
-            pred_chunk_size=pred_chunk_size,
-        )
-        chunks_out.append(np.transpose(rec_vxyz, (1, 2, 3, 0)))
-
-    full = np.concatenate(chunks_out, axis=-1)
-    return full[..., :v]
 
 
 def _create_blend_weights(patch_size, overlap):

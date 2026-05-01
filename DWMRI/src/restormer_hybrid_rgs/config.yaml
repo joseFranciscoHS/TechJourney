@@ -16,15 +16,15 @@ dbrain:
       stages:
         - patch_size: 32
           batch_size: 48
-          epochs: 30
+          epochs: 100
           step: 8
         - patch_size: 24
           batch_size: 96
-          epochs: 30
+          epochs: 100
           step: 6
         - patch_size: 16
           batch_size: 256
-          epochs: 30
+          epochs: 100
           step: 4
     multi_gpu: false
     gpu_ids: [0, 1, 2]
@@ -61,7 +61,7 @@ dbrain:
     in_channel: 24
     out_channel: 1
     output_activation: "prelu"
-    dim: 16
+    dim: 8
     num_blocks: [1, 2, 2]
     num_refinement_blocks: 2
     heads: [1, 2, 2]
@@ -126,21 +126,21 @@ stanford:
       stages:
         - patch_size: 32
           batch_size: 32
-          epochs: 100
+          epochs: 200
           step: 8
         - patch_size: 24
           batch_size: 64
-          epochs: 100
+          epochs: 200
           step: 6
         - patch_size: 16
           batch_size: 256
-          epochs: 300
+          epochs: 200
           step: 4
   model:
     in_channel: 24
     out_channel: 1
     output_activation: "prelu"
-    dim: 24
+    dim: 8
     num_blocks: [1, 2, 2]
     num_refinement_blocks: 2
     heads: [1, 2, 2]
@@ -177,7 +177,7 @@ stanford:
     pred_chunk_size: null
     n_context_samples: 24
     patch_size: 32
-    overlap: 8
+    overlap: 1
     rescale_to_01: true
     rescale_mode: "per_volume"
     clip_to_range: true
