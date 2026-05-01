@@ -458,6 +458,8 @@ def compute_fa(data_xyzv, gtab):
 - Número exacto de parámetros de cada modelo entrenado.
 - Los checkpoints finales de cada experimento deben guardarse con una convención de nombres que incluya: dataset / arquitectura / K / noise_type / sigma / learning_rate (ya implementado en las rutas de checkpoint).
 
+**Ejecución batch y checklist:** La lista canónica de comandos por experimento es el manifiesto [`experiments/paper_manifest_final.yaml`](../experiments/paper_manifest_final.yaml) (ejecutable con [`experiments/driver.py`](../experiments/driver.py)). La lista humana checkbox por `job_id` está en [`experiments/checklist_pruebas_paper.md`](../experiments/checklist_pruebas_paper.md). **Diferencias plan ↔ YAML:** el plan incluye MP-PCA en Stanford (Sección 2.1); el manifiesto actual no automatiza ese baseline (correr `paper_eval.baselines.mppca_run` aparte o añadir un job al YAML). BM4D (2.7 opcional) y tractografía (3.6) no están en el manifiesto por diseño.
+
 ---
 
 ## Sección 5 — Análisis de Inferencia RGS
