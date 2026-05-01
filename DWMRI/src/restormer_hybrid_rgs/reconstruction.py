@@ -407,12 +407,17 @@ def reconstruct_dwis_sequential_sliding_k(
         raise ValueError(f"target_channel={target_channel} must be in [0, {num_input - 1}]")
 
     num_windows = num_vols - num_input + 1
-    out_full = data.detach().cpu().numpy().copy()
-    counts = np.zeros((num_vols,), dtype=np.float32)
-    sums = np.zeros_like(out_full, dtype=np.float32)
-    for win_start in range(num_windows):
-        order = np.arange(win_start, win_start + num_input, dtype=np.int64)
-        x_win = data[torch.from_numpy(order).long()]
+    data_cpu_np = data.detach().cpu().numpy()
+    counts_t = torch.zeros((num_vols,), dtype=torch.float32)
+    sums_t = torch.zeros_like(data, dtype=torch.float32)
+
+    window_orders = [
+        torch.arange(win_start, win_start + num_input, dtype=torch.long)
+        for win_start in range(num_windows)
+    ]
+
+    for order_t in window_orders:
+        x_win = data.index_select(0, order_t)
         rec_win = reconstruct_dwis(
             model=model,
             data=x_win,
@@ -424,12 +429,17 @@ def reconstruct_dwis_sequential_sliding_k(
             use_amp=use_amp,
             pred_chunk_size=pred_chunk_size,
         )
-        global_target = int(order[target_channel])
-        sums[global_target] += rec_win[target_channel]
-        counts[global_target] += 1.0
+        global_target = int(order_t[target_channel].item())
+        sums_t[global_target] += torch.from_numpy(rec_win[target_channel]).to(
+            dtype=torch.float32
+        )
+        counts_t[global_target] += 1.0
 
-    valid = counts > 0
-    out_full[valid] = sums[valid] / counts[valid, None, None, None]
+    out_full = data_cpu_np.copy()
+    counts_np = counts_t.detach().cpu().numpy()
+    sums_np = sums_t.detach().cpu().numpy()
+    valid = counts_np > 0
+    out_full[valid] = sums_np[valid] / counts_np[valid, None, None, None]
     logging.info(
         "Sequential-K reconstruction done. covered=%d/%d volumes",
         int(np.sum(valid)),
