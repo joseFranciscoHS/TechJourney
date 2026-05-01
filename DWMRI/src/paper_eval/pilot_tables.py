@@ -59,7 +59,9 @@ def _table_ablations(metrics_rows: List[Dict[str, str]]) -> List[Dict[str, str]]
     out: List[Dict[str, str]] = []
     for row in metrics_rows:
         metrics_dir = row.get("metrics_dir", "")
-        if not any(tag in metrics_dir for tag in ["sequential", "rgs", "2d_", "_K5", "_K10"]):
+        if not any(
+            tag in metrics_dir for tag in ["sequential", "rgs", "2d_", "_K5", "_K10"]
+        ):
             continue
         out.append(
             {
@@ -92,7 +94,9 @@ def _table_runtime(registry_rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Create dry-run paper tables from pilot CSV outputs.")
+    parser = argparse.ArgumentParser(
+        description="Create dry-run paper tables from pilot CSV outputs."
+    )
     parser.add_argument("--metrics-csv", required=True)
     parser.add_argument("--registry-csv", required=True)
     parser.add_argument("--out-dir", required=True)

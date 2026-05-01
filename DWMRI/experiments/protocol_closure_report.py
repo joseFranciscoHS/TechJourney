@@ -11,7 +11,9 @@ def _read_json(path: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build protocol closure artifact from smoke outputs.")
+    parser = argparse.ArgumentParser(
+        description="Build protocol closure artifact from smoke outputs."
+    )
     parser.add_argument("--validation-json", required=True)
     parser.add_argument("--dependency-json", required=True)
     parser.add_argument("--baseline-csv", default=None)

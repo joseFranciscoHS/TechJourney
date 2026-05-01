@@ -5,7 +5,6 @@ import torch
 from tqdm import tqdm
 
 
-
 def reconstruct_dwis_rgs(
     model,
     data,
@@ -199,7 +198,3 @@ def reconstruct_dwis_sequential_sliding_k(
         num_vols,
     )
     return out_full
-
-
-
-

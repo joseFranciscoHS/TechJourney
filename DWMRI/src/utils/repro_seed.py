@@ -45,7 +45,9 @@ def configure_cudnn(*, fast: bool = True) -> None:
             torch.use_deterministic_algorithms(True, warn_only=True)
         except TypeError:
             torch.use_deterministic_algorithms(True)
-        logging.info("cuDNN: benchmark=False, deterministic=True (reproducible-ish mode)")
+        logging.info(
+            "cuDNN: benchmark=False, deterministic=True (reproducible-ish mode)"
+        )
 
 
 def log_runtime_env(device: str) -> None:

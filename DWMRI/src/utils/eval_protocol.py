@@ -27,7 +27,9 @@ def apply_reconstruction_eval_protocol(
     return out.astype(np.float32, copy=False)
 
 
-def compute_roi_mask(reference_xyzv: np.ndarray, threshold: Optional[float]) -> Optional[np.ndarray]:
+def compute_roi_mask(
+    reference_xyzv: np.ndarray, threshold: Optional[float]
+) -> Optional[np.ndarray]:
     if threshold is None:
         return None
     return (reference_xyzv > float(threshold)).any(axis=-1)

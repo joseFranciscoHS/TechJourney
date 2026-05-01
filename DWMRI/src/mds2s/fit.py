@@ -3,9 +3,9 @@ import os
 
 import numpy as np
 import torch
+import wandb
 from torch.optim.lr_scheduler import LRScheduler
 from tqdm import tqdm
-import wandb
 
 from utils.checkpoint import load_checkpoint, save_checkpoint
 from utils.training_tracker import TrainingLossTracker
@@ -76,13 +76,13 @@ def fit_model(
         batch_count = 0
         epoch_losses = []
 
-        logging.info(f"Starting epoch {epoch+1}/{num_epochs}")
+        logging.info(f"Starting epoch {epoch + 1}/{num_epochs}")
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
         for batch_idx, x in tqdm(
             enumerate(train_loader),
-            desc=f"Epoch {epoch+1}/{num_epochs}",
+            desc=f"Epoch {epoch + 1}/{num_epochs}",
             total=len(train_loader),
         ):
             [x] = x
@@ -91,10 +91,7 @@ def fit_model(
             # Log batch information occasionally
             if batch_idx % 10 == 0:
                 logging.debug(
-                    (
-                        f"Batch {batch_idx}/{len(train_loader)} - "
-                        f"input shape: {x.shape}"
-                    )
+                    (f"Batch {batch_idx}/{len(train_loader)} - input shape: {x.shape}")
                 )
 
             p_mtx = np.random.uniform(
@@ -130,7 +127,7 @@ def fit_model(
             scheduler.step(epoch)
         new_lr = optimizer.param_groups[0]["lr"]
 
-        logging.info(f"Epoch {epoch+1}/{num_epochs} completed")
+        logging.info(f"Epoch {epoch + 1}/{num_epochs} completed")
         logging.info(f"Average Loss: {avg_loss:.6f}")
         logging.info(
             (

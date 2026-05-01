@@ -15,14 +15,17 @@ Usage (from ``DWMRI/src`` with PYTHONPATH)::
 from __future__ import annotations
 
 import argparse
-from typing import Optional
 import gc
 import logging
 import os
 import sys
+from typing import Optional
 
 import numpy as np
 import torch
+import wandb
+from torch.utils.data import DataLoader, Subset
+
 from restormer_hybrid_rgs.data import TrainingDataSet
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model import Restormer3D
@@ -37,7 +40,6 @@ from restormer_hybrid_rgs.run import (
     _patch_volume_dim,
     fit_progressive,
 )
-from torch.utils.data import DataLoader, Subset
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
 from utils.data import (
@@ -53,8 +55,6 @@ from utils.metrics import (
 )
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
 from utils.utils import load_config, noise_path_segment
-
-import wandb
 
 
 def _build_checkpoint_dir(
@@ -193,7 +193,9 @@ def main():
             "dataset": "stanford_fewvol_restormer_rgs",
             "train_num_volumes": train_num_volumes,
             "reconstruct_full_dwi": reconstruct_full,
-            "shell_sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
+            "shell_sampling_mode": getattr(
+                settings.data, "shell_sampling_mode", "sequential"
+            ),
             "learning_rate": settings.train.learning_rate,
             "bvalue": getattr(settings.data, "bvalue", None),
             "noise_sigma": getattr(settings.data, "noise_sigma", None),
@@ -456,9 +458,7 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
-                pred_chunk_size=getattr(
-                    settings.reconstruct, "pred_chunk_size", None
-                ),
+                pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
             )
             reconstructed = np.transpose(rec_vxyz, (1, 2, 3, 0))
         else:
@@ -476,9 +476,7 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
-                pred_chunk_size=getattr(
-                    settings.reconstruct, "pred_chunk_size", None
-                ),
+                pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
             )
         ref_for_metrics = full_orig
     else:
@@ -499,9 +497,7 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
-                pred_chunk_size=getattr(
-                    settings.reconstruct, "pred_chunk_size", None
-                ),
+                pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
             )
         else:
             rec_vxyz = reconstruct_dwis(
@@ -513,9 +509,7 @@ def _run_stanford_fewvol_body(
                 patch_size=psize,
                 overlap=overlap,
                 use_amp=use_amp_rec,
-                pred_chunk_size=getattr(
-                    settings.reconstruct, "pred_chunk_size", None
-                ),
+                pred_chunk_size=getattr(settings.reconstruct, "pred_chunk_size", None),
             )
         reconstructed = np.transpose(rec_vxyz, (1, 2, 3, 0))
         ref_for_metrics = train_orig

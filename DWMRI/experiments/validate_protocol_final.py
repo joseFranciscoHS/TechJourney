@@ -65,7 +65,9 @@ def validate(protocol_path: Path, manifest_path: Path):
             "restormer_dbrain_progressive_off_ablation",
         ],
     }
-    protocol_ablations = [str(a) for a in protocol.get("matrix", {}).get("ablations", [])]
+    protocol_ablations = [
+        str(a) for a in protocol.get("matrix", {}).get("ablations", [])
+    ]
     for ablation in protocol_ablations:
         for jid in required_ablation_jobs.get(ablation, []):
             if jid not in jobs:
@@ -149,7 +151,9 @@ def validate(protocol_path: Path, manifest_path: Path):
     sigma_archs = [
         str(v) for v in sigma_cfg.get("methods", {}).get("proposed_architectures", [])
     ]
-    sigma_baselines = [str(v) for v in sigma_cfg.get("methods", {}).get("baselines", [])]
+    sigma_baselines = [
+        str(v) for v in sigma_cfg.get("methods", {}).get("baselines", [])
+    ]
 
     for sigma in sigma_values:
         stag = _sigma_tag(sigma)
@@ -158,7 +162,10 @@ def validate(protocol_path: Path, manifest_path: Path):
             errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{export_jid}")
         else:
             cmd = _command_text(jobs[export_jid])
-            for token in ("experiments/paper_export_dbrain_volume_pair.py", f"--noise-sigma {sigma:.2f}"):
+            for token in (
+                "experiments/paper_export_dbrain_volume_pair.py",
+                f"--noise-sigma {sigma:.2f}",
+            ):
                 if token not in cmd:
                     errors.append(f"{export_jid}:missing_token:{token}")
 
@@ -191,7 +198,10 @@ def validate(protocol_path: Path, manifest_path: Path):
                 errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{jid}")
             else:
                 cmd = _command_text(jobs[jid])
-                for token in ("--backend sklearn_reference", f"--noise-sigma {sigma:.2f}"):
+                for token in (
+                    "--backend sklearn_reference",
+                    f"--noise-sigma {sigma:.2f}",
+                ):
                     if token not in cmd:
                         errors.append(f"{jid}:missing_token:{token}")
 
@@ -334,7 +344,9 @@ def validate(protocol_path: Path, manifest_path: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate final paper protocol and manifest coherence.")
+    parser = argparse.ArgumentParser(
+        description="Validate final paper protocol and manifest coherence."
+    )
     parser.add_argument("--protocol", required=True)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--out", required=True)

@@ -180,8 +180,14 @@ def main():
     parser.add_argument("--output-root", required=True)
     parser.add_argument("--registry-path", required=True)
     parser.add_argument("--fail-fast", action="store_true")
-    parser.add_argument("--resume", action="store_true", help="Skip succeeded jobs from existing state")
-    parser.add_argument("--reset-state", action="store_true", help="Discard existing driver state and start fresh")
+    parser.add_argument(
+        "--resume", action="store_true", help="Skip succeeded jobs from existing state"
+    )
+    parser.add_argument(
+        "--reset-state",
+        action="store_true",
+        help="Discard existing driver state and start fresh",
+    )
     parser.add_argument(
         "--retry-failed",
         action="store_true",
@@ -200,11 +206,17 @@ def main():
         os.remove(_state_path(args.output_root))
 
     state = _load_state(args.output_root, jobs)
-    missing_in_manifest = [jid for jid in state["jobs"].keys() if jid not in set(job_ids)]
+    missing_in_manifest = [
+        jid for jid in state["jobs"].keys() if jid not in set(job_ids)
+    ]
     for jid in missing_in_manifest:
         _append_event(
             args.output_root,
-            {"event": "manifest_mismatch", "job_id": jid, "details": "state job not in current manifest"},
+            {
+                "event": "manifest_mismatch",
+                "job_id": jid,
+                "details": "state job not in current manifest",
+            },
         )
 
     selected_jobs, skipped_jobs = _select_jobs(
@@ -215,7 +227,14 @@ def main():
     )
 
     for skipped in skipped_jobs:
-        _append_event(args.output_root, {"event": "job_skipped", "job_id": skipped["id"], "reason": skipped["reason"]})
+        _append_event(
+            args.output_root,
+            {
+                "event": "job_skipped",
+                "job_id": skipped["id"],
+                "reason": skipped["reason"],
+            },
+        )
 
     _save_state(args.output_root, state)
     run_started_at = time.time()
@@ -227,17 +246,23 @@ def main():
     try:
         for job in selected_jobs:
             current_job_id = job["id"]
-            prev_attempts = int(state["jobs"].get(current_job_id, {}).get("attempts", 0))
+            prev_attempts = int(
+                state["jobs"].get(current_job_id, {}).get("attempts", 0)
+            )
             _mark_job_state(
                 state,
                 current_job_id,
                 status="running",
                 attempts=prev_attempts + 1,
                 started_at_utc=_now_iso(),
-                command=_build_command(job, args.exp_id, args.output_root, args.registry_path),
+                command=_build_command(
+                    job, args.exp_id, args.output_root, args.registry_path
+                ),
             )
             _save_state(args.output_root, state)
-            _append_event(args.output_root, {"event": "job_started", "job_id": current_job_id})
+            _append_event(
+                args.output_root, {"event": "job_started", "job_id": current_job_id}
+            )
 
             result = run_job(
                 job,

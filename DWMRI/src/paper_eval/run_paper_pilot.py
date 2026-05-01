@@ -172,7 +172,9 @@ def _with_cpu_fallback(cmd: List[str], run_device: str) -> List[str]:
             if override.endswith("train.device=mps"):
                 override = override.replace("train.device=mps", "train.device=cpu")
             elif override.endswith("reconstruct.device=mps"):
-                override = override.replace("reconstruct.device=mps", "reconstruct.device=cpu")
+                override = override.replace(
+                    "reconstruct.device=mps", "reconstruct.device=cpu"
+                )
             out.extend([token, override])
             idx += 2
             continue
@@ -504,7 +506,9 @@ def _phase_commands(spec: PilotSpec) -> Dict[str, List[List[str]]]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run end-to-end short pilot for paper.")
+    parser = argparse.ArgumentParser(
+        description="Run end-to-end short pilot for paper."
+    )
     parser.add_argument(
         "--output-root",
         default="tmp",
@@ -572,7 +576,12 @@ def main():
     if failures:
         print(json.dumps({"status": "failed", "failures": failures}, indent=2))
         raise SystemExit(1)
-    print(json.dumps({"status": "ok", "phases": selected, "executed": bool(args.execute)}, indent=2))
+    print(
+        json.dumps(
+            {"status": "ok", "phases": selected, "executed": bool(args.execute)},
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

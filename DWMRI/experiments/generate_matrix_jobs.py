@@ -1,16 +1,26 @@
 import argparse
+
 import yaml
 
 
 def make_job(architecture: str, dimensionality: str, regime: str, dataset: str):
-    module = "drcnet_hybrid_rgs.run" if architecture == "drcnet" else "restormer_hybrid_rgs.run"
+    module = (
+        "drcnet_hybrid_rgs.run"
+        if architecture == "drcnet"
+        else "restormer_hybrid_rgs.run"
+    )
     cmd = ["python", "-m", module, "--dataset", dataset, "--regime", regime]
     if dimensionality == "2d":
         cmd += ["--set", "model.use_2d=true"]
     if regime == "supervised":
         cmd += ["--set", "train.supervised=true"]
     job_id = f"{architecture}_{dimensionality}_{regime}_{dataset}"
-    return {"id": job_id, "recipe": "model_dim_matrix", "cwd": "DWMRI/src", "command": cmd}
+    return {
+        "id": job_id,
+        "recipe": "model_dim_matrix",
+        "cwd": "DWMRI/src",
+        "command": cmd,
+    }
 
 
 def main():

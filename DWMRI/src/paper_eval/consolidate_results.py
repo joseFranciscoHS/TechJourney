@@ -39,14 +39,22 @@ def _collect_rows(root: Path) -> List[Dict[str, Any]]:
             "rd_mae": dti.get("rd_mae"),
             "dti_reference": dti.get("dti_reference"),
             "dti_skipped_reason": dti.get("dti_skipped_reason"),
-            "n_context_samples": (manifest.get("config", {}) or {}).get("n_context_samples"),
+            "n_context_samples": (manifest.get("config", {}) or {}).get(
+                "n_context_samples"
+            ),
             "n_preds": (manifest.get("config", {}) or {}).get("n_preds"),
             "metrics_roi_threshold": (manifest.get("metrics_policy", {}) or {}).get(
                 "metrics_roi_threshold"
             ),
-            "rescale_to_01": (manifest.get("metrics_policy", {}) or {}).get("rescale_to_01"),
-            "rescale_mode": (manifest.get("metrics_policy", {}) or {}).get("rescale_mode"),
-            "clip_to_range": (manifest.get("metrics_policy", {}) or {}).get("clip_to_range"),
+            "rescale_to_01": (manifest.get("metrics_policy", {}) or {}).get(
+                "rescale_to_01"
+            ),
+            "rescale_mode": (manifest.get("metrics_policy", {}) or {}).get(
+                "rescale_mode"
+            ),
+            "clip_to_range": (manifest.get("metrics_policy", {}) or {}).get(
+                "clip_to_range"
+            ),
         }
         rows.append(row)
     return rows
@@ -66,8 +74,12 @@ def _write_csv(rows: List[Dict[str, Any]], out_path: Path) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Consolidate metrics into a single CSV table.")
-    parser.add_argument("--root", required=True, help="Root directory to scan recursively.")
+    parser = argparse.ArgumentParser(
+        description="Consolidate metrics into a single CSV table."
+    )
+    parser.add_argument(
+        "--root", required=True, help="Root directory to scan recursively."
+    )
     parser.add_argument("--out", required=True, help="Output CSV path.")
     args = parser.parse_args()
     rows = _collect_rows(Path(args.root))

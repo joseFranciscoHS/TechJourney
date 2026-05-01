@@ -102,14 +102,10 @@ class TrainingDataSet2D(torch.utils.data.Dataset):
             gw = rest % self.n_windows
             coord_i = rest // self.n_windows
             x0, y0 = self._coords[coord_i]
-            indices = np.arange(
-                gw, gw + self.num_input_volumes, dtype=np.int64
-            )
+            indices = np.arange(gw, gw + self.num_input_volumes, dtype=np.int64)
 
         ph, pw = self.patch_h, self.patch_w
-        plane = self.data_vxyz[
-            indices, x0 : x0 + ph, y0 : y0 + pw, z_idx
-        ].copy()
+        plane = self.data_vxyz[indices, x0 : x0 + ph, y0 : y0 + pw, z_idx].copy()
         window = torch.from_numpy(plane).float()
 
         p_mtx = self._rng.random(size=(ph, pw))
@@ -121,4 +117,3 @@ class TrainingDataSet2D(torch.utils.data.Dataset):
         x_masked[tc] = x_masked[tc] * mask.squeeze(0)
         noisy_target_volume = window[tc : tc + 1]
         return x_masked, mask, noisy_target_volume
-

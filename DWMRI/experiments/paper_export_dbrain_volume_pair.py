@@ -76,7 +76,9 @@ def main():
 
     np.save(os.path.join(args.out_dir, "gt_full_xyzv.npy"), gt_full.astype(np.float32))
     np.save(os.path.join(args.out_dir, "gt_dwi_xyzv.npy"), gt_dwi.astype(np.float32))
-    np.save(os.path.join(args.out_dir, "noisy_dwi_xyzv.npy"), noisy_crop.astype(np.float32))
+    np.save(
+        os.path.join(args.out_dir, "noisy_dwi_xyzv.npy"), noisy_crop.astype(np.float32)
+    )
 
     meta = {
         "take_x": int(tx),
@@ -88,7 +90,9 @@ def main():
         "noise_sigma": float(settings.data.noise_sigma),
         "bvalue": int(settings.data.bvalue),
     }
-    with open(os.path.join(args.out_dir, "export_meta.json"), "w", encoding="utf-8") as f:
+    with open(
+        os.path.join(args.out_dir, "export_meta.json"), "w", encoding="utf-8"
+    ) as f:
         json.dump(meta, f, indent=2)
     logging.info("Wrote npy + export_meta.json to %s", args.out_dir)
 

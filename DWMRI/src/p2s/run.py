@@ -97,8 +97,7 @@ def _output_subdir(settings):
         )
     else:
         backend_suffix = (
-            f"backend_dipy"
-            f"_model_{getattr(settings.patch2self, 'model', 'ols')}"
+            f"backend_dipy_model_{getattr(settings.patch2self, 'model', 'ols')}"
         )
 
     return os.path.join(
@@ -232,11 +231,15 @@ def main(
 
     wb_cfg = getattr(full_settings, "wandb", None)
     if use_wandb is None:
-        use_wandb = bool(getattr(wb_cfg, "enabled", True)) if wb_cfg is not None else True
+        use_wandb = (
+            bool(getattr(wb_cfg, "enabled", True)) if wb_cfg is not None else True
+        )
     if wandb is None:
         use_wandb = False
     wb_project = (
-        getattr(wb_cfg, "project", "DWMRI-Denoising") if wb_cfg is not None else "DWMRI-Denoising"
+        getattr(wb_cfg, "project", "DWMRI-Denoising")
+        if wb_cfg is not None
+        else "DWMRI-Denoising"
     )
 
     if dataset == "dbrain":
@@ -244,7 +247,9 @@ def main(
         settings = full_settings.dbrain
         if noise_sigma_override is not None:
             settings.data.noise_sigma = float(noise_sigma_override)
-            logging.info("Overriding dBrain noise_sigma to: %s", settings.data.noise_sigma)
+            logging.info(
+                "Overriding dBrain noise_sigma to: %s", settings.data.noise_sigma
+            )
         if nii_path_override is not None:
             settings.data.nii_path = nii_path_override
             settings.data.nii_path_lightning = nii_path_override
@@ -264,18 +269,24 @@ def main(
         settings = full_settings.stanford
         if noise_sigma_override is not None:
             settings.data.noise_sigma = float(noise_sigma_override)
-            logging.info("Overriding Stanford noise_sigma to: %s", settings.data.noise_sigma)
+            logging.info(
+                "Overriding Stanford noise_sigma to: %s", settings.data.noise_sigma
+            )
         nii_path = None
         data_loader = StanfordDataLoader(
             bvalue=settings.data.bvalue,
             noise_sigma=settings.data.noise_sigma,
         )
     else:
-        raise ValueError(f"Unknown dataset: '{dataset}'. Must be 'stanford' or 'dbrain'.")
+        raise ValueError(
+            f"Unknown dataset: '{dataset}'. Must be 'stanford' or 'dbrain'."
+        )
 
     if backend_override is not None:
         settings.patch2self.backend = str(backend_override)
-        logging.info("Overriding patch2self backend to: %s", settings.patch2self.backend)
+        logging.info(
+            "Overriding patch2self backend to: %s", settings.patch2self.backend
+        )
 
     seed = int(
         seed_override
@@ -359,9 +370,7 @@ def main(
             )
         else:
             if backend != "dipy":
-                logging.warning(
-                    f"Unknown backend '{backend}'; falling back to 'dipy'."
-                )
+                logging.warning(f"Unknown backend '{backend}'; falling back to 'dipy'.")
             denoised_data = denoise_dwi_patch2self(
                 noisy_data, bvals, settings.patch2self
             )
@@ -415,9 +424,15 @@ def main(
             den_dwi = apply_reconstruction_eval_protocol(
                 den_dwi,
                 ref_dwi,
-                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
-                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+                rescale_to_01=bool(
+                    getattr(settings.reconstruct, "rescale_to_01", True)
+                ),
+                rescale_mode=str(
+                    getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                ),
+                clip_to_range=bool(
+                    getattr(settings.reconstruct, "clip_to_range", True)
+                ),
             )
 
             metrics = compute_metrics(ref_dwi, den_dwi)
@@ -433,9 +448,7 @@ def main(
                     f"{n_roi} voxels ({roi_pct:.1f}%)"
                 )
                 metrics_roi = compute_metrics(ref_dwi, den_dwi, mask=roi_mask_3d)
-                logging.info(
-                    f"Metrics (ROI, brain/tissue only): {metrics_roi}"
-                )
+                logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
         else:
             logging.info(
@@ -446,9 +459,15 @@ def main(
             den_dwi = apply_reconstruction_eval_protocol(
                 den_dwi,
                 noisy_dwi,
-                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
-                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+                rescale_to_01=bool(
+                    getattr(settings.reconstruct, "rescale_to_01", True)
+                ),
+                rescale_mode=str(
+                    getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                ),
+                clip_to_range=bool(
+                    getattr(settings.reconstruct, "clip_to_range", True)
+                ),
             )
             metrics = compute_metrics(noisy_dwi, den_dwi)
             logging.info(f"Metrics: {metrics}")
@@ -463,9 +482,7 @@ def main(
                     f"{n_roi} voxels ({roi_pct:.1f}%)"
                 )
                 metrics_roi = compute_metrics(noisy_dwi, den_dwi, mask=roi_mask_3d)
-                logging.info(
-                    f"Metrics (ROI, brain/tissue only): {metrics_roi}"
-                )
+                logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
 
         if wandb_run is not None:
@@ -528,9 +545,13 @@ def main(
                 metrics_dir,
             )
         metrics_policy = metrics_policy_dict(
-            reference_name="clean_gt" if original_data is not None else "self_reference_noisy",
+            reference_name="clean_gt"
+            if original_data is not None
+            else "self_reference_noisy",
             rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
-            rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+            rescale_mode=str(
+                getattr(settings.reconstruct, "rescale_mode", "per_volume")
+            ),
             clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
             roi_threshold=getattr(settings.reconstruct, "metrics_roi_threshold", None),
         )
@@ -585,9 +606,7 @@ def main(
             else:
                 # Stanford: no ground truth — compare noisy vs denoised only
                 for i in range(n_img_vols):
-                    path = os.path.join(
-                        images_dir, f"noisy_vs_denoised_volume_{i}.png"
-                    )
+                    path = os.path.join(images_dir, f"noisy_vs_denoised_volume_{i}.png")
                     fully_compare_volumes(
                         original_volume=_viz(noisy_dwi),
                         noisy_volume=_viz(noisy_dwi),
@@ -597,20 +616,14 @@ def main(
                     )
                     if wandb_run is not None:
                         wandb_images.append(
-                            wandb.Image(
-                                path, caption=f"Noisy vs denoised, volume {i}"
-                            )
+                            wandb.Image(path, caption=f"Noisy vs denoised, volume {i}")
                         )
 
             single_path = os.path.join(images_dir, "denoised_single.png")
-            visualize_single_volume(
-                _viz(den_dwi), file_name=single_path, volume_idx=0
-            )
+            visualize_single_volume(_viz(den_dwi), file_name=single_path, volume_idx=0)
 
             noisy_path = os.path.join(images_dir, "noisy_single.png")
-            visualize_single_volume(
-                _viz(noisy_dwi), file_name=noisy_path, volume_idx=0
-            )
+            visualize_single_volume(_viz(noisy_dwi), file_name=noisy_path, volume_idx=0)
 
             if wandb_run is not None and wandb_images:
                 wandb.log({"reconstruct/comparison": wandb_images})

@@ -33,12 +33,7 @@ class Restormer2D(nn.Module):
     ):
         super().__init__()
         self.embed = nn.Conv2d(inp_channels, dim, kernel_size=3, padding=1, bias=bias)
-        self.blocks = nn.Sequential(
-            *[
-                _Block2D(dim=dim)
-                for _ in range(num_blocks)
-            ]
-        )
+        self.blocks = nn.Sequential(*[_Block2D(dim=dim) for _ in range(num_blocks)])
         self.out = nn.Conv2d(dim, out_channels, kernel_size=3, padding=1, bias=bias)
 
     def forward(self, x):

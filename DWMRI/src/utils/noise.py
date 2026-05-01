@@ -49,9 +49,7 @@ def add_noise(data, sigma, noise_type="rician", seed=None, n_coils=1):
     if noise_type == "ncchi":
         noise_type = "noncentral_chi"
     if noise_type not in ("rician", "gaussian", "noncentral_chi"):
-        raise ValueError(
-            f"noise_type must be one of {NOISE_TYPES}, got {noise_type!r}"
-        )
+        raise ValueError(f"noise_type must be one of {NOISE_TYPES}, got {noise_type!r}")
 
     log_msg = (
         f"Adding {noise_type} noise with sigma={sigma} to data of shape {data.shape}"

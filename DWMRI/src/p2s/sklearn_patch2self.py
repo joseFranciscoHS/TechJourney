@@ -39,6 +39,7 @@ from sklearn.neural_network import MLPRegressor
 # Patch extraction
 # ---------------------------------------------------------------------------
 
+
 def _extract_3d_patches(
     arr: np.ndarray,
     patch_radius: np.ndarray,
@@ -65,16 +66,16 @@ def _extract_3d_patches(
         for j in range(ry, arr.shape[1] - ry, stride):
             for k in range(rz, arr.shape[2] - rz, stride):
                 block = arr[
-                    i - rx: i + rx + 1,
-                    j - ry: j + ry + 1,
-                    k - rz: k + rz + 1,
+                    i - rx : i + rx + 1,
+                    j - ry : j + ry + 1,
+                    k - rz : k + rz + 1,
                     :,
                 ]  # (px, py, pz, V)
                 all_patches.append(block.reshape(n_feat, n_vols))
 
     # (n_patches, n_feat, V) → (V, n_patches, n_feat)
-    stacked = np.array(all_patches)        # (n_patches, n_feat, V)
-    return stacked.transpose(2, 0, 1)      # (V, n_patches, n_feat)
+    stacked = np.array(all_patches)  # (n_patches, n_feat, V)
+    return stacked.transpose(2, 0, 1)  # (V, n_patches, n_feat)
 
 
 def _sampled_grid_shape(
@@ -93,6 +94,7 @@ def _sampled_grid_shape(
 # ---------------------------------------------------------------------------
 # Sklearn model factory
 # ---------------------------------------------------------------------------
+
 
 def _build_model(model_name: str):
     """Instantiate an sklearn regressor by name."""
@@ -115,14 +117,14 @@ def _build_model(model_name: str):
             max_iter=500,
         )
     raise ValueError(
-        f"Unknown sklearn_model '{model_name}'. "
-        "Choose from: ols, ridge, lasso, mlp"
+        f"Unknown sklearn_model '{model_name}'. Choose from: ols, ridge, lasso, mlp"
     )
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def patch2self_sklearn(
     data_4d: np.ndarray,
@@ -181,11 +183,16 @@ def patch2self_sklearn(
 
     logging.info(
         "patch2self_sklearn: %d volumes — %d b0 (unchanged), %d DWI",
-        V, n_b0, n_dwi,
+        V,
+        n_b0,
+        n_dwi,
     )
     logging.info(
         "  model=%s  patch_radius=%s  stride=%d  b0_as_predictors=%s",
-        model_name, patch_radius.tolist(), stride, use_b0_as_predictors,
+        model_name,
+        patch_radius.tolist(),
+        stride,
+        use_b0_as_predictors,
     )
 
     if n_dwi == 0:
@@ -209,7 +216,11 @@ def patch2self_sklearn(
 
     logging.info(
         "  Patch grid: %d centres (%dx%dx%d), n_feat=%d",
-        n_patches, x_out, y_out, z_out, n_feat,
+        n_patches,
+        x_out,
+        y_out,
+        z_out,
+        n_feat,
     )
 
     # Select which volumes go into the predictor pool
@@ -233,7 +244,8 @@ def patch2self_sklearn(
     )  # (n_pred, n_patches, n_feat)
     logging.info(
         "  Patch extraction done in %.1fs, train shape=%s",
-        time.time() - t0, train.shape,
+        time.time() - t0,
+        train.shape,
     )
 
     denoised_4d = data_4d.copy()  # b0 volumes keep their original values
@@ -252,20 +264,18 @@ def patch2self_sklearn(
         # Predictor volumes: b0 block (if any) + all DWI except train_f
         if n_b0_pred > 0:
             other = np.concatenate(
-                [train[:n_b0_pred],
-                 train[n_b0_pred:train_f],
-                 train[train_f + 1:]],
+                [train[:n_b0_pred], train[n_b0_pred:train_f], train[train_f + 1 :]],
                 axis=0,
             )
         else:
             other = np.concatenate(
-                [train[:train_f], train[train_f + 1:]],
+                [train[:train_f], train[train_f + 1 :]],
                 axis=0,
             )
         # other: (n_other, n_patches, n_feat)
 
         # Supervision: central feature of the held-out volume
-        Y_target = train[train_f, :, n_feat // 2]   # (n_patches,)
+        Y_target = train[train_f, :, n_feat // 2]  # (n_patches,)
 
         # TODO: tech debt — validate this sample/feature layout against the original MD-S2S reference on real D-Brain to confirm parity in final metrics.
         # Build design matrix per voxel/patch center:
@@ -290,11 +300,16 @@ def patch2self_sklearn(
 
         logging.info(
             "  Volume %d/%d (global %d) denoised in %.1fs",
-            local_f + 1, n_dwi, global_f, time.time() - t_vol,
+            local_f + 1,
+            n_dwi,
+            global_f,
+            time.time() - t_vol,
         )
 
     logging.info(
         "patch2self_sklearn done — range [%.4f, %.4f], mean %.4f",
-        denoised_4d.min(), denoised_4d.max(), denoised_4d.mean(),
+        denoised_4d.min(),
+        denoised_4d.max(),
+        denoised_4d.mean(),
     )
     return denoised_4d.astype(np.float32)

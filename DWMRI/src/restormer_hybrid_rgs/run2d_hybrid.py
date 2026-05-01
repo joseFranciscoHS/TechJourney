@@ -85,7 +85,9 @@ def _dataset_kwargs(settings):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Restormer hybrid 2D (RGS / sequential-K)")
+    parser = argparse.ArgumentParser(
+        description="Restormer hybrid 2D (RGS / sequential-K)"
+    )
     parser.add_argument("--dataset", default="dbrain", choices=["dbrain"])
     parser.add_argument("--config", default=None)
     parser.add_argument(
@@ -103,7 +105,9 @@ def main():
     parser.add_argument("--regime", default="self_supervised")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
-    parser.add_argument("--no-images", action="store_true", help="Unused parity placeholder")
+    parser.add_argument(
+        "--no-images", action="store_true", help="Unused parity placeholder"
+    )
     parser.add_argument("--no-wandb", action="store_true", help="Unused placeholder")
     parser.add_argument("--checkpoint", default=None)
     args = parser.parse_args()
@@ -215,7 +219,9 @@ def main():
     try:
         if not args.skip_train:
             train_t0 = time.time()
-            optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
+            optimizer = torch.optim.Adam(
+                model.parameters(), lr=settings.train.learning_rate
+            )
             fit_model(
                 model=model,
                 optimizer=optimizer,
@@ -241,7 +247,9 @@ def main():
             )
 
         if not args.skip_reconstruct:
-            ckpt = args.checkpoint or os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+            ckpt = args.checkpoint or os.path.join(
+                checkpoint_dir, "best_loss_checkpoint.pth"
+            )
             if os.path.isfile(ckpt):
                 try:
                     bundle = torch.load(ckpt, map_location=device, weights_only=False)
@@ -258,7 +266,9 @@ def main():
                     device,
                     mask_p=settings.reconstruct.mask_p,
                     n_preds=int(settings.reconstruct.n_preds),
-                    n_context=int(getattr(settings.reconstruct, "n_context_samples", 4)),
+                    n_context=int(
+                        getattr(settings.reconstruct, "n_context_samples", 4)
+                    ),
                     target_channel=tc,
                     num_input=k,
                     seed=train_seed,
@@ -278,9 +288,15 @@ def main():
             recon_xyzv = apply_reconstruction_eval_protocol(
                 recon_xyzv,
                 original_data,
-                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", False)),
-                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", False)),
+                rescale_to_01=bool(
+                    getattr(settings.reconstruct, "rescale_to_01", False)
+                ),
+                rescale_mode=str(
+                    getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                ),
+                clip_to_range=bool(
+                    getattr(settings.reconstruct, "clip_to_range", False)
+                ),
             )
 
             metrics = compute_metrics(original_data, recon_xyzv)
@@ -346,17 +362,29 @@ def main():
                     "sampling_mode": mode,
                     "k_input": int(k),
                     "g_shell": int(
-                        getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+                        getattr(
+                            settings.data,
+                            "shell_gradient_volumes",
+                            settings.data.num_volumes,
+                        )
                     ),
-                    "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                    "n_context_samples": int(
+                        getattr(settings.reconstruct, "n_context_samples", 0)
+                    ),
                     "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
                     "dimensionality": "2d",
                 },
                 metrics_policy=metrics_policy_dict(
                     reference_name="clean_gt",
-                    rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", False)),
-                    rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                    clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", False)),
+                    rescale_to_01=bool(
+                        getattr(settings.reconstruct, "rescale_to_01", False)
+                    ),
+                    rescale_mode=str(
+                        getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                    ),
+                    clip_to_range=bool(
+                        getattr(settings.reconstruct, "clip_to_range", False)
+                    ),
                     roi_threshold=roi_thr,
                 ),
             )
@@ -385,14 +413,20 @@ def main():
             "sampling_mode": mode,
             "sampling_config": {
                 "g_shell": int(
-                    getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+                    getattr(
+                        settings.data,
+                        "shell_gradient_volumes",
+                        settings.data.num_volumes,
+                    )
                 ),
                 "k_input": int(k),
                 "target_channel": int(tc),
                 "window_policy": "sliding_last_target",
             },
             "inference_config": {
-                "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                "n_context_samples": int(
+                    getattr(settings.reconstruct, "n_context_samples", 0)
+                ),
                 "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
             },
             "train_config": {
@@ -400,7 +434,9 @@ def main():
                 "batch_size": int(getattr(settings.train, "batch_size", 0)),
                 "lr": float(getattr(settings.train, "learning_rate", 0.0)),
                 "progressive_enabled": bool(
-                    getattr(getattr(settings.train, "progressive", {}), "enabled", False)
+                    getattr(
+                        getattr(settings.train, "progressive", {}), "enabled", False
+                    )
                 ),
             },
             "control_metrics": {

@@ -24,12 +24,18 @@ def _flatten(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "dataset": r.get("dataset"),
                 "architecture": r.get("architecture"),
                 "status": r.get("status"),
-                "n_context_samples": (r.get("inference_config") or {}).get("n_context_samples"),
+                "n_context_samples": (r.get("inference_config") or {}).get(
+                    "n_context_samples"
+                ),
                 "n_preds": (r.get("inference_config") or {}).get("n_preds"),
-                "sec_per_volume": (r.get("control_metrics") or {}).get("sec_per_volume"),
+                "sec_per_volume": (r.get("control_metrics") or {}).get(
+                    "sec_per_volume"
+                ),
                 "sec_per_epoch": (r.get("control_metrics") or {}).get("sec_per_epoch"),
                 "n_params": (r.get("control_metrics") or {}).get("n_params"),
-                "peak_gpu_mem_mb": (r.get("control_metrics") or {}).get("peak_gpu_mem_mb"),
+                "peak_gpu_mem_mb": (r.get("control_metrics") or {}).get(
+                    "peak_gpu_mem_mb"
+                ),
                 "psnr": (r.get("quality_metrics_full") or {}).get("psnr"),
                 "psnr_roi": (r.get("quality_metrics_roi") or {}).get("psnr"),
                 "fa_mae": (r.get("dti_metrics") or {}).get("fa_mae"),
@@ -51,7 +57,9 @@ def _write_csv(rows: List[Dict[str, Any]], out_path: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Flatten runtime registry JSONL to CSV.")
+    parser = argparse.ArgumentParser(
+        description="Flatten runtime registry JSONL to CSV."
+    )
     parser.add_argument("--registry", required=True)
     parser.add_argument("--out", required=True)
     args = parser.parse_args()

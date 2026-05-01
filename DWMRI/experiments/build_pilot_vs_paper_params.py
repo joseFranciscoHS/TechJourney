@@ -82,7 +82,11 @@ def _csv_rows(
         ParamRow(
             parameter="dbrain.train.reproducible",
             pilot_value=str(pilot.reproducible).lower(),
-            paper_protocol_value=str(protocol.get("reproducibility", {}).get("deterministic", {}).get("reproducible", "")).lower(),
+            paper_protocol_value=str(
+                protocol.get("reproducibility", {})
+                .get("deterministic", {})
+                .get("reproducible", "")
+            ).lower(),
             paper_manifest_value=drcnet_dbrain_set.get("dbrain.train.reproducible", ""),
             paper_config_fallback=str(cfg_train.get("reproducible", "")).lower(),
             notes="Manifest explicitly forces reproducible=true for final runs.",
@@ -91,7 +95,9 @@ def _csv_rows(
             parameter="dbrain.data.num_input_volumes(K)",
             pilot_value=str(pilot.k),
             paper_protocol_value=str(proto_dbrain.get("k_input", "")),
-            paper_manifest_value=drcnet_dbrain_set.get("dbrain.data.num_input_volumes", ""),
+            paper_manifest_value=drcnet_dbrain_set.get(
+                "dbrain.data.num_input_volumes", ""
+            ),
             paper_config_fallback=str(cfg_data.get("num_input_volumes", "")),
             notes="Paper final keeps full K=24.",
         ),
@@ -99,7 +105,9 @@ def _csv_rows(
             parameter="dbrain.data.shell_gradient_volumes(G)",
             pilot_value="12",
             paper_protocol_value=str(proto_dbrain.get("g_shell", "")),
-            paper_manifest_value=drcnet_dbrain_set.get("dbrain.data.shell_gradient_volumes", ""),
+            paper_manifest_value=drcnet_dbrain_set.get(
+                "dbrain.data.shell_gradient_volumes", ""
+            ),
             paper_config_fallback=str(cfg_data.get("shell_gradient_volumes", "")),
             notes="Pilot speed profile reduces shell size.",
         ),
@@ -107,7 +115,9 @@ def _csv_rows(
             parameter="dbrain.data.target_channel",
             pilot_value=str(pilot.k - 1),
             paper_protocol_value=str(proto_dbrain.get("target_channel", "")),
-            paper_manifest_value=drcnet_dbrain_set.get("dbrain.data.target_channel", ""),
+            paper_manifest_value=drcnet_dbrain_set.get(
+                "dbrain.data.target_channel", ""
+            ),
             paper_config_fallback=str(cfg_data.get("target_channel", "")),
             notes="Derived as K-1 in pilot; fixed to 23 in final.",
         ),
@@ -124,7 +134,9 @@ def _csv_rows(
             pilot_value="false",
             paper_protocol_value="progressive_vs_standard listed as ablation",
             paper_manifest_value="(inherits config)",
-            paper_config_fallback=str(cfg_train.get("progressive", {}).get("enabled", "")),
+            paper_config_fallback=str(
+                cfg_train.get("progressive", {}).get("enabled", "")
+            ),
             notes="Manifest final does not yet expand ablation jobs.",
         ),
         ParamRow(
@@ -154,8 +166,12 @@ def _csv_rows(
         ParamRow(
             parameter="dbrain.reconstruct.metrics_roi_threshold",
             pilot_value=str(pilot.roi_threshold),
-            paper_protocol_value=str(protocol.get("evaluation_policy", {}).get("metrics_roi_threshold", "")),
-            paper_manifest_value=drcnet_dbrain_set.get("dbrain.reconstruct.metrics_roi_threshold", ""),
+            paper_protocol_value=str(
+                protocol.get("evaluation_policy", {}).get("metrics_roi_threshold", "")
+            ),
+            paper_manifest_value=drcnet_dbrain_set.get(
+                "dbrain.reconstruct.metrics_roi_threshold", ""
+            ),
             paper_config_fallback=str(cfg_recon.get("metrics_roi_threshold", "")),
             notes="Aligned between pilot and paper.",
         ),
@@ -164,7 +180,7 @@ def _csv_rows(
             pilot_value="32/32/32",
             paper_protocol_value="canonical split from config",
             paper_manifest_value="(inherits config)",
-            paper_config_fallback=f"{cfg_data.get('take_x','')}/{cfg_data.get('take_y','')}/{cfg_data.get('take_z','')}",
+            paper_config_fallback=f"{cfg_data.get('take_x', '')}/{cfg_data.get('take_y', '')}/{cfg_data.get('take_z', '')}",
             notes="Pilot crops aggressively for runtime.",
         ),
         ParamRow(
@@ -179,7 +195,9 @@ def _csv_rows(
             parameter="dbrain.data.shell_sampling_mode",
             pilot_value="rgs + sequential (phase C matrix)",
             paper_protocol_value=str(proto_dbrain.get("shell_sampling_mode", "")),
-            paper_manifest_value=drcnet_dbrain_set.get("dbrain.data.shell_sampling_mode", ""),
+            paper_manifest_value=drcnet_dbrain_set.get(
+                "dbrain.data.shell_sampling_mode", ""
+            ),
             paper_config_fallback=str(cfg_data.get("shell_sampling_mode", "")),
             notes="Final manifest currently runs RGS main jobs only.",
         ),
@@ -187,7 +205,9 @@ def _csv_rows(
             parameter="stanford.data.num_input_volumes(K)",
             pilot_value=str(pilot.k),
             paper_protocol_value=str(proto_stanford.get("k_input", "")),
-            paper_manifest_value=drcnet_stanford_set.get("stanford.data.num_input_volumes", ""),
+            paper_manifest_value=drcnet_stanford_set.get(
+                "stanford.data.num_input_volumes", ""
+            ),
             paper_config_fallback="(see drcnet config stanford profile)",
             notes="Pilot smoke keeps small K; final uses K=24.",
         ),
@@ -195,7 +215,9 @@ def _csv_rows(
             parameter="stanford.data.shell_gradient_volumes(G)",
             pilot_value="(inherits stanford config; pilot only crops xyz)",
             paper_protocol_value=str(proto_stanford.get("g_shell", "")),
-            paper_manifest_value=drcnet_stanford_set.get("stanford.data.shell_gradient_volumes", ""),
+            paper_manifest_value=drcnet_stanford_set.get(
+                "stanford.data.shell_gradient_volumes", ""
+            ),
             paper_config_fallback="(see drcnet config stanford profile)",
             notes="Final stanford jobs explicitly set G=150.",
         ),
@@ -227,9 +249,15 @@ def _csv_rows(
     return rows
 
 
-def _compute_manifest_gap(protocol: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
+def _compute_manifest_gap(
+    protocol: dict[str, Any], manifest: dict[str, Any]
+) -> dict[str, Any]:
     ablations = protocol.get("matrix", {}).get("ablations", [])
-    job_ids = [str(job.get("id", "")) for job in manifest.get("jobs", []) if isinstance(job, dict)]
+    job_ids = [
+        str(job.get("id", ""))
+        for job in manifest.get("jobs", [])
+        if isinstance(job, dict)
+    ]
     manifest_blob = " ".join(job_ids)
     missing: list[str] = []
     matched: list[str] = []

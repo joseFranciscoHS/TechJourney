@@ -9,7 +9,9 @@ def _has_module(name: str) -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Probe runtime dependencies for protocol smoke.")
+    parser = argparse.ArgumentParser(
+        description="Probe runtime dependencies for protocol smoke."
+    )
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
 

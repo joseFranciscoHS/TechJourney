@@ -8,7 +8,9 @@ from utils.data import DBrainDataLoader
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run MP-PCA baseline directly on D-Brain loader.")
+    parser = argparse.ArgumentParser(
+        description="Run MP-PCA baseline directly on D-Brain loader."
+    )
     parser.add_argument("--output-root", default="tmp/paper_pilot")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--patch-radius", type=int, default=2)
@@ -19,7 +21,9 @@ def main():
     loader = DBrainDataLoader(nii_path=args.nii_path, bvecs_path=args.bvecs_path)
     gt, noisy = loader.load_data()
     if gt is None:
-        raise RuntimeError("DBrainDataLoader returned no clean GT; MP-PCA baseline requires GT.")
+        raise RuntimeError(
+            "DBrainDataLoader returned no clean GT; MP-PCA baseline requires GT."
+        )
 
     out_dir = os.path.join(
         args.output_root,

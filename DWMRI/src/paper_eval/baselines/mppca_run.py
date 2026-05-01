@@ -117,17 +117,15 @@ if __name__ == "__main__":
         help="ROI for DTI MAE (voxels where GT > threshold on any channel); use negative to disable",
     )
     parser.add_argument("--no-rescale-to-01", action="store_true")
-    parser.add_argument("--rescale-mode", default="per_volume", choices=["per_volume", "match_gt"])
+    parser.add_argument(
+        "--rescale-mode", default="per_volume", choices=["per_volume", "match_gt"]
+    )
     parser.add_argument("--no-clip-to-range", action="store_true")
     args = parser.parse_args()
 
     noisy = np.load(args.noisy)
     gt = np.load(args.gt)
-    roi_thr = (
-        None
-        if args.metrics_roi_threshold < 0
-        else args.metrics_roi_threshold
-    )
+    roi_thr = None if args.metrics_roi_threshold < 0 else args.metrics_roi_threshold
     run_mppca(
         noisy,
         gt,

@@ -13,7 +13,15 @@ np.random.seed(91021)
 
 
 class DBrainDataLoader:
-    def __init__(self, nii_path, bvecs_path, bvalue=2500, noise_sigma=0.01, noise_type="rician", n_coils=1):
+    def __init__(
+        self,
+        nii_path,
+        bvecs_path,
+        bvalue=2500,
+        noise_sigma=0.01,
+        noise_type="rician",
+        n_coils=1,
+    ):
         self.nii_path = nii_path
         self.bvecs_path = bvecs_path
         self.noise_sigma = noise_sigma
@@ -180,7 +188,9 @@ def rescale_reconstruction_to_01(data, mode="per_volume", reference=None, eps=1e
         Rescaled array, same shape as data, dtype float32, values in [0, 1].
     """
     if data.ndim != 4:
-        raise ValueError(f"rescale_reconstruction_to_01 expects 4D data, got ndim={data.ndim}")
+        raise ValueError(
+            f"rescale_reconstruction_to_01 expects 4D data, got ndim={data.ndim}"
+        )
     out = np.zeros_like(data, dtype=np.float32)
     n_vols = data.shape[-1]
 
@@ -253,4 +263,3 @@ def compute_brain_mask(data, median_radius=2, numpass=1):
     )
 
     return mask
-

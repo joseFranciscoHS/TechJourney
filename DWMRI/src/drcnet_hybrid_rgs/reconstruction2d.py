@@ -64,7 +64,9 @@ def reconstruct_dwis_rgs_2d(
     with torch.inference_mode():
         for vol_k in tqdm(range(v), desc="RGS2D volumes"):
             others = [i for i in range(v) if i != vol_k]
-            acc = torch.zeros((x_size, y_size, z_size), device=device, dtype=torch.float32)
+            acc = torch.zeros(
+                (x_size, y_size, z_size), device=device, dtype=torch.float32
+            )
             for _ in range(n_context):
                 ctx = rng.choice(others, size=num_input - 1, replace=False)
                 order = np.concatenate([ctx, np.array([vol_k], dtype=np.int64)])
@@ -92,7 +94,9 @@ def reconstruct_dwis_rgs_2d(
                             .clone()
                         )
                         inp[:, :, target_channel] = inp[:, :, target_channel] * masks
-                        inp_b = inp.reshape(pred_chunk * slice_chunk, num_input, x_size, y_size)
+                        inp_b = inp.reshape(
+                            pred_chunk * slice_chunk, num_input, x_size, y_size
+                        )
                         out = model(inp_b).squeeze(1)
                         out = out.reshape(pred_chunk, slice_chunk, x_size, y_size)
                         acc[:, :, z_start:z_end] += out.sum(dim=0).permute(1, 2, 0)
@@ -180,7 +184,9 @@ def reconstruct_dwis_sequential_sliding_k_2d(
                         .clone()
                     )
                     inp[:, :, target_channel] = inp[:, :, target_channel] * masks
-                    inp_b = inp.reshape(pred_chunk * slice_chunk, num_input, x_size, y_size)
+                    inp_b = inp.reshape(
+                        pred_chunk * slice_chunk, num_input, x_size, y_size
+                    )
                     out = model(inp_b).squeeze(1)
                     out = out.reshape(pred_chunk, slice_chunk, x_size, y_size)
                     chunk_sum = out.sum(dim=0).permute(1, 2, 0).detach().cpu().numpy()

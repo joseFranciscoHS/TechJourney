@@ -115,9 +115,11 @@ def reconstruct_dwis(
                         y_end = y_start + patch_size
                         z_end = z_start + patch_size
 
-                        patch = data[
-                            :, x_start:x_end, y_start:y_end, z_start:z_end
-                        ].clone().contiguous()
+                        patch = (
+                            data[:, x_start:x_end, y_start:y_end, z_start:z_end]
+                            .clone()
+                            .contiguous()
+                        )
 
                         pred_sum_t = None
                         for start in range(0, n_preds, _chunk):
@@ -133,12 +135,10 @@ def reconstruct_dwis(
                                 )
                                 > mask_p
                             ).float()
-                            patch_b = patch.unsqueeze(0).expand(
-                                bsz, -1, -1, -1, -1
-                            ).clone()
-                            patch_b[:, vol_idx] = (
-                                patch[vol_idx].unsqueeze(0) * masks
+                            patch_b = (
+                                patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
                             )
+                            patch_b[:, vol_idx] = patch[vol_idx].unsqueeze(0) * masks
                             patch_b = patch_b.to(device)
 
                             if amp_ok:
@@ -330,9 +330,11 @@ def reconstruct_dwis_rgs(
                                     )
                                     > mask_p
                                 ).float()
-                                patch_b = patch.unsqueeze(0).expand(
-                                    bsz, -1, -1, -1, -1
-                                ).clone()
+                                patch_b = (
+                                    patch.unsqueeze(0)
+                                    .expand(bsz, -1, -1, -1, -1)
+                                    .clone()
+                                )
                                 patch_b[:, target_channel] = (
                                     patch[target_channel].unsqueeze(0) * masks
                                 )
@@ -352,9 +354,7 @@ def reconstruct_dwis_rgs(
                                 )
                                 del patch_b, pred, part
 
-                            pred_np = (
-                                pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
-                            )
+                            pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
                             del pred_sum_t
                             sum_preds[
                                 vol_k,

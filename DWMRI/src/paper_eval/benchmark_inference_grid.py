@@ -69,8 +69,12 @@ def run_grid(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Benchmark inference grid for RGS models.")
-    parser.add_argument("--architecture", choices=["drcnet", "restormer"], required=True)
+    parser = argparse.ArgumentParser(
+        description="Benchmark inference grid for RGS models."
+    )
+    parser.add_argument(
+        "--architecture", choices=["drcnet", "restormer"], required=True
+    )
     parser.add_argument("--dataset", choices=["dbrain", "stanford"], default="dbrain")
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--output-root", required=True)

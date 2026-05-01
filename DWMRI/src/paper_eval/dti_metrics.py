@@ -159,7 +159,9 @@ def try_compute_dti_errors(
         return _null_dti_metrics(str(exc))
 
 
-def save_dti_metrics(metrics: Dict[str, Any], out_dir: str, name: str = "dti_metrics.json"):
+def save_dti_metrics(
+    metrics: Dict[str, Any], out_dir: str, name: str = "dti_metrics.json"
+):
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, name), "w", encoding="utf-8") as f:
         json.dump(_with_contract(metrics), f, indent=2)

@@ -294,9 +294,15 @@ def main(
             reconstructed_dwis = apply_reconstruction_eval_protocol(
                 reconstructed_dwis,
                 original_data,
-                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
-                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+                rescale_to_01=bool(
+                    getattr(settings.reconstruct, "rescale_to_01", True)
+                ),
+                rescale_mode=str(
+                    getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                ),
+                clip_to_range=bool(
+                    getattr(settings.reconstruct, "clip_to_range", True)
+                ),
             )
 
             # Full-image metrics (background voxels can dominate and worsen PSNR/SSIM)
@@ -346,9 +352,8 @@ def main(
             if metrics_roi is not None:
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
 
-            if (
-                gt_xyzv_for_dti is not None
-                and getattr(settings.reconstruct, "compute_dti", True)
+            if gt_xyzv_for_dti is not None and getattr(
+                settings.reconstruct, "compute_dti", True
             ):
                 try:
                     nb0 = int(settings.data.num_b0s)
@@ -400,10 +405,18 @@ def main(
                     metrics_dir,
                 )
             metrics_policy = metrics_policy_dict(
-                reference_name="clean_gt" if clean_reference else "self_reference_noisy",
-                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", True)),
-                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", True)),
+                reference_name="clean_gt"
+                if clean_reference
+                else "self_reference_noisy",
+                rescale_to_01=bool(
+                    getattr(settings.reconstruct, "rescale_to_01", True)
+                ),
+                rescale_mode=str(
+                    getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                ),
+                clip_to_range=bool(
+                    getattr(settings.reconstruct, "clip_to_range", True)
+                ),
                 roi_threshold=roi_threshold,
             )
             save_run_manifest(

@@ -39,9 +39,18 @@ def run(out_root: Path):
     out_root.mkdir(parents=True, exist_ok=True)
 
     mppca_out = out_root / "mppca" / "dbrain"
-    run_mppca(noisy_xyzv=noisy, gt_xyzv=gt, out_dir=str(mppca_out), patch_radius=2, bvecs_path=None)
+    run_mppca(
+        noisy_xyzv=noisy,
+        gt_xyzv=gt,
+        out_dir=str(mppca_out),
+        patch_radius=2,
+        bvecs_path=None,
+    )
     mppca_denoised = np.load(mppca_out / "denoised.npy")
-    save_dti_metrics(try_compute_dti_errors(mppca_denoised, gt, bvals, bvecs, roi_threshold=0.02), str(mppca_out))
+    save_dti_metrics(
+        try_compute_dti_errors(mppca_denoised, gt, bvals, bvecs, roi_threshold=0.02),
+        str(mppca_out),
+    )
 
     roi_thr = 0.02
     roi_mask = compute_roi_mask(gt, roi_thr)
@@ -57,14 +66,25 @@ def run(out_root: Path):
         out = out_root / "p2s" / "dbrain" / f"backend_{backend}"
         out.mkdir(parents=True, exist_ok=True)
         save_metrics(compute_metrics(gt, den), str(out), filename="metrics.json")
-        save_metrics(compute_metrics(gt, den, mask=roi_mask), str(out), filename="metrics_roi.json")
-        save_dti_metrics(try_compute_dti_errors(den, gt, bvals, bvecs, roi_threshold=roi_thr), str(out))
+        save_metrics(
+            compute_metrics(gt, den, mask=roi_mask),
+            str(out),
+            filename="metrics_roi.json",
+        )
+        save_dti_metrics(
+            try_compute_dti_errors(den, gt, bvals, bvecs, roi_threshold=roi_thr),
+            str(out),
+        )
         save_run_manifest(
             out_dir=str(out),
             seed=91021,
             reproducible=True,
             runtime_device="cpu",
-            config={"dataset": "dbrain", "architecture": "patch2self", "backend": backend},
+            config={
+                "dataset": "dbrain",
+                "architecture": "patch2self",
+                "backend": backend,
+            },
             metrics_policy=policy,
         )
         return out
@@ -72,7 +92,9 @@ def run(out_root: Path):
     den_dipy = denoise_dwi_patch2self(
         noisy.astype(np.float32),
         bvals,
-        SimpleNamespace(model="ols", shift_intensity=True, clip_negative_vals=False, b0_threshold=50),
+        SimpleNamespace(
+            model="ols", shift_intensity=True, clip_negative_vals=False, b0_threshold=50
+        ),
     ).astype(np.float64)
     p2s_dipy_out = _save_p2s("dipy", den_dipy)
 
@@ -101,7 +123,9 @@ def run(out_root: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Smoke-run baseline protocol with synthetic data.")
+    parser = argparse.ArgumentParser(
+        description="Smoke-run baseline protocol with synthetic data."
+    )
     parser.add_argument("--out-root", required=True)
     args = parser.parse_args()
     result = run(Path(args.out_root))

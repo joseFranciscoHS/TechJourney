@@ -23,6 +23,7 @@ from drcnet_hybrid_rgs.reconstruction2d import (
     reconstruct_dwis_rgs_2d,
     reconstruct_dwis_sequential_sliding_k_2d,
 )
+from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
 from utils import setup_logging
 from utils.data import DBrainDataLoader
 from utils.eval_protocol import (
@@ -49,15 +50,16 @@ from utils.repro_seed import (
 )
 from utils.utils import load_config, noise_path_segment
 
-from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
-
 
 def _is_rgs(settings) -> bool:
     return getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
 
 
 def _take_volumes_dwi(settings) -> int:
-    if _is_rgs(settings) or getattr(settings.data, "shell_sampling_mode", "") == "sequential":
+    if (
+        _is_rgs(settings)
+        or getattr(settings.data, "shell_sampling_mode", "") == "sequential"
+    ):
         return settings.data.num_b0s + int(
             getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
         )
@@ -65,7 +67,9 @@ def _take_volumes_dwi(settings) -> int:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DRCNet hybrid 2D (RGS / sequential-K)")
+    parser = argparse.ArgumentParser(
+        description="DRCNet hybrid 2D (RGS / sequential-K)"
+    )
     parser.add_argument("--dataset", default="dbrain", choices=["dbrain"])
     parser.add_argument("--config", default=None)
     parser.add_argument(
@@ -83,7 +87,9 @@ def main():
     parser.add_argument("--regime", default="self_supervised")
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
-    parser.add_argument("--no-images", action="store_true", help="Unused parity placeholder")
+    parser.add_argument(
+        "--no-images", action="store_true", help="Unused parity placeholder"
+    )
     parser.add_argument("--no-wandb", action="store_true", help="Unused placeholder")
     parser.add_argument("--checkpoint", default=None)
     args = parser.parse_args()
@@ -158,7 +164,9 @@ def main():
     )
     os.makedirs(checkpoint_dir, exist_ok=True)
     metrics_dir = os.path.join(
-        getattr(settings.reconstruct, "metrics_dir", "drcnet_hybrid_rgs/metrics/dbrain"),
+        getattr(
+            settings.reconstruct, "metrics_dir", "drcnet_hybrid_rgs/metrics/dbrain"
+        ),
         bvalue_segment,
         f"2d_{vol_seg}",
         noise_segment,
@@ -187,7 +195,9 @@ def main():
             num_epochs=int(getattr(settings.train, "num_epochs", 5)),
             device=device,
             checkpoint_dir=checkpoint_dir,
-            loss_dir=os.path.join("drcnet_hybrid_rgs/losses/2d_hybrid", f"b{settings.data.bvalue}"),
+            loss_dir=os.path.join(
+                "drcnet_hybrid_rgs/losses/2d_hybrid", f"b{settings.data.bvalue}"
+            ),
             use_amp=getattr(settings.train, "use_amp", True),
             supervised_mode=bool(getattr(settings.train, "supervised", False)),
             cudnn_fast=cudnn_fast,
@@ -198,7 +208,9 @@ def main():
 
     recon_vxyz = None
     if not args.skip_reconstruct:
-        ckpt = args.checkpoint or os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+        ckpt = args.checkpoint or os.path.join(
+            checkpoint_dir, "best_loss_checkpoint.pth"
+        )
         if os.path.isfile(ckpt):
             try:
                 bundle = torch.load(ckpt, map_location=device, weights_only=False)
@@ -219,9 +231,16 @@ def main():
                 num_input=k,
                 seed=train_seed,
                 pred_chunk_size=int(
-                    getattr(settings.reconstruct, "pred_chunk_size", settings.reconstruct.n_preds)
+                    getattr(
+                        settings.reconstruct,
+                        "pred_chunk_size",
+                        settings.reconstruct.n_preds,
+                    )
                 ),
-                slice_chunk_size=int(getattr(settings.reconstruct, "slice_chunk_size", 0)) or None,
+                slice_chunk_size=int(
+                    getattr(settings.reconstruct, "slice_chunk_size", 0)
+                )
+                or None,
             )
         else:
             recon_vxyz = reconstruct_dwis_sequential_sliding_k_2d(
@@ -234,9 +253,16 @@ def main():
                 target_channel=tc,
                 seed=train_seed,
                 pred_chunk_size=int(
-                    getattr(settings.reconstruct, "pred_chunk_size", settings.reconstruct.n_preds)
+                    getattr(
+                        settings.reconstruct,
+                        "pred_chunk_size",
+                        settings.reconstruct.n_preds,
+                    )
                 ),
-                slice_chunk_size=int(getattr(settings.reconstruct, "slice_chunk_size", 0)) or None,
+                slice_chunk_size=int(
+                    getattr(settings.reconstruct, "slice_chunk_size", 0)
+                )
+                or None,
             )
         recon_xyzv = np.transpose(recon_vxyz, (1, 2, 3, 0))
         sec_per_volume = float(time.time() - infer_t0) / float(recon_xyzv.shape[-1])
@@ -244,7 +270,9 @@ def main():
             recon_xyzv,
             original_data,
             rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", False)),
-            rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
+            rescale_mode=str(
+                getattr(settings.reconstruct, "rescale_mode", "per_volume")
+            ),
             clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", False)),
         )
         metrics = compute_metrics(original_data, recon_xyzv)
@@ -266,7 +294,9 @@ def main():
                 den_xyzv = np.concatenate(
                     [gt_xyzv[..., :nb0], recon_xyzv.astype(np.float64)], axis=-1
                 )
-                roi_m = (gt_xyzv > roi_thr).any(axis=-1) if roi_thr is not None else None
+                roi_m = (
+                    (gt_xyzv > roi_thr).any(axis=-1) if roi_thr is not None else None
+                )
                 dti_metrics = compute_dti_errors(
                     den_xyzv, gt_xyzv, bvals, bvecs, roi_mask=roi_m
                 )
@@ -304,17 +334,29 @@ def main():
                 "sampling_mode": mode,
                 "k_input": int(k),
                 "g_shell": int(
-                    getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+                    getattr(
+                        settings.data,
+                        "shell_gradient_volumes",
+                        settings.data.num_volumes,
+                    )
                 ),
-                "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                "n_context_samples": int(
+                    getattr(settings.reconstruct, "n_context_samples", 0)
+                ),
                 "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
                 "dimensionality": "2d",
             },
             metrics_policy=metrics_policy_dict(
                 reference_name="clean_gt",
-                rescale_to_01=bool(getattr(settings.reconstruct, "rescale_to_01", False)),
-                rescale_mode=str(getattr(settings.reconstruct, "rescale_mode", "per_volume")),
-                clip_to_range=bool(getattr(settings.reconstruct, "clip_to_range", False)),
+                rescale_to_01=bool(
+                    getattr(settings.reconstruct, "rescale_to_01", False)
+                ),
+                rescale_mode=str(
+                    getattr(settings.reconstruct, "rescale_mode", "per_volume")
+                ),
+                clip_to_range=bool(
+                    getattr(settings.reconstruct, "clip_to_range", False)
+                ),
                 roi_threshold=roi_thr,
             ),
         )
@@ -327,9 +369,11 @@ def main():
         "status": "success",
         "timestamps": {"start_utc": started, "end_utc": now_utc_iso()},
         "duration_s": time.time() - wall_t0,
-        "stage": "train_reconstruct"
-        if (not args.skip_train and not args.skip_reconstruct)
-        else ("train" if not args.skip_train else "reconstruct"),
+        "stage": (
+            "train_reconstruct"
+            if (not args.skip_train and not args.skip_reconstruct)
+            else ("train" if not args.skip_train else "reconstruct")
+        ),
         "dataset": "dbrain",
         "regime": args.regime,
         "architecture": "drcnet",
@@ -337,7 +381,9 @@ def main():
         "sampling_mode": mode,
         "sampling_config": {
             "g_shell": int(
-                getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+                getattr(
+                    settings.data, "shell_gradient_volumes", settings.data.num_volumes
+                )
             ),
             "k_input": int(k),
             "target_channel": int(tc),

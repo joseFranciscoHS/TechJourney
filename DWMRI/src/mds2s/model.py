@@ -6,12 +6,8 @@ import torch.nn as nn
 class ResBlock(nn.Module):
     def __init__(self, in_channel, mid_channel, out_channel, p=0.3):
         super(ResBlock, self).__init__()
-        self.conv1 = nn.Conv2d(
-            in_channel, mid_channel, kernel_size=3, padding=1
-        )
-        self.conv2 = nn.Conv2d(
-            mid_channel, out_channel, kernel_size=3, padding=1
-        )
+        self.conv1 = nn.Conv2d(in_channel, mid_channel, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(mid_channel, out_channel, kernel_size=3, padding=1)
         # self.nonlinear1 = nn.LeakyReLU(0.1)
         self.nonlinear1 = nn.ReLU()
         self.Dropout = nn.Dropout(p)
@@ -43,9 +39,7 @@ class Self2self(nn.Module):
         )
 
         layers = [
-            ResBlock(
-                self.channel_size, self.channel_size, self.channel_size, p=p
-            )
+            ResBlock(self.channel_size, self.channel_size, self.channel_size, p=p)
         ]
         for i in range(self.n_blks - 1):
             layers.append(
@@ -70,9 +64,7 @@ class Self2self(nn.Module):
 
         # Log model parameters
         total_params = sum(p.numel() for p in self.parameters())
-        trainable_params = sum(
-            p.numel() for p in self.parameters() if p.requires_grad
-        )
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         logging.info(
             f"Self2self model created - Total parameters: {total_params:,}, Trainable parameters: {trainable_params:,}"
         )

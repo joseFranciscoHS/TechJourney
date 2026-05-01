@@ -3,11 +3,12 @@ import os
 
 import numpy as np
 import torch
+import wandb
 
 # L1Loss removed - using masked MSE loss for J-invariant training
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, LRScheduler
 from tqdm import tqdm
-import wandb
+
 from utils.checkpoint import load_checkpoint, save_checkpoint
 from utils.repro_seed import configure_cudnn
 from utils.training_tracker import TrainingLossTracker
@@ -42,9 +43,11 @@ def fit_model(
     # Initialize AMP GradScaler for mixed precision training
     amp_enabled = bool(use_amp) and device_type == "cuda"
     scaler = torch.amp.GradScaler(enabled=amp_enabled)
-    logging.info(f"AMP (Automatic Mixed Precision): {'enabled' if amp_enabled else 'disabled'}")
+    logging.info(
+        f"AMP (Automatic Mixed Precision): {'enabled' if amp_enabled else 'disabled'}"
+    )
 
-    logging.info((f"Starting training - device: {device}, " f"epochs: {num_epochs}"))
+    logging.info((f"Starting training - device: {device}, epochs: {num_epochs}"))
     logging.info(f"Model device: {next(model.parameters()).device}")
 
     model.to(device)
@@ -58,9 +61,14 @@ def fit_model(
 
     # Load the latest checkpoint if it exists
     latest_checkpoint = os.path.join(checkpoint_dir, "latest_checkpoint.pth")
-    model, optimizer, start_epoch, scheduler_state_dict, scaler_state_dict, best_loss = load_checkpoint(
-        model, optimizer, latest_checkpoint, device, strict=False
-    )
+    (
+        model,
+        optimizer,
+        start_epoch,
+        scheduler_state_dict,
+        scaler_state_dict,
+        best_loss,
+    ) = load_checkpoint(model, optimizer, latest_checkpoint, device, strict=False)
 
     # Restore scheduler state if it exists
     if scheduler is not None and scheduler_state_dict is not None:
@@ -96,7 +104,7 @@ def fit_model(
         batch_count = 0
         epoch_losses = []
 
-        logging.info(f"Starting epoch {epoch+1}/{num_epochs}")
+        logging.info(f"Starting epoch {epoch + 1}/{num_epochs}")
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
@@ -155,7 +163,7 @@ def fit_model(
             scheduler.step(epoch)
         new_lr = optimizer.param_groups[0]["lr"]
 
-        logging.info(f"Epoch {epoch+1}/{num_epochs} completed")
+        logging.info(f"Epoch {epoch + 1}/{num_epochs} completed")
         logging.info(f"Average Loss: {avg_loss:.6f}")
         logging.info(
             (

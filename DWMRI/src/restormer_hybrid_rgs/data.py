@@ -91,7 +91,7 @@ def compute_valid_patch_coords(
     if patch_filter_method != "none":
         logging.info(
             f"Patch filtering: kept {num_valid_patches:,} patches, "
-            f"skipped {skipped_count:,} ({100*skipped_count/total_spatial_patches:.1f}%)"
+            f"skipped {skipped_count:,} ({100 * skipped_count / total_spatial_patches:.1f}%)"
         )
 
     return valid_coords, patch_size
