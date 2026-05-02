@@ -1,3 +1,3 @@
 .ruff_cache/
 dbrain/
-*.nii.gz
+p2s/output/*

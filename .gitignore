@@ -174,3 +174,6 @@ Thumbs.db
 
 # Custom ignore patterns
 ignore_*
+DWMRI/p2s/output/dbrain/bvalue_2500/noise_sigma_0.1/backend_sklearn_reference_model_ols_stride_1/denoised_patch2self.nii.gz
+DWMRI/p2s/output/dbrain/bvalue_2500/noise_sigma_0.1/backend_dipy_model_ols/denoised_patch2self.nii.gz
+DWMRI/p2s/output/dbrain/bvalue_2500/noise_sigma_0.1/backend_dipy_model_ols/denoised_patch2self.nii.gz
