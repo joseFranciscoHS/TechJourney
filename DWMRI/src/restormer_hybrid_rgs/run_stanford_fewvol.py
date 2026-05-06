@@ -24,7 +24,7 @@ from typing import Optional
 import numpy as np
 import torch
 import wandb
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from restormer_hybrid_rgs.data import TrainingDataSet
 from restormer_hybrid_rgs.fit import fit_model
@@ -50,6 +50,11 @@ from utils.metrics import (
     visualize_single_volume,
 )
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
+from utils.repro_seed import make_dataloader_generator
+from utils.training_patch_subset import (
+    apply_training_patch_subset_from_train_block,
+    training_subset_checkpoint_segment,
+)
 from utils.utils import load_config, noise_path_segment
 
 
@@ -69,10 +74,11 @@ def _build_checkpoint_dir(
         vol_seg = f"rgs_G{g_shell}_K{train_num_volumes}"
     else:
         vol_seg = f"num_volumes_{train_num_volumes}"
+    sub_seg = training_subset_checkpoint_segment(settings.train)
+    mid = [bvalue_segment, vol_seg] + ([sub_seg] if sub_seg else [])
     return os.path.join(
         settings.train.checkpoint_dir,
-        bvalue_segment,
-        vol_seg,
+        *mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
@@ -154,7 +160,9 @@ def main():
     config_path = os.path.join(script_dir, "config.yaml")
     settings = load_config(config_path).stanford
 
-    train_num_volumes = int(getattr(settings.data, "train_num_volumes", settings.data.num_volumes))
+    train_num_volumes = int(
+        getattr(settings.data, "train_num_volumes", settings.data.num_volumes)
+    )
     reconstruct_full = bool(getattr(settings.data, "reconstruct_full_dwi", True))
     use_rgs = getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
     k_in = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
@@ -187,7 +195,9 @@ def main():
             "dataset": "stanford_fewvol_restormer_rgs",
             "train_num_volumes": train_num_volumes,
             "reconstruct_full_dwi": reconstruct_full,
-            "shell_sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
+            "shell_sampling_mode": getattr(
+                settings.data, "shell_sampling_mode", "sequential"
+            ),
             "learning_rate": settings.train.learning_rate,
             "bvalue": getattr(settings.data, "bvalue", None),
             "noise_sigma": getattr(settings.data, "noise_sigma", None),
@@ -228,7 +238,9 @@ def _run_stanford_fewvol_body(
     if use_rgs:
         g_shell = int(full_noisy.shape[-1])
         if k_in > g_shell:
-            raise ValueError(f"RGS: num_input_volumes K={k_in} exceeds shell G={g_shell}")
+            raise ValueError(
+                f"RGS: num_input_volumes K={k_in} exceeds shell G={g_shell}"
+            )
         train_noisy = full_noisy
         train_orig = full_orig
 
@@ -247,7 +259,9 @@ def _run_stanford_fewvol_body(
 
     vol_key = k_in if use_rgs else train_num_volumes
     g_for_path = int(full_noisy.shape[-1]) if use_rgs else None
-    checkpoint_dir = _build_checkpoint_dir(settings, vol_key, rgs=use_rgs, g_shell=g_for_path)
+    checkpoint_dir = _build_checkpoint_dir(
+        settings, vol_key, rgs=use_rgs, g_shell=g_for_path
+    )
     os.makedirs(checkpoint_dir, exist_ok=True)
     best_ckpt = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
 
@@ -256,12 +270,17 @@ def _run_stanford_fewvol_body(
         getattr(settings.data, "noise_sigma", 0.1),
     )
     bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
-    vol_seg = f"rgs_G{g_for_path}_K{vol_key}" if use_rgs else f"num_volumes_{train_num_volumes}"
+    vol_seg = (
+        f"rgs_G{g_for_path}_K{vol_key}"
+        if use_rgs
+        else f"num_volumes_{train_num_volumes}"
+    )
+    _sub_seg = training_subset_checkpoint_segment(settings.train)
+    _loss_mid = [bvalue_segment, vol_seg] + ([_sub_seg] if _sub_seg else [])
     loss_dir = os.path.join(
         "restormer_hybrid_rgs/losses",
         "stanford_fewvol",
-        bvalue_segment,
-        vol_seg,
+        *_loss_mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
@@ -279,7 +298,9 @@ def _run_stanford_fewvol_body(
     inp_ch = k_in if use_rgs else train_num_volumes
 
     if do_train:
-        logging.info(f"Initializing Restormer3D for training (inp_channels={inp_ch})...")
+        logging.info(
+            f"Initializing Restormer3D for training (inp_channels={inp_ch})..."
+        )
         model = _make_model(settings, inp_ch)
 
         batch_for_multi_gpu = (
@@ -298,7 +319,9 @@ def _run_stanford_fewvol_body(
                 "memory_threshold": settings.train.memory_threshold,
             }
         )
-        model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
+        model, effective_lr, effective_batch_size = setup_multi_gpu(
+            model, multi_gpu_config
+        )
         logging.info(
             f"Optimizer prep: effective_lr={effective_lr:.6f}, "
             f"effective_batch_size={effective_batch_size}"
@@ -331,6 +354,10 @@ def _run_stanford_fewvol_body(
 
         use_amp = getattr(settings.train, "use_amp", True)
 
+        train_seed = int(getattr(settings.train, "seed", 42))
+        cudnn_fast = not bool(getattr(settings.train, "reproducible", False))
+        dl_generator = make_dataloader_generator(train_seed)
+
         if progressive_enabled:
             fit_progressive(
                 model=model,
@@ -342,6 +369,8 @@ def _run_stanford_fewvol_body(
                 loss_dir=loss_dir,
                 patch_filter_method=patch_filter_method,
                 min_signal_threshold=min_signal_threshold,
+                dl_generator=dl_generator,
+                cudnn_fast=cudnn_fast,
             )
         else:
             pv = _patch_volume_dim(settings)
@@ -361,16 +390,14 @@ def _run_stanford_fewvol_body(
                 min_signal_threshold=min_signal_threshold,
                 **_dataset_kwargs(settings),
             )
-            subset_fraction = 1
-            total_samples = len(train_set)
-            num_samples = int(total_samples * subset_fraction)
-            np.random.seed(getattr(settings.train, "seed", 42))
-            indices = np.random.choice(total_samples, size=num_samples, replace=False)
-            train_set = Subset(train_set, indices)
+            train_set, _n_tot, _n_used = apply_training_patch_subset_from_train_block(
+                train_set, settings.train
+            )
             train_loader = DataLoader(
                 train_set,
                 batch_size=settings.train.batch_size,
                 shuffle=True,
+                generator=dl_generator,
             )
             fit_model(
                 model=model,
@@ -397,7 +424,9 @@ def _run_stanford_fewvol_body(
         return
 
     if not os.path.isfile(best_ckpt):
-        logging.error(f"No checkpoint at {best_ckpt}; train first or use --force-train.")
+        logging.error(
+            f"No checkpoint at {best_ckpt}; train first or use --force-train."
+        )
         sys.exit(1)
 
     rec_dev = settings.reconstruct.device
@@ -421,7 +450,9 @@ def _run_stanford_fewvol_body(
                 f"RGS patch reconstruct: all {full_noisy.shape[-1]} DWI volumes "
                 f"(K={k_in}, MC context + spatial masks)"
             )
-            x_t = torch.from_numpy(np.transpose(full_noisy, (3, 0, 1, 2))).type(torch.float)
+            x_t = torch.from_numpy(np.transpose(full_noisy, (3, 0, 1, 2))).type(
+                torch.float
+            )
             rec_vxyz = reconstruct_dwis_rgs(
                 model=rec_model,
                 data=x_t,
@@ -448,7 +479,9 @@ def _run_stanford_fewvol_body(
         ref_for_metrics = full_orig
     else:
         logging.info("Reconstructing training subset only.")
-        x_t = torch.from_numpy(np.transpose(train_noisy, (3, 0, 1, 2))).type(torch.float)
+        x_t = torch.from_numpy(np.transpose(train_noisy, (3, 0, 1, 2))).type(
+            torch.float
+        )
         if use_rgs:
             rec_vxyz = reconstruct_dwis_rgs(
                 model=rec_model,
@@ -474,16 +507,18 @@ def _run_stanford_fewvol_body(
     if getattr(settings.reconstruct, "rescale_to_01", False):
         mode = getattr(settings.reconstruct, "rescale_mode", "per_volume")
         reference = ref_for_metrics if mode == "match_gt" else None
-        reconstructed = rescale_reconstruction_to_01(reconstructed, mode=mode, reference=reference)
+        reconstructed = rescale_reconstruction_to_01(
+            reconstructed, mode=mode, reference=reference
+        )
 
     if getattr(settings.reconstruct, "subtract_background_estimate", False):
         thresh = getattr(settings.reconstruct, "subtract_background_threshold", 0.02)
         bg_mask = (ref_for_metrics <= thresh).all(axis=-1)
         if np.any(bg_mask):
             shift = float(np.median(reconstructed[bg_mask]))
-            reconstructed = np.clip(reconstructed.astype(np.float64) - shift, 0, 1).astype(
-                np.float32
-            )
+            reconstructed = np.clip(
+                reconstructed.astype(np.float64) - shift, 0, 1
+            ).astype(np.float32)
 
     if getattr(settings.reconstruct, "clip_to_range", False):
         reconstructed = np.clip(reconstructed, 0, 1)
@@ -550,7 +585,9 @@ def _run_stanford_fewvol_body(
                 file_name=comparison_path,
                 volume_idx=i,
             )
-            wandb_images.append(wandb.Image(comparison_path, caption=f"Volume index {i}"))
+            wandb_images.append(
+                wandb.Image(comparison_path, caption=f"Volume index {i}")
+            )
 
         if wandb_run is not None:
             wandb.log({"reconstruct/comparison": wandb_images})

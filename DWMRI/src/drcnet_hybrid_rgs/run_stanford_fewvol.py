@@ -24,7 +24,7 @@ from typing import Optional
 import numpy as np
 import torch
 import wandb
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from drcnet_hybrid_rgs.data import TrainingDataSet
 from drcnet_hybrid_rgs.fit import fit_model
@@ -50,6 +50,11 @@ from utils.metrics import (
     visualize_single_volume,
 )
 from utils.multi_gpu import create_multi_gpu_config_from_dict, setup_multi_gpu
+from utils.repro_seed import make_dataloader_generator
+from utils.training_patch_subset import (
+    apply_training_patch_subset_from_train_block,
+    training_subset_checkpoint_segment,
+)
 from utils.utils import load_config, noise_path_segment
 
 
@@ -69,10 +74,11 @@ def _build_checkpoint_dir(
         vol_seg = f"rgs_G{g_shell}_K{train_num_volumes}"
     else:
         vol_seg = f"num_volumes_{train_num_volumes}"
+    sub_seg = training_subset_checkpoint_segment(settings.train)
+    mid = [bvalue_segment, vol_seg] + ([sub_seg] if sub_seg else [])
     return os.path.join(
         settings.train.checkpoint_dir,
-        bvalue_segment,
-        vol_seg,
+        *mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
@@ -272,11 +278,12 @@ def _run_stanford_fewvol_body(
         if use_rgs
         else f"num_volumes_{train_num_volumes}"
     )
+    _sub_seg = training_subset_checkpoint_segment(settings.train)
+    _loss_mid = [bvalue_segment, vol_seg] + ([_sub_seg] if _sub_seg else [])
     loss_dir = os.path.join(
         "drcnet_hybrid_rgs/losses",
         "stanford_fewvol",
-        bvalue_segment,
-        vol_seg,
+        *_loss_mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
@@ -357,6 +364,10 @@ def _run_stanford_fewvol_body(
 
         use_amp = getattr(settings.train, "use_amp", True)
 
+        train_seed = int(getattr(settings.train, "seed", 42))
+        cudnn_fast = not bool(getattr(settings.train, "reproducible", False))
+        dl_generator = make_dataloader_generator(train_seed)
+
         if progressive_enabled:
             fit_progressive(
                 model=model,
@@ -368,6 +379,8 @@ def _run_stanford_fewvol_body(
                 loss_dir=loss_dir,
                 patch_filter_method=patch_filter_method,
                 min_signal_threshold=min_signal_threshold,
+                dl_generator=dl_generator,
+                cudnn_fast=cudnn_fast,
             )
         else:
             pv = _patch_volume_dim(settings)
@@ -387,16 +400,14 @@ def _run_stanford_fewvol_body(
                 min_signal_threshold=min_signal_threshold,
                 **_dataset_kwargs(settings),
             )
-            subset_fraction = 1
-            total_samples = len(train_set)
-            num_samples = int(total_samples * subset_fraction)
-            np.random.seed(getattr(settings.train, "seed", 42))
-            indices = np.random.choice(total_samples, size=num_samples, replace=False)
-            train_set = Subset(train_set, indices)
+            train_set, _n_tot, _n_used = apply_training_patch_subset_from_train_block(
+                train_set, settings.train
+            )
             train_loader = DataLoader(
                 train_set,
                 batch_size=settings.train.batch_size,
                 shuffle=True,
+                generator=dl_generator,
             )
             fit_model(
                 model=model,

@@ -8,7 +8,7 @@ import time
 import numpy as np
 import torch
 import wandb
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from restormer_hybrid_rgs.data import TrainingDataSet
@@ -49,6 +49,10 @@ from utils.repro_seed import (
     make_dataloader_generator,
     set_seed,
 )
+from utils.training_patch_subset import (
+    apply_training_patch_subset_from_train_block,
+    training_subset_checkpoint_segment,
+)
 from utils.utils import load_config, noise_path_segment
 
 
@@ -62,11 +66,15 @@ def _is_sequential(settings) -> bool:
 
 def _volume_path_segment(settings) -> str:
     if _is_rgs(settings):
-        g = int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes))
+        g = int(
+            getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+        )
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
         return f"rgs_G{g}_K{k}"
     if _is_sequential(settings):
-        g = int(getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes))
+        g = int(
+            getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+        )
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
         return f"sequential_G{g}_K{k}"
     return f"num_volumes_{settings.data.num_volumes}"
@@ -74,7 +82,9 @@ def _volume_path_segment(settings) -> str:
 
 def _patch_volume_dim(settings) -> int:
     if _is_rgs(settings) or _is_sequential(settings):
-        return int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
+        return int(
+            getattr(settings.data, "num_input_volumes", settings.model.in_channel)
+        )
     return settings.data.num_volumes
 
 
@@ -124,7 +134,6 @@ def fit_progressive(
     """
     stages = settings.train.progressive.stages
     total_stages = len(stages)
-    subset_seed = getattr(settings.train, "seed", 42)
     use_amp = getattr(settings.train, "use_amp", True)
 
     logging.info(
@@ -168,12 +177,9 @@ def fit_progressive(
             **_training_sample_kwargs(settings),
         )
 
-        subset_fraction = 1
-        total_samples = len(train_set)
-        num_samples = int(total_samples * subset_fraction)
-        np.random.seed(subset_seed)
-        indices = np.random.choice(total_samples, size=num_samples, replace=False)
-        train_set = Subset(train_set, indices)
+        train_set, _n_tot, _n_used = apply_training_patch_subset_from_train_block(
+            train_set, settings.train
+        )
 
         train_loader = DataLoader(
             train_set,
@@ -186,8 +192,12 @@ def fit_progressive(
             f"num_batches={len(train_loader)}, samples={len(train_set)}"
         )
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=settings.train.learning_rate)
-        logging.info(f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})")
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=settings.train.learning_rate
+        )
+        logging.info(
+            f"Stage {stage_num} Optimizer: Adam(lr={settings.train.learning_rate})"
+        )
 
         scheduler = None
         if getattr(settings.train, "use_scheduler", False):
@@ -216,7 +226,9 @@ def fit_progressive(
             checkpoint_dir, f"stage_{stage_num}_patch{stage.patch_size}"
         )
         os.makedirs(stage_checkpoint_dir, exist_ok=True)
-        stage_loss_dir = os.path.join(loss_dir, f"stage_{stage_num}_patch{stage.patch_size}")
+        stage_loss_dir = os.path.join(
+            loss_dir, f"stage_{stage_num}_patch{stage.patch_size}"
+        )
         os.makedirs(stage_loss_dir, exist_ok=True)
 
         fit_model(
@@ -366,7 +378,9 @@ def main(
                     if (nt or "rician").lower().strip() == "noncentral_chi"
                     else (nt or "rician").lower().strip()
                 )
-                wandb_kwargs["name"] = f"{dataset}_{vol_seg_wandb}_noise_{alias}_sigma_{sigma}"
+                wandb_kwargs["name"] = (
+                    f"{dataset}_{vol_seg_wandb}_noise_{alias}_sigma_{sigma}"
+                )
                 wandb_kwargs["tags"] = [
                     dataset,
                     vol_seg_wandb,
@@ -390,7 +404,9 @@ def main(
         take_volumes = _take_volumes_dwi(settings)
         logging.info(f"Taking volumes from {settings.data.num_b0s} to {take_volumes}")
         if _is_rgs(settings):
-            k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
+            k = int(
+                getattr(settings.data, "num_input_volumes", settings.model.in_channel)
+            )
             if k != settings.model.in_channel:
                 raise ValueError(
                     f"RGS: num_input_volumes ({k}) must match model.in_channel ({settings.model.in_channel})"
@@ -398,7 +414,9 @@ def main(
         tx, ty, tz = settings.data.take_x, settings.data.take_y, settings.data.take_z
         original_xyzv_b0 = original_data[:tx, :ty, :tz, :take_volumes]
         noisy_data = noisy_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
-        original_data = original_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
+        original_data = original_data[
+            :tx, :ty, :tz, settings.data.num_b0s : take_volumes
+        ]
         logging.info(f"Noisy data shape: {noisy_data.shape}")
         logging.info(
             f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
@@ -464,7 +482,9 @@ def main(
             }
         )
 
-        model, effective_lr, effective_batch_size = setup_multi_gpu(model, multi_gpu_config)
+        model, effective_lr, effective_batch_size = setup_multi_gpu(
+            model, multi_gpu_config
+        )
 
         logging.info("Setting up optimizer and scheduler...")
         optimizer = torch.optim.Adam(model.parameters(), lr=effective_lr)
@@ -516,10 +536,11 @@ def main(
         )
         bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
         vol_seg = _volume_path_segment(settings)
+        _sub_seg = training_subset_checkpoint_segment(settings.train)
+        _path_mid = [bvalue_segment, vol_seg] + ([_sub_seg] if _sub_seg else [])
         checkpoint_dir = os.path.join(
             settings.train.checkpoint_dir,
-            bvalue_segment,
-            vol_seg,
+            *_path_mid,
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
@@ -528,8 +549,7 @@ def main(
         loss_dir = os.path.join(
             "restormer_hybrid_rgs/losses",
             dataset,
-            bvalue_segment,
-            vol_seg,
+            *_path_mid,
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
@@ -573,12 +593,11 @@ def main(
                     min_signal_threshold=min_signal_threshold,
                     **_training_sample_kwargs(settings),
                 )
-                subset_fraction = 1
-                total_samples = len(train_set)
-                num_samples = int(total_samples * subset_fraction)
-                np.random.seed(int(getattr(settings.train, "seed", 42)))
-                indices = np.random.choice(total_samples, size=num_samples, replace=False)
-                train_set = Subset(train_set, indices)
+                train_set, _n_tot, _n_used = (
+                    apply_training_patch_subset_from_train_block(
+                        train_set, settings.train
+                    )
+                )
                 train_loader = DataLoader(
                     train_set,
                     batch_size=settings.train.batch_size,
@@ -622,9 +641,13 @@ def main(
                 out_channels=settings.model.out_channel,
                 dim=getattr(settings.model, "dim", 32),
                 num_blocks=getattr(settings.model, "num_blocks", [2, 2, 2, 4]),
-                num_refinement_blocks=getattr(settings.model, "num_refinement_blocks", 2),
+                num_refinement_blocks=getattr(
+                    settings.model, "num_refinement_blocks", 2
+                ),
                 heads=getattr(settings.model, "heads", [1, 2, 4, 8]),
-                ffn_expansion_factor=getattr(settings.model, "ffn_expansion_factor", 2.0),
+                ffn_expansion_factor=getattr(
+                    settings.model, "ffn_expansion_factor", 2.0
+                ),
                 bias=getattr(settings.model, "bias", False),
                 LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
@@ -639,9 +662,9 @@ def main(
             )
             if n_params is None:
                 n_params = int(sum(p.numel() for p in reconstruct_model.parameters()))
-            x_reconstruct = torch.from_numpy(np.transpose(noisy_data, (3, 0, 1, 2))).type(
-                torch.float
-            )
+            x_reconstruct = torch.from_numpy(
+                np.transpose(noisy_data, (3, 0, 1, 2))
+            ).type(torch.float)
 
             rec_use_amp = getattr(settings.reconstruct, "use_amp", True)
             patch_sz = getattr(settings.reconstruct, "patch_size", 32)
@@ -704,7 +727,9 @@ def main(
             logging.info(f"Reconstructed DWIs dtype: {reconstructed_dwis.dtype}")
 
             if getattr(settings.reconstruct, "subtract_background_estimate", False):
-                thresh = getattr(settings.reconstruct, "subtract_background_threshold", 0.02)
+                thresh = getattr(
+                    settings.reconstruct, "subtract_background_threshold", 0.02
+                )
                 bg_mask = (original_data <= thresh).all(axis=-1)
                 if np.any(bg_mask):
                     bg_vals = reconstructed_dwis[bg_mask]
@@ -716,7 +741,9 @@ def main(
                     reconstructed_dwis = np.clip(reconstructed_dwis, 0, 1)
 
             rescale_to_01 = bool(getattr(settings.reconstruct, "rescale_to_01", False))
-            rescale_mode = str(getattr(settings.reconstruct, "rescale_mode", "per_volume"))
+            rescale_mode = str(
+                getattr(settings.reconstruct, "rescale_mode", "per_volume")
+            )
             clip_to_range = bool(getattr(settings.reconstruct, "clip_to_range", False))
             reconstructed_dwis = apply_reconstruction_eval_protocol(
                 reconstructed_dwis,
@@ -758,7 +785,9 @@ def main(
                 logging.info(
                     f"ROI mask: original > {roi_threshold}, {n_roi:,} voxels ({roi_pct:.1f}%)"
                 )
-                metrics_roi = compute_metrics(original_data, reconstructed_dwis, mask=roi_mask)
+                metrics_roi = compute_metrics(
+                    original_data, reconstructed_dwis, mask=roi_mask
+                )
                 logging.info(f"Metrics (ROI, brain/tissue only): {metrics_roi}")
                 save_metrics(metrics_roi, metrics_dir, filename="metrics_roi.json")
 
@@ -771,7 +800,9 @@ def main(
                         }
                     )
 
-            if original_xyzv_b0 is not None and getattr(settings.reconstruct, "compute_dti", True):
+            if original_xyzv_b0 is not None and getattr(
+                settings.reconstruct, "compute_dti", True
+            ):
                 try:
                     gtab = data_loader.load_gradient_table()
                     bvals = np.asarray(gtab.bvals)[:take_volumes]
@@ -782,7 +813,9 @@ def main(
                         [gt_xyzv[..., :nb0], reconstructed_dwis.astype(np.float64)],
                         axis=-1,
                     )
-                    roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
+                    roi_thr = getattr(
+                        settings.reconstruct, "metrics_roi_threshold", 0.02
+                    )
                     dti_metrics = try_compute_dti_errors(
                         den_xyzv,
                         gt_xyzv,
@@ -812,14 +845,18 @@ def main(
                     "ad_mae": None,
                     "rd_mae": None,
                     "dti_reference": (
-                        "clean_gt" if original_xyzv_b0 is not None else "self_reference_noisy"
+                        "clean_gt"
+                        if original_xyzv_b0 is not None
+                        else "self_reference_noisy"
                     ),
                     "dti_skipped_reason": "no_clean_gt_or_compute_dti_false",
                 }
                 save_dti_metrics(dti_metrics, metrics_dir)
 
             policy = metrics_policy_dict(
-                reference_name="clean_gt" if dataset == "dbrain" else "self_reference_noisy",
+                reference_name="clean_gt"
+                if dataset == "dbrain"
+                else "self_reference_noisy",
                 rescale_to_01=rescale_to_01,
                 rescale_mode=rescale_mode,
                 clip_to_range=clip_to_range,
@@ -833,7 +870,9 @@ def main(
                 config={
                     "dataset": dataset,
                     "architecture": "restormer_hybrid_rgs",
-                    "sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
+                    "sampling_mode": getattr(
+                        settings.data, "shell_sampling_mode", "sequential"
+                    ),
                     "k_input": int(
                         getattr(
                             settings.data,
@@ -848,7 +887,9 @@ def main(
                             settings.data.num_volumes,
                         )
                     ),
-                    "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                    "n_context_samples": int(
+                        getattr(settings.reconstruct, "n_context_samples", 0)
+                    ),
                     "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
                 },
                 metrics_policy=policy,
@@ -882,7 +923,9 @@ def main(
                     else settings.data.num_volumes
                 )
                 for i in range(n_viz):
-                    comparison_path = os.path.join(images_dir, f"comparison_volume_{i}.png")
+                    comparison_path = os.path.join(
+                        images_dir, f"comparison_volume_{i}.png"
+                    )
                     fully_compare_volumes(
                         original_volume=np.transpose(original_data, (2, 3, 0, 1)),
                         noisy_volume=np.transpose(noisy_data, (2, 3, 0, 1)),
@@ -890,7 +933,9 @@ def main(
                         file_name=comparison_path,
                         volume_idx=i,
                     )
-                    wandb_images.append(wandb.Image(comparison_path, caption=f"Volume index {i}"))
+                    wandb_images.append(
+                        wandb.Image(comparison_path, caption=f"Volume index {i}")
+                    )
                 if wandb_run is not None:
                     wandb.log(
                         {
@@ -935,7 +980,9 @@ def main(
             "regime": regime,
             "architecture": "restormer",
             "dimensionality": "3d",
-            "sampling_mode": getattr(settings.data, "shell_sampling_mode", "sequential"),
+            "sampling_mode": getattr(
+                settings.data, "shell_sampling_mode", "sequential"
+            ),
             "sampling_config": {
                 "g_shell": int(
                     getattr(
@@ -945,13 +992,17 @@ def main(
                     )
                 ),
                 "k_input": int(
-                    getattr(settings.data, "num_input_volumes", settings.model.in_channel)
+                    getattr(
+                        settings.data, "num_input_volumes", settings.model.in_channel
+                    )
                 ),
                 "target_channel": int(getattr(settings.data, "target_channel", 9)),
                 "window_policy": "sliding_last_target",
             },
             "inference_config": {
-                "n_context_samples": int(getattr(settings.reconstruct, "n_context_samples", 0)),
+                "n_context_samples": int(
+                    getattr(settings.reconstruct, "n_context_samples", 0)
+                ),
                 "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
             },
             "train_config": {
@@ -959,7 +1010,9 @@ def main(
                 "batch_size": int(getattr(settings.train, "batch_size", 0)),
                 "lr": float(getattr(settings.train, "learning_rate", 0.0)),
                 "progressive_enabled": bool(
-                    getattr(getattr(settings.train, "progressive", {}), "enabled", False)
+                    getattr(
+                        getattr(settings.train, "progressive", {}), "enabled", False
+                    )
                 ),
             },
             "control_metrics": {
@@ -967,7 +1020,9 @@ def main(
                 "sec_per_epoch": sec_per_epoch,
                 "sec_per_volume": sec_per_volume,
                 "peak_gpu_mem_mb": gpu_peak_mem_mb(
-                    settings.reconstruct.device if reconstruct else settings.train.device
+                    settings.reconstruct.device
+                    if reconstruct
+                    else settings.train.device
                 ),
             },
             "quality_metrics_full": metrics,

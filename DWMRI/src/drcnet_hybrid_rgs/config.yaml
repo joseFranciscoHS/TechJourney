@@ -19,6 +19,9 @@ dbrain:
     auto_scale_lr: true  # Automatically scale LR based on GPU count
     auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
     memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
+    # Random patch subsample: 1.0 = all patches; <1.0 speeds training (override via --set dbrain.train.subset_fraction=...)
+    subset_fraction: 1.0
+    subset_max_patches: null  # Optional cap after applying fraction (int); null = no cap
     ## cosine annealing warm restarts
     scheduler_T_0: 20  # More frequent restarts
     eta_min_lr: 0.0001  # Lower minimum LR
@@ -130,6 +133,8 @@ stanford:
     auto_scale_lr: true  # Automatically scale LR based on GPU count
     auto_exclude_imbalanced: true  # Automatically exclude imbalanced GPUs
     memory_threshold: 0.15  # Minimum memory ratio to consider balanced (0.15 = 15%)
+    subset_fraction: 1.0
+    subset_max_patches: null
     progressive:
       enabled: true
       stages:

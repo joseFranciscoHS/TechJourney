@@ -48,6 +48,10 @@ from utils.repro_seed import (
     make_dataloader_generator,
     set_seed,
 )
+from utils.training_patch_subset import (
+    apply_training_patch_subset_from_train_block,
+    training_subset_checkpoint_segment,
+)
 from utils.utils import load_config, noise_path_segment
 
 
@@ -160,12 +164,6 @@ def main():
         step=int(getattr(settings.data, "patch_2d_step", settings.data.step)),
         sample_rng_seed=train_seed,
     )
-    train_loader = DataLoader(
-        train_set,
-        batch_size=settings.train.batch_size,
-        shuffle=True,
-        generator=dl_generator,
-    )
 
     noise_segment = noise_path_segment(
         getattr(settings.data, "noise_type", "rician"),
@@ -173,22 +171,32 @@ def main():
     )
     bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
     vol_seg = _volume_path_segment(settings)
+    _sub_seg = training_subset_checkpoint_segment(settings.train)
+    _path_mid = [bvalue_segment, f"2d_{vol_seg}"] + ([_sub_seg] if _sub_seg else [])
     checkpoint_dir = os.path.join(
         settings.train.checkpoint_dir,
-        bvalue_segment,
-        f"2d_{vol_seg}",
+        *_path_mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
     os.makedirs(checkpoint_dir, exist_ok=True)
     metrics_dir = os.path.join(
         settings.reconstruct.metrics_dir,
-        bvalue_segment,
-        f"2d_{vol_seg}",
+        *_path_mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
     os.makedirs(metrics_dir, exist_ok=True)
+
+    train_set, _n_tot, _n_used = apply_training_patch_subset_from_train_block(
+        train_set, settings.train
+    )
+    train_loader = DataLoader(
+        train_set,
+        batch_size=settings.train.batch_size,
+        shuffle=True,
+        generator=dl_generator,
+    )
 
     device = settings.train.device
     num_blocks_cfg = getattr(settings.model, "num_blocks", [1, 2, 2])

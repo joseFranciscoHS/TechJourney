@@ -43,6 +43,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -74,6 +76,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -108,6 +112,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.train.supervised=true
   - --set
@@ -150,6 +156,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.train.supervised=true
   - --set
@@ -336,6 +344,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=sequential
   - --set
   - dbrain.data.num_input_volumes=24
@@ -367,6 +377,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -404,6 +416,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=sequential
   - --set
   - dbrain.data.num_input_volumes=24
@@ -435,6 +449,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -473,6 +489,8 @@ jobs:
       - dbrain.train.seed=91021
       - --set
       - dbrain.train.reproducible=true
+      - --set
+      - dbrain.train.subset_fraction=0.6
       - --set
       - dbrain.data.shell_sampling_mode=rgs
       - --set
@@ -514,6 +532,8 @@ jobs:
       - --set
       - dbrain.train.reproducible=true
       - --set
+      - dbrain.train.subset_fraction=0.6
+      - --set
       - dbrain.data.shell_sampling_mode=rgs
       - --set
       - dbrain.data.num_input_volumes=24
@@ -552,6 +572,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -585,6 +607,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -620,6 +644,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -653,6 +679,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -688,6 +716,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -721,6 +751,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -926,6 +958,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -959,6 +993,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -994,6 +1030,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1027,6 +1065,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -1062,6 +1102,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1095,6 +1137,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -1300,6 +1344,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1335,6 +1381,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -1372,6 +1420,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1408,6 +1458,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1443,6 +1495,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -1660,6 +1714,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1695,6 +1751,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -1732,6 +1790,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1768,6 +1828,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -1803,6 +1865,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2020,6 +2084,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -2055,6 +2121,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2092,6 +2160,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -2127,6 +2197,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2164,6 +2236,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -2199,6 +2273,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2452,6 +2528,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -2487,6 +2565,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2524,6 +2604,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -2559,6 +2641,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2596,6 +2680,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
   - dbrain.reconstruct.rescale_to_01=true
@@ -2631,6 +2717,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -2884,6 +2972,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -2919,6 +3009,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -2956,6 +3048,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -2991,6 +3085,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3028,6 +3124,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -3063,6 +3161,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3100,6 +3200,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -3135,6 +3237,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3172,6 +3276,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -3207,6 +3313,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3244,6 +3352,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
   - dbrain.data.num_input_volumes=24
@@ -3279,6 +3389,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3385,6 +3497,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.noise_sigma=0.05
   - --set
   - dbrain.data.shell_sampling_mode=rgs
@@ -3418,6 +3532,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.noise_sigma=0.05
   - --set
@@ -3522,6 +3638,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.noise_sigma=0.10
   - --set
   - dbrain.data.shell_sampling_mode=rgs
@@ -3555,6 +3673,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.noise_sigma=0.10
   - --set
@@ -3659,6 +3779,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.noise_sigma=0.15
   - --set
   - dbrain.data.shell_sampling_mode=rgs
@@ -3693,6 +3815,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.data.noise_sigma=0.15
   - --set
   - dbrain.data.shell_sampling_mode=rgs
@@ -3726,6 +3850,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3762,6 +3888,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
@@ -3802,6 +3930,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
   - dbrain.reconstruct.n_preds=10
@@ -3822,6 +3952,8 @@ jobs:
   - dbrain.train.seed=91041
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
@@ -3844,6 +3976,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
   - dbrain.reconstruct.n_preds=10
@@ -3865,6 +3999,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
   - dbrain.reconstruct.n_preds=10
@@ -3885,6 +4021,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
@@ -3909,6 +4047,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
   - dbrain.reconstruct.n_preds=10
@@ -3932,6 +4072,8 @@ jobs:
   - --set
   - dbrain.train.reproducible=true
   - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set
   - dbrain.reconstruct.n_preds=10
@@ -3954,6 +4096,8 @@ jobs:
   - dbrain.train.seed=91021
   - --set
   - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
   - --set
   - dbrain.reconstruct.n_context_samples=24
   - --set

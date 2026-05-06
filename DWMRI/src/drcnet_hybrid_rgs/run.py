@@ -8,7 +8,7 @@ import time
 import numpy as np
 import torch
 import wandb
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from drcnet_hybrid_rgs.data import TrainingDataSet
 from drcnet_hybrid_rgs.fit import fit_model
@@ -52,6 +52,10 @@ from utils.repro_seed import (
     log_runtime_env,
     make_dataloader_generator,
     set_seed,
+)
+from utils.training_patch_subset import (
+    apply_training_patch_subset_from_train_block,
+    training_subset_checkpoint_segment,
 )
 from utils.utils import load_config, noise_path_segment
 
@@ -134,7 +138,6 @@ def fit_progressive(
     """
     stages = settings.train.progressive.stages
     total_stages = len(stages)
-    subset_seed = getattr(settings.train, "seed", 42)
     use_amp = getattr(settings.train, "use_amp", True)
 
     logging.info(
@@ -178,12 +181,9 @@ def fit_progressive(
             **_training_sample_kwargs(settings),
         )
 
-        subset_fraction = 1
-        total_samples = len(train_set)
-        num_samples = int(total_samples * subset_fraction)
-        np.random.seed(subset_seed)
-        indices = np.random.choice(total_samples, size=num_samples, replace=False)
-        train_set = Subset(train_set, indices)
+        train_set, _n_tot, _n_used = apply_training_patch_subset_from_train_block(
+            train_set, settings.train
+        )
 
         train_loader = DataLoader(
             train_set,
@@ -436,10 +436,11 @@ def main(
         )
         bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
         vol_seg = _volume_path_segment(settings)
+        _sub_seg = training_subset_checkpoint_segment(settings.train)
+        _path_mid = [bvalue_segment, vol_seg] + ([_sub_seg] if _sub_seg else [])
         checkpoint_dir = os.path.join(
             settings.train.checkpoint_dir,
-            bvalue_segment,
-            vol_seg,
+            *_path_mid,
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
@@ -448,8 +449,7 @@ def main(
         loss_dir = os.path.join(
             "drcnet_hybrid_rgs/losses",
             dataset,
-            bvalue_segment,
-            vol_seg,
+            *_path_mid,
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",
         )
@@ -533,6 +533,11 @@ def main(
                     patch_filter_method=patch_filter_method,
                     min_signal_threshold=min_signal_threshold,
                     **_training_sample_kwargs(settings),
+                )
+                train_set, _n_tot, _n_used = (
+                    apply_training_patch_subset_from_train_block(
+                        train_set, settings.train
+                    )
                 )
                 train_loader = DataLoader(
                     train_set,
