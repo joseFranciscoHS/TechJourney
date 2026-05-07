@@ -1,6 +1,6 @@
 dbrain:
   train:
-    num_epochs: 300  # Increased for better convergence
+    num_epochs: 360  # Increased for better convergence
     device: cuda:0
     seed: 42  # RNG: torch/numpy/dataset RGS draws and spatial masks
     reproducible: false  # true => cuDNN deterministic (slower; GPU still not bit-identical)
@@ -39,15 +39,15 @@ dbrain:
       stages:
         - patch_size: 32
           batch_size: 128
-          epochs: 100
+          epochs: 120
           step: 8
         - patch_size: 24
           batch_size: 256
-          epochs: 100
+          epochs: 120
           step: 6
         - patch_size: 16
           batch_size: 256
-          epochs: 100
+          epochs: 120
           step: 4
   # --- reconstruct (metrics & viz) ---
   # clip_to_range: true → reconstructions clipped to [0, 1] before metrics (matches original range).
@@ -64,7 +64,7 @@ dbrain:
     n_preds: 12  # Spatial-mask MC passes per context (sequential mode); also used inner in RGS
     pred_chunk_size: 4  # Micro-batch size for parallel mask predictions in RGS inference
     # RGS inference: random 9-tuple + target k, averaged n_context times (then × n_preds inside)
-    n_context_samples: 24
+    n_context_samples: 16
     # Post-reconstruction processing
     rescale_to_01: true  # Rescale reconstruction to [0,1] (inverse of per-volume preprocessing)
     rescale_mode: "per_volume"  # "per_volume" (default) or "match_gt" to align to GT range per volume
@@ -77,7 +77,7 @@ dbrain:
     metrics_dir: "drcnet_hybrid_rgs/metrics/dbrain"
     images_dir: "drcnet_hybrid_rgs/images/dbrain"
   model:
-    in_channel: 24 # is the number of volumes (all volumes including masked target)
+    in_channel: 16 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
     output_activation: "prelu"  # "prelu" (unbounded) or "sigmoid" (0-1 bounded, reduces background bias)
     groups: 1  # Increased for better feature separation
@@ -88,12 +88,12 @@ dbrain:
     patch_size: 32  # Larger patches for better context
     step: 8  # Larger step for more diverse training data
     num_b0s: 6
-    num_volumes: 24  # DWI count in slice when shell_sampling_mode is sequential
+    num_volumes: 16  # DWI count in slice when shell_sampling_mode is sequential
     # RGS–Hybrid (Random Gradient Subset): random K-tuples from full shell G (see README)
     shell_sampling_mode: rgs  # sequential (sliding-K over full shell) | rgs
-    num_input_volumes: 24  # K; must match model.in_channel
+    num_input_volumes: 16  # K; must match model.in_channel
     shell_gradient_volumes: 60  # G — DWI count after b0s when mode=rgs
-    target_channel: 23  # 0-based; mask + loss on this channel (K-th slot)
+    target_channel: 15  # 0-based; mask + loss on this channel (K-th slot)
     noise_sigma: 0.1
     noise_type: "rician"  # rician, gaussian, noncentral_chi (or ncchi); used in checkpoint paths
     noise_n_coils: 1     # for noncentral_chi only
@@ -117,7 +117,7 @@ dbrain:
     otsu_numpass: 1             # For "otsu" method: number of median filter passes
 stanford:
   train:
-    num_epochs: 300
+    num_epochs: 900
     device: cuda
     seed: 42
     reproducible: false
@@ -140,18 +140,18 @@ stanford:
       stages:
         - patch_size: 32
           batch_size: 24
-          epochs: 50
+          epochs: 300
           step: 8
         - patch_size: 24
           batch_size: 64
-          epochs: 50
+          epochs: 300
           step: 4
         - patch_size: 16
           batch_size: 128
-          epochs: 50
+          epochs: 300
           step: 2
   model:
-    in_channel: 24
+    in_channel: 16
     out_channel: 1
     output_activation: "prelu"
     groups: 1
@@ -159,13 +159,13 @@ stanford:
     residual: true
     base_filters: 32
   data:
-    num_volumes: 24
+    num_volumes: 16
     shell_sampling_mode: rgs
-    num_input_volumes: 24
+    num_input_volumes: 16
     shell_gradient_volumes: 150
-    target_channel: 23
+    target_channel: 15
     # Few-volume experiment (run_stanford_fewvol.py): train on this many DWI channels; omit to use num_volumes.
-    train_num_volumes: 24
+    train_num_volumes: 16
     # If true, infer all non-b0 DWI via chunked reconstruction (see run_stanford_fewvol.py).
     reconstruct_full_dwi: true
     noise_type: "rician"
@@ -186,7 +186,7 @@ stanford:
     mask_p: 0.3
     n_preds: 23
     pred_chunk_size: 4
-    n_context_samples: 24
+    n_context_samples: 16
     rescale_to_01: true
     rescale_mode: "per_volume"
     clip_to_range: true

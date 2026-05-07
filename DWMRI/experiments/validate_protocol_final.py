@@ -53,12 +53,12 @@ def validate(protocol_path: Path, manifest_path: Path):
 
     required_ablation_jobs = {
         "sampling_sequential_vs_rgs": [
-            "drcnet_dbrain_seq_k24_ablation",
-            "restormer_dbrain_seq_k24_ablation",
+            "drcnet_dbrain_seq_k16_ablation",
+            "restormer_dbrain_seq_k16_ablation",
         ],
         "conv2d_vs_conv3d": [
-            "drcnet_dbrain_2d_rgs_k24_ablation",
-            "restormer_dbrain_2d_rgs_k24_ablation",
+            "drcnet_dbrain_2d_rgs_k16_ablation",
+            "restormer_dbrain_2d_rgs_k16_ablation",
         ],
         "progressive_vs_standard": [
             "drcnet_dbrain_progressive_off_ablation",
@@ -130,7 +130,7 @@ def validate(protocol_path: Path, manifest_path: Path):
     npreds_cfg = sweep_cfg.get("n_preds_sensitivity", {})
     npreds_values = [int(v) for v in npreds_cfg.get("dbrain", [])]
     npreds_archs = [str(v) for v in npreds_cfg.get("architectures", [])]
-    fixed_nctx = int(npreds_cfg.get("fixed_n_context_samples", 24))
+    fixed_nctx = int(npreds_cfg.get("fixed_n_context_samples", 16))
     for arch in npreds_archs:
         for npreds in npreds_values:
             jid = f"{arch}_dbrain_npreds_{npreds}_ablation"
@@ -145,6 +145,11 @@ def validate(protocol_path: Path, manifest_path: Path):
             ):
                 if token not in cmd:
                     errors.append(f"{jid}:missing_token:{token}")
+
+    dbrain_seed = protocol["datasets"]["dbrain"]["seed"]
+    stanford_seed = protocol["datasets"]["stanford"]["seed"]
+    roi_thr = protocol["evaluation_policy"]["metrics_roi_threshold"]
+    rescale_mode = protocol["evaluation_policy"]["rescale_mode"]
 
     sigma_cfg = sweep_cfg.get("noise_sigma_sensitivity", {})
     sigma_values = [float(v) for v in sigma_cfg.get("dbrain", [])]
@@ -205,6 +210,21 @@ def validate(protocol_path: Path, manifest_path: Path):
                     if token not in cmd:
                         errors.append(f"{jid}:missing_token:{token}")
 
+        if "mds2s" in sigma_baselines:
+            jid = f"mds2s_dbrain_sigma_{stag}_final"
+            if jid not in jobs:
+                errors.append(f"missing_ablation_job:noise_sigma_sensitivity:{jid}")
+            else:
+                cmd = _command_text(jobs[jid])
+                for token in (
+                    "--dataset dbrain",
+                    f"--noise-sigma {sigma:.2f}",
+                    f"--seed {dbrain_seed}",
+                    "--reproducible true",
+                ):
+                    if token not in cmd:
+                        errors.append(f"{jid}:missing_token:{token}")
+
         for arch in sigma_archs:
             jid = f"{arch}_dbrain_sigma_{stag}_ablation"
             if jid not in jobs:
@@ -217,11 +237,6 @@ def validate(protocol_path: Path, manifest_path: Path):
             ):
                 if token not in cmd:
                     errors.append(f"{jid}:missing_token:{token}")
-
-    dbrain_seed = protocol["datasets"]["dbrain"]["seed"]
-    stanford_seed = protocol["datasets"]["stanford"]["seed"]
-    roi_thr = protocol["evaluation_policy"]["metrics_roi_threshold"]
-    rescale_mode = protocol["evaluation_policy"]["rescale_mode"]
 
     for jid in ("drcnet_dbrain_rgs_final", "restormer_dbrain_rgs_final"):
         if jid not in jobs:
@@ -319,8 +334,8 @@ def validate(protocol_path: Path, manifest_path: Path):
         expected_tokens = (
             f"dbrain.train.seed={pc.get('seed', dbrain_seed)}",
             f"dbrain.data.shell_sampling_mode={pc.get('shell_sampling_mode', 'rgs')}",
-            f"dbrain.data.num_input_volumes={pc.get('k_input', 24)}",
-            f"dbrain.data.target_channel={pc.get('target_channel', 23)}",
+            f"dbrain.data.num_input_volumes={pc.get('k_input', 16)}",
+            f"dbrain.data.target_channel={pc.get('target_channel', 15)}",
             f"dbrain.reconstruct.mask_p={pc.get('mask_p', 0.3)}",
             f"dbrain.reconstruct.metrics_roi_threshold={pc.get('metrics_roi_threshold', roi_thr)}",
             f"dbrain.reconstruct.rescale_mode={pc.get('rescale_mode', rescale_mode)}",

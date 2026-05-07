@@ -5,7 +5,7 @@ dbrain:
     mask_p: 0.3
     dropout_p: 0.3
     learning_rate: 0.0001
-    batch_size: 12
+    batch_size: 256
     use_scheduler: True
     scheduler_step_size: 500
     scheduler_gamma: 0.5
@@ -19,11 +19,11 @@ dbrain:
     compute_dti: true
     metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
   model:
-    in_channel: 24 # is the same as the number of volumes
-    out_channel: 24
+    in_channel: 16 # is the same as the number of volumes
+    out_channel: 16
   data:
     num_b0s: 6
-    num_volumes: 24
+    num_volumes: 16
     noise_sigma: 0.1
     bvalue: 2500
     nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
@@ -53,10 +53,10 @@ stanford:
     compute_dti: false
     metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
   model:
-    in_channel: 150
-    out_channel: 150
+    in_channel: 16
+    out_channel: 16
   data:
     num_b0s: 10
-    num_volumes: 150
+    num_volumes: 16
     noise_sigma: 0.01
     bvalue: 2500

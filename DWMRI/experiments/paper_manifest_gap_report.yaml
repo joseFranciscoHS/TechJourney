@@ -17,15 +17,15 @@ manifest_ids:
 - p2s_dbrain_sklearn_reference_final
 - mds2s_dbrain_final
 - mds2s_stanford_final
-- drcnet_dbrain_seq_k24_ablation
+- drcnet_dbrain_seq_k16_ablation
 - drcnet_dbrain_k10_ablation
 - drcnet_dbrain_maskp_02_ablation
 - drcnet_dbrain_ncontext_12_ablation
 - drcnet_dbrain_progressive_off_ablation
-- restormer_dbrain_seq_k24_ablation
+- restormer_dbrain_seq_k16_ablation
 - restormer_dbrain_progressive_off_ablation
-- drcnet_dbrain_2d_rgs_k24_ablation
-- restormer_dbrain_2d_rgs_k24_ablation
+- drcnet_dbrain_2d_rgs_k16_ablation
+- restormer_dbrain_2d_rgs_k16_ablation
 - summarize_registry_final
 - collect_paper_artifacts_final
 matched_ablations_heuristic:

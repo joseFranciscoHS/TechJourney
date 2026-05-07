@@ -47,11 +47,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -81,11 +81,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -121,11 +121,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -165,11 +165,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -201,11 +201,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -215,7 +215,7 @@ jobs:
   - --set
   - stanford.reconstruct.clip_to_range=true
   - --set
-  - stanford.reconstruct.compute_dti=true
+  - stanford.reconstruct.compute_dti=false
 - id: restormer_stanford_rgs_final
   recipe: restormer_main
   cwd: null
@@ -233,11 +233,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -247,7 +247,7 @@ jobs:
   - --set
   - stanford.reconstruct.clip_to_range=true
   - --set
-  - stanford.reconstruct.compute_dti=true
+  - stanford.reconstruct.compute_dti=false
 - id: p2s_dbrain_dipy_final
   recipe: p2s_baseline
   cwd: null
@@ -329,7 +329,7 @@ jobs:
   - --reproducible
   - 'true'
   - --no-wandb
-- id: drcnet_dbrain_seq_k24_ablation
+- id: drcnet_dbrain_seq_k16_ablation
   recipe: sampling_sequential_vs_rgs
   cwd: null
   command:
@@ -348,11 +348,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=sequential
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -382,11 +382,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.progressive.enabled=false
   - --set
@@ -401,7 +401,7 @@ jobs:
   - dbrain.reconstruct.clip_to_range=true
   - --set
   - dbrain.reconstruct.compute_dti=true
-- id: restormer_dbrain_seq_k24_ablation
+- id: restormer_dbrain_seq_k16_ablation
   recipe: sampling_sequential_vs_rgs
   cwd: null
   command:
@@ -420,11 +420,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=sequential
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -454,11 +454,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.progressive.enabled=false
   - --set
@@ -473,7 +473,7 @@ jobs:
   - dbrain.reconstruct.clip_to_range=true
   - --set
   - dbrain.reconstruct.compute_dti=true
-- id: drcnet_dbrain_2d_rgs_k24_ablation
+- id: drcnet_dbrain_2d_rgs_k16_ablation
   recipe: conv2d_vs_conv3d
   cwd: null
   command:
@@ -494,17 +494,17 @@ jobs:
       - --set
       - dbrain.data.shell_sampling_mode=rgs
       - --set
-      - dbrain.data.num_input_volumes=24
+      - dbrain.data.num_input_volumes=16
       - --set
       - dbrain.data.shell_gradient_volumes=60
       - --set
-      - dbrain.data.target_channel=23
+      - dbrain.data.target_channel=15
       - --set
       - dbrain.reconstruct.mask_p=0.3
       - --set
       - dbrain.reconstruct.n_preds=12
       - --set
-      - dbrain.reconstruct.n_context_samples=24
+      - dbrain.reconstruct.n_context_samples=16
       - --set
       - dbrain.reconstruct.metrics_roi_threshold=0.02
       - --set
@@ -515,7 +515,7 @@ jobs:
       - dbrain.reconstruct.clip_to_range=true
       - --set
       - dbrain.reconstruct.compute_dti=true
-- id: restormer_dbrain_2d_rgs_k24_ablation
+- id: restormer_dbrain_2d_rgs_k16_ablation
   recipe: conv2d_vs_conv3d
   cwd: null
   command:
@@ -536,17 +536,17 @@ jobs:
       - --set
       - dbrain.data.shell_sampling_mode=rgs
       - --set
-      - dbrain.data.num_input_volumes=24
+      - dbrain.data.num_input_volumes=16
       - --set
       - dbrain.data.shell_gradient_volumes=60
       - --set
-      - dbrain.data.target_channel=23
+      - dbrain.data.target_channel=15
       - --set
       - dbrain.reconstruct.mask_p=0.3
       - --set
       - dbrain.reconstruct.n_preds=5
       - --set
-      - dbrain.reconstruct.n_context_samples=24
+      - dbrain.reconstruct.n_context_samples=16
       - --set
       - dbrain.reconstruct.metrics_roi_threshold=0.02
       - --set
@@ -629,7 +629,7 @@ jobs:
   - dbrain.data.shell_gradient_volumes=60
   - --set
   - dbrain.data.target_channel=9
-- id: drcnet_dbrain_k15_ablation
+- id: drcnet_dbrain_k16_ablation
   recipe: k_sweep
   cwd: null
   command:
@@ -658,49 +658,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.model.in_channel=15
+  - dbrain.model.in_channel=16
   - --set
-  - dbrain.data.num_input_volumes=15
-  - --set
-  - dbrain.data.shell_gradient_volumes=60
-  - --set
-  - dbrain.data.target_channel=14
-- id: drcnet_dbrain_k20_ablation
-  recipe: k_sweep
-  cwd: null
-  command:
-  - python
-  - -m
-  - drcnet_hybrid_rgs.run
-  - --dataset
-  - dbrain
-  - --no-wandb
-  - --set
-  - dbrain.train.seed=91021
-  - --set
-  - dbrain.train.reproducible=true
-  - --set
-  - dbrain.train.subset_fraction=0.6
-  - --set
-  - dbrain.reconstruct.metrics_roi_threshold=0.02
-  - --set
-  - dbrain.reconstruct.rescale_to_01=true
-  - --set
-  - dbrain.reconstruct.rescale_mode=per_volume
-  - --set
-  - dbrain.reconstruct.clip_to_range=true
-  - --set
-  - dbrain.reconstruct.compute_dti=true
-  - --set
-  - dbrain.data.shell_sampling_mode=rgs
-  - --set
-  - dbrain.model.in_channel=20
-  - --set
-  - dbrain.data.num_input_volumes=20
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=19
+  - dbrain.data.target_channel=15
 - id: drcnet_dbrain_k24_ablation
   recipe: k_sweep
   cwd: null
@@ -841,7 +805,7 @@ jobs:
   - stanford.data.shell_gradient_volumes=150
   - --set
   - stanford.data.target_channel=9
-- id: drcnet_stanford_k20_ablation
+- id: drcnet_stanford_k16_ablation
   recipe: k_sweep
   cwd: null
   command:
@@ -868,13 +832,47 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.model.in_channel=20
+  - stanford.model.in_channel=16
   - --set
-  - stanford.data.num_input_volumes=20
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=19
+  - stanford.data.target_channel=15
+- id: drcnet_stanford_k24_ablation
+  recipe: k_sweep
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - stanford
+  - --no-wandb
+  - --set
+  - stanford.train.seed=91022
+  - --set
+  - stanford.train.reproducible=true
+  - --set
+  - stanford.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - stanford.reconstruct.rescale_to_01=true
+  - --set
+  - stanford.reconstruct.rescale_mode=per_volume
+  - --set
+  - stanford.reconstruct.clip_to_range=true
+  - --set
+  - stanford.reconstruct.compute_dti=false
+  - --set
+  - stanford.data.shell_sampling_mode=rgs
+  - --set
+  - stanford.model.in_channel=24
+  - --set
+  - stanford.data.num_input_volumes=24
+  - --set
+  - stanford.data.shell_gradient_volumes=150
+  - --set
+  - stanford.data.target_channel=23
 - id: drcnet_stanford_k30_ablation
   recipe: k_sweep
   cwd: null
@@ -909,40 +907,6 @@ jobs:
   - stanford.data.shell_gradient_volumes=150
   - --set
   - stanford.data.target_channel=29
-- id: drcnet_stanford_k50_ablation
-  recipe: k_sweep
-  cwd: null
-  command:
-  - python
-  - -m
-  - drcnet_hybrid_rgs.run
-  - --dataset
-  - stanford
-  - --no-wandb
-  - --set
-  - stanford.train.seed=91022
-  - --set
-  - stanford.train.reproducible=true
-  - --set
-  - stanford.reconstruct.metrics_roi_threshold=0.02
-  - --set
-  - stanford.reconstruct.rescale_to_01=true
-  - --set
-  - stanford.reconstruct.rescale_mode=per_volume
-  - --set
-  - stanford.reconstruct.clip_to_range=true
-  - --set
-  - stanford.reconstruct.compute_dti=false
-  - --set
-  - stanford.data.shell_sampling_mode=rgs
-  - --set
-  - stanford.model.in_channel=50
-  - --set
-  - stanford.data.num_input_volumes=50
-  - --set
-  - stanford.data.shell_gradient_volumes=150
-  - --set
-  - stanford.data.target_channel=49
 - id: restormer_dbrain_k5_ablation
   recipe: k_sweep
   cwd: null
@@ -1015,7 +979,7 @@ jobs:
   - dbrain.data.shell_gradient_volumes=60
   - --set
   - dbrain.data.target_channel=9
-- id: restormer_dbrain_k15_ablation
+- id: restormer_dbrain_k16_ablation
   recipe: k_sweep
   cwd: null
   command:
@@ -1044,49 +1008,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.model.in_channel=15
+  - dbrain.model.in_channel=16
   - --set
-  - dbrain.data.num_input_volumes=15
-  - --set
-  - dbrain.data.shell_gradient_volumes=60
-  - --set
-  - dbrain.data.target_channel=14
-- id: restormer_dbrain_k20_ablation
-  recipe: k_sweep
-  cwd: null
-  command:
-  - python
-  - -m
-  - restormer_hybrid_rgs.run
-  - --dataset
-  - dbrain
-  - --no-wandb
-  - --set
-  - dbrain.train.seed=91021
-  - --set
-  - dbrain.train.reproducible=true
-  - --set
-  - dbrain.train.subset_fraction=0.6
-  - --set
-  - dbrain.reconstruct.metrics_roi_threshold=0.02
-  - --set
-  - dbrain.reconstruct.rescale_to_01=true
-  - --set
-  - dbrain.reconstruct.rescale_mode=per_volume
-  - --set
-  - dbrain.reconstruct.clip_to_range=true
-  - --set
-  - dbrain.reconstruct.compute_dti=true
-  - --set
-  - dbrain.data.shell_sampling_mode=rgs
-  - --set
-  - dbrain.model.in_channel=20
-  - --set
-  - dbrain.data.num_input_volumes=20
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=19
+  - dbrain.data.target_channel=15
 - id: restormer_dbrain_k24_ablation
   recipe: k_sweep
   cwd: null
@@ -1227,7 +1155,7 @@ jobs:
   - stanford.data.shell_gradient_volumes=150
   - --set
   - stanford.data.target_channel=9
-- id: restormer_stanford_k20_ablation
+- id: restormer_stanford_k16_ablation
   recipe: k_sweep
   cwd: null
   command:
@@ -1254,13 +1182,47 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.model.in_channel=20
+  - stanford.model.in_channel=16
   - --set
-  - stanford.data.num_input_volumes=20
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=19
+  - stanford.data.target_channel=15
+- id: restormer_stanford_k24_ablation
+  recipe: k_sweep
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - stanford
+  - --no-wandb
+  - --set
+  - stanford.train.seed=91022
+  - --set
+  - stanford.train.reproducible=true
+  - --set
+  - stanford.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - stanford.reconstruct.rescale_to_01=true
+  - --set
+  - stanford.reconstruct.rescale_mode=per_volume
+  - --set
+  - stanford.reconstruct.clip_to_range=true
+  - --set
+  - stanford.reconstruct.compute_dti=false
+  - --set
+  - stanford.data.shell_sampling_mode=rgs
+  - --set
+  - stanford.model.in_channel=24
+  - --set
+  - stanford.data.num_input_volumes=24
+  - --set
+  - stanford.data.shell_gradient_volumes=150
+  - --set
+  - stanford.data.target_channel=23
 - id: restormer_stanford_k30_ablation
   recipe: k_sweep
   cwd: null
@@ -1295,40 +1257,6 @@ jobs:
   - stanford.data.shell_gradient_volumes=150
   - --set
   - stanford.data.target_channel=29
-- id: restormer_stanford_k50_ablation
-  recipe: k_sweep
-  cwd: null
-  command:
-  - python
-  - -m
-  - restormer_hybrid_rgs.run
-  - --dataset
-  - stanford
-  - --no-wandb
-  - --set
-  - stanford.train.seed=91022
-  - --set
-  - stanford.train.reproducible=true
-  - --set
-  - stanford.reconstruct.metrics_roi_threshold=0.02
-  - --set
-  - stanford.reconstruct.rescale_to_01=true
-  - --set
-  - stanford.reconstruct.rescale_mode=per_volume
-  - --set
-  - stanford.reconstruct.clip_to_range=true
-  - --set
-  - stanford.reconstruct.compute_dti=false
-  - --set
-  - stanford.data.shell_sampling_mode=rgs
-  - --set
-  - stanford.model.in_channel=50
-  - --set
-  - stanford.data.num_input_volumes=50
-  - --set
-  - stanford.data.shell_gradient_volumes=150
-  - --set
-  - stanford.data.target_channel=49
 - id: drcnet_dbrain_maskp_01_ablation
   recipe: mask_p_sensitivity
   cwd: null
@@ -1358,11 +1286,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.1
   - --set
@@ -1396,11 +1324,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.2
   - --set
@@ -1434,11 +1362,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.3
   - --set
@@ -1472,11 +1400,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.5
   - --set
@@ -1510,11 +1438,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.7
   - --set
@@ -1546,11 +1474,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.1
   - --set
@@ -1582,11 +1510,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.2
   - --set
@@ -1618,11 +1546,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.3
   - --set
@@ -1654,11 +1582,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.5
   - --set
@@ -1690,11 +1618,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.7
   - --set
@@ -1728,11 +1656,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.1
   - --set
@@ -1766,11 +1694,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.2
   - --set
@@ -1804,11 +1732,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.3
   - --set
@@ -1842,11 +1770,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.5
   - --set
@@ -1880,11 +1808,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.train.mask_p=0.7
   - --set
@@ -1916,11 +1844,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.1
   - --set
@@ -1952,11 +1880,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.2
   - --set
@@ -1988,11 +1916,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.3
   - --set
@@ -2024,11 +1952,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.5
   - --set
@@ -2060,11 +1988,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.train.mask_p=0.7
   - --set
@@ -2098,11 +2026,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2136,11 +2064,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2174,11 +2102,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2212,11 +2140,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2250,11 +2178,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2288,11 +2216,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2324,11 +2252,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2360,11 +2288,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2396,11 +2324,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2432,11 +2360,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2468,11 +2396,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2504,11 +2432,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2542,11 +2470,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2580,11 +2508,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2618,11 +2546,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2656,11 +2584,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2694,11 +2622,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2732,11 +2660,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.n_preds=12
   - --set
@@ -2768,11 +2696,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2804,11 +2732,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2840,11 +2768,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2876,11 +2804,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2912,11 +2840,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2948,11 +2876,11 @@ jobs:
   - --set
   - stanford.data.shell_sampling_mode=rgs
   - --set
-  - stanford.data.num_input_volumes=24
+  - stanford.data.num_input_volumes=16
   - --set
   - stanford.data.shell_gradient_volumes=150
   - --set
-  - stanford.data.target_channel=23
+  - stanford.data.target_channel=15
   - --set
   - stanford.reconstruct.n_preds=10
   - --set
@@ -2976,13 +2904,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=1
   - --set
@@ -3014,13 +2942,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=3
   - --set
@@ -3052,13 +2980,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=5
   - --set
@@ -3090,13 +3018,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -3128,13 +3056,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=15
   - --set
@@ -3166,13 +3094,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=20
   - --set
@@ -3204,13 +3132,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=1
   - --set
@@ -3242,13 +3170,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=3
   - --set
@@ -3280,13 +3208,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=5
   - --set
@@ -3318,13 +3246,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -3356,13 +3284,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=15
   - --set
@@ -3394,13 +3322,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=20
   - --set
@@ -3482,6 +3410,23 @@ jobs:
   - --noise-sigma
   - '0.05'
   - --no-wandb
+- id: mds2s_dbrain_sigma_050_final
+  recipe: mds2s_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - mds2s.run
+  - --dataset
+  - dbrain
+  - --seed
+  - '91021'
+  - --reproducible
+  - 'true'
+  - --noise-sigma
+  - '0.05'
+  - --no-wandb
 - id: drcnet_dbrain_sigma_050_ablation
   recipe: noise_sigma_sensitivity
   cwd: null
@@ -3503,11 +3448,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -3539,11 +3484,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -3623,6 +3568,23 @@ jobs:
   - --noise-sigma
   - '0.10'
   - --no-wandb
+- id: mds2s_dbrain_sigma_100_final
+  recipe: mds2s_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - mds2s.run
+  - --dataset
+  - dbrain
+  - --seed
+  - '91021'
+  - --reproducible
+  - 'true'
+  - --noise-sigma
+  - '0.10'
+  - --no-wandb
 - id: drcnet_dbrain_sigma_100_ablation
   recipe: noise_sigma_sensitivity
   cwd: null
@@ -3644,11 +3606,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -3680,11 +3642,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -3764,6 +3726,23 @@ jobs:
   - --noise-sigma
   - '0.15'
   - --no-wandb
+- id: mds2s_dbrain_sigma_150_final
+  recipe: mds2s_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - mds2s.run
+  - --dataset
+  - dbrain
+  - --seed
+  - '91021'
+  - --reproducible
+  - 'true'
+  - --noise-sigma
+  - '0.15'
+  - --no-wandb
 - id: drcnet_dbrain_sigma_150_ablation
   recipe: noise_sigma_sensitivity
   cwd: null
@@ -3785,11 +3764,11 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -3821,11 +3800,169 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
+  - --set
+  - dbrain.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - dbrain.reconstruct.rescale_to_01=true
+  - --set
+  - dbrain.reconstruct.rescale_mode=per_volume
+  - --set
+  - dbrain.reconstruct.clip_to_range=true
+  - --set
+  - dbrain.reconstruct.compute_dti=true
+- id: export_dbrain_npy_sigma_200_final
+  recipe: export_dbrain_npy_sigma
+  cwd: repo_root
+  append_registry_flags: false
+  command:
+  - python
+  - experiments/paper_export_dbrain_volume_pair.py
+  - --config
+  - src/drcnet_hybrid_rgs/config.yaml
+  - --noise-sigma
+  - '0.20'
+  - --out-dir
+  - /tmp/paper_final_shared_npy_sigma_200
+- id: mppca_dbrain_sigma_200_final
+  recipe: mppca_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - paper_eval.baselines.mppca_run
+  - --noisy
+  - /tmp/paper_final_shared_npy_sigma_200/noisy_dwi_xyzv.npy
+  - --gt
+  - /tmp/paper_final_shared_npy_sigma_200/gt_dwi_xyzv.npy
+  - --out-dir
+  - /tmp/paper_final_out/baselines/mppca/dbrain_sigma_200
+  - --metrics-roi-threshold
+  - '0.02'
+  - --rescale-mode
+  - per_volume
+- id: p2s_dbrain_dipy_sigma_200_final
+  recipe: p2s_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - p2s.run
+  - --dataset
+  - dbrain
+  - --backend
+  - dipy
+  - --seed
+  - '91021'
+  - --reproducible
+  - 'true'
+  - --noise-sigma
+  - '0.20'
+  - --no-wandb
+- id: p2s_dbrain_sklearn_reference_sigma_200_final
+  recipe: p2s_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - p2s.run
+  - --dataset
+  - dbrain
+  - --backend
+  - sklearn_reference
+  - --seed
+  - '91021'
+  - --reproducible
+  - 'true'
+  - --noise-sigma
+  - '0.20'
+  - --no-wandb
+- id: mds2s_dbrain_sigma_200_final
+  recipe: mds2s_noise_sigma
+  cwd: null
+  append_registry_flags: false
+  command:
+  - python
+  - -m
+  - mds2s.run
+  - --dataset
+  - dbrain
+  - --seed
+  - '91021'
+  - --reproducible
+  - 'true'
+  - --noise-sigma
+  - '0.20'
+  - --no-wandb
+- id: drcnet_dbrain_sigma_200_ablation
+  recipe: noise_sigma_sensitivity
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
+  - dbrain.data.noise_sigma=0.20
+  - --set
+  - dbrain.data.shell_sampling_mode=rgs
+  - --set
+  - dbrain.data.num_input_volumes=16
+  - --set
+  - dbrain.data.shell_gradient_volumes=60
+  - --set
+  - dbrain.data.target_channel=15
+  - --set
+  - dbrain.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - dbrain.reconstruct.rescale_to_01=true
+  - --set
+  - dbrain.reconstruct.rescale_mode=per_volume
+  - --set
+  - dbrain.reconstruct.clip_to_range=true
+  - --set
+  - dbrain.reconstruct.compute_dti=true
+- id: restormer_dbrain_sigma_200_ablation
+  recipe: noise_sigma_sensitivity
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
+  - dbrain.data.noise_sigma=0.20
+  - --set
+  - dbrain.data.shell_sampling_mode=rgs
+  - --set
+  - dbrain.data.num_input_volumes=16
+  - --set
+  - dbrain.data.shell_gradient_volumes=60
+  - --set
+  - dbrain.data.target_channel=15
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -3855,13 +3992,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -3893,13 +4030,13 @@ jobs:
   - --set
   - dbrain.data.shell_sampling_mode=rgs
   - --set
-  - dbrain.data.num_input_volumes=24
+  - dbrain.data.num_input_volumes=16
   - --set
   - dbrain.data.shell_gradient_volumes=60
   - --set
-  - dbrain.data.target_channel=23
+  - dbrain.data.target_channel=15
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -3923,7 +4060,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91031
@@ -3932,7 +4069,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
 - id: drcnet_dbrain_ncontext24_seed_91041_infer
@@ -3946,7 +4083,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91041
@@ -3955,7 +4092,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
 - id: restormer_dbrain_ncontext24_seed_91031_infer
@@ -3969,7 +4106,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91031
@@ -3978,7 +4115,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
 - id: restormer_dbrain_ncontext24_seed_91041_infer
@@ -3992,7 +4129,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91041
@@ -4001,7 +4138,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
 - id: drcnet_dbrain_gap_standard_infer
@@ -4015,7 +4152,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91021
@@ -4024,7 +4161,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -4040,7 +4177,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91021
@@ -4049,7 +4186,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -4065,7 +4202,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91021
@@ -4074,7 +4211,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -4090,7 +4227,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.train.seed=91021
@@ -4099,7 +4236,7 @@ jobs:
   - --set
   - dbrain.train.subset_fraction=0.6
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=10
   - --set
@@ -4115,7 +4252,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.reconstruct.n_context_samples=5
@@ -4132,7 +4269,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.reconstruct.n_context_samples=12
@@ -4149,10 +4286,10 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=12
 - id: drcnet_dbrain_inference_time_ctx48_pred20
@@ -4166,7 +4303,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
+  - drcnet_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.reconstruct.n_context_samples=48
@@ -4183,7 +4320,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.reconstruct.n_context_samples=5
@@ -4200,7 +4337,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.reconstruct.n_context_samples=12
@@ -4217,10 +4354,10 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
-  - dbrain.reconstruct.n_context_samples=24
+  - dbrain.reconstruct.n_context_samples=16
   - --set
   - dbrain.reconstruct.n_preds=12
 - id: restormer_dbrain_inference_time_ctx48_pred20
@@ -4234,7 +4371,7 @@ jobs:
   - dbrain
   - --skip-train
   - --checkpoint
-  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K24/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
+  - restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth
   - --no-wandb
   - --set
   - dbrain.reconstruct.n_context_samples=48

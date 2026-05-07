@@ -22,10 +22,10 @@
 
 | Modo         | Descripción                                                                                                                                                                                                                                                                                                                                 | K   |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| `sequential` | Ventanas deslizantes de tamaño K sobre el shell completo G (índices 0..G-1): cada muestra usa el bloque contiguo [t, t+K-1] con t ∈ {0,…,G-K}. Entrenamiento e inferencia tienen como objetivo el volumen en el último índice de la ventana (canal K-1 del stack; `target_channel = K-1`).                                                 | 24  |
-| `rgs`        | En cada muestra se sortean K índices distintos sin reemplazo del shell completo G. El objetivo siempre está en `target_channel = K-1`.                                                                                                                                                                                                       | 24  |
+| `sequential` | Ventanas deslizantes de tamaño K sobre el shell completo G (índices 0..G-1): cada muestra usa el bloque contiguo [t, t+K-1] con t ∈ {0,…,G-K}. Entrenamiento e inferencia tienen como objetivo el volumen en el último índice de la ventana (canal K-1 del stack; `target_channel = K-1`).                                                 | 16  |
+| `rgs`        | En cada muestra se sortean K índices distintos sin reemplazo del shell completo G. El objetivo siempre está en `target_channel = K-1`.                                                                                                                                                                                                       | 16  |
 
-**Valor de K a usar:** K=24. Es el valor configurado en ambas arquitecturas para D-Brain (G=60) y es lo suficientemente grande para que la diferencia entre ventanas contiguas deslizantes sobre los G gradientes y subconjuntos de K índices aleatorios sin reemplazo sea medible. Si los recursos lo permiten, repetir con K=10.
+**Valor de K a usar:** K=16. Es el valor configurado en ambas arquitecturas para D-Brain (G=60) y es lo suficientemente grande para que la diferencia entre ventanas contiguas deslizantes sobre los G gradientes y subconjuntos de K índices aleatorios sin reemplazo sea medible. Si los recursos lo permiten, repetir con K=10.
 
 **Arquitecturas involucradas:** Ambas — DRCNet-hybrid-RGS y Restormer-hybrid-RGS. Correr el experimento con cada una de forma independiente para verificar que el hallazgo es robusto a la arquitectura.
 
@@ -50,8 +50,8 @@
 
 | Dataset  | G (shell completo) | Valores de K          |
 | -------- | ------------------ | --------------------- |
-| D-Brain  | 60                 | 5, 10, 15, 20, 24, 30 |
-| Stanford | 150                | 5, 10, 20, 30, 50     |
+| D-Brain  | 60                 | 5, 10, 16, 24, 30 |
+| Stanford | 150                | 5, 10, 16, 24, 30     |
 
 **Arquitectura de referencia:** DRCNet-hybrid-RGS (más rápido de entrenar que Restormer, apto para barridos). Una vez encontrado el K óptimo, validar con Restormer.
 
@@ -410,13 +410,15 @@ def compute_fa(data_xyzv, gtab):
 
 ### 4.2 D-Brain — variación del nivel de ruido
 
-**Qué hacer:** Entrenar y evaluar el método propuesto (y los baselines) con σ ∈ {0.05, 0.10, 0.15} Rician.
+**Qué hacer:** Entrenar y evaluar el método propuesto (y los baselines) con σ ∈ {0.05, 0.10, 0.15, 0.20} Rician.
 
 **Por qué:** Demuestra que el método es robusto y consistente en distintos regímenes de SNR. Un método que solo funciona bien a σ=0.1 (el valor de entrenamiento) puede no generalizar.
 
 **Protocolo:** Para cada σ, tanto el entrenamiento como la inferencia usan ese nivel de ruido. No se hace transfer entre niveles de ruido (no se entrena a σ=0.1 y se testa a σ=0.15, aunque ese análisis también sería interesante para demostrar robustez).
 
-**Salida esperada:** Curva de PSNR vs σ para el método propuesto y los baselines principales (MP-PCA y P2S). El método propuesto debe mantener ventaja en todos los niveles.
+**Ámbito:** D-Brain only para esta ablación (es el dataset con GT limpio, necesario para PSNR/SSIM y errores de tensor cuantitativos).
+
+**Salida esperada:** Curva de PSNR vs σ para el método propuesto y los baselines principales (MP-PCA, P2S y MDS2S). El método propuesto debe mantener ventaja en todos los niveles.
 
 ---
 
@@ -579,8 +581,8 @@ Negritas en el mejor valor por columna (excluyendo supervisado). Segunda mejor s
 
 | Ablación     | Variante                | PSNR-ROI ↑ | FA-error ↓ |
 | ------------ | ----------------------- | ---------- | ---------- |
-| Sampling     | Sequential K=24         |            |            |
-|              | RGS K=24 (propuesto)    |            |            |
+| Sampling     | Sequential K=16         |            |            |
+|              | RGS K=16 (propuesto)    |            |            |
 | Tamaño K     | K=5                     |            |            |
 |              | K=10                    |            |            |
 |              | K=24                    |            |            |

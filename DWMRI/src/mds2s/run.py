@@ -58,6 +58,7 @@ def main(
     bvecs_path_override: str | None = None,
     device_override: str | None = None,
     num_epochs_override: int | None = None,
+    noise_sigma_override: float | None = None,
 ):
     # Setup logging
     log_file = setup_logging(log_level=logging.INFO)
@@ -75,6 +76,8 @@ def main(
     if dataset == "dbrain":
         logging.info("Using DBrain dataset configuration")
         settings = settings.dbrain
+        if noise_sigma_override is not None:
+            settings.data.noise_sigma = float(noise_sigma_override)
         if nii_path_override is not None:
             settings.data.nii_path = nii_path_override
         if bvecs_path_override is not None:
@@ -91,6 +94,8 @@ def main(
     elif dataset == "stanford":
         logging.info("Using Stanford dataset configuration")
         settings = settings.stanford
+        if noise_sigma_override is not None:
+            settings.data.noise_sigma = float(noise_sigma_override)
         data_loader = StanfordDataLoader(
             bvalue=settings.data.bvalue,
             noise_sigma=settings.data.noise_sigma,
@@ -505,6 +510,7 @@ if __name__ == "__main__":
     parser.add_argument("--reproducible", choices=["true", "false"], default=None)
     parser.add_argument("--device", choices=["cpu", "cuda", "mps"], default=None)
     parser.add_argument("--num-epochs", type=int, default=None)
+    parser.add_argument("--noise-sigma", type=float, default=None)
     args = parser.parse_args()
 
     main(
@@ -518,6 +524,7 @@ if __name__ == "__main__":
         bvecs_path_override=args.bvecs_path,
         device_override=args.device,
         num_epochs_override=args.num_epochs,
+        noise_sigma_override=args.noise_sigma,
         reproducible_override=(
             None if args.reproducible is None else args.reproducible == "true"
         ),
