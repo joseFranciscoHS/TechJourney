@@ -104,7 +104,8 @@ class TrainingDataSet(torch.utils.data.Dataset):
     materialized in RAM.
 
     **sequential**: full shell G is loaded and K-sized sequential sliding windows
-    are formed over gradient indices. The supervised/masked target is always
+    are formed over gradient indices. For each spatial patch sample, one window
+    start is drawn at random. The supervised/masked target is always
     ``target_channel`` (typically K-1, i.e. the last slot in each window).
 
     **rgs** (RGS–Hybrid): Full shell has G gradient volumes. Each sample draws K
@@ -134,7 +135,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
             num_input_volumes: K stacked channels (required for rgs and sequential)
                 must be <= G.
             target_channel: 0-based channel index for mask + loss (typically K-1)
-            sample_rng_seed: Seed for RGS draws and Bernoulli masks (None = unseeded).
+            sample_rng_seed: Seed for RGS/sequential draws and Bernoulli masks (None = unseeded).
         """
         self.shell_sampling_mode = shell_sampling_mode
         self.target_channel = int(target_channel)
@@ -209,7 +210,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
                 raise ValueError(
                     f"sequential mode requires K<=G, got K={self.num_input_volumes}, G={self.n_vols}"
                 )
-            self.total_samples = len(self.valid_coords) * self.n_windows
+            self.total_samples = len(self.valid_coords)
         else:
             self.total_samples = len(self.valid_coords) * self.n_volumes
 
@@ -236,8 +237,9 @@ class TrainingDataSet(torch.utils.data.Dataset):
             ].copy()
             window = torch.from_numpy(window).float()
         elif self.shell_sampling_mode == "sequential":
-            window_idx = index // self.n_windows
-            grad_window_start = index % self.n_windows
+            window_idx = index
+            # TODO: tech debt — evaluate whether random per-sample window starts need stratified coverage across epochs.
+            grad_window_start = int(self._rng.integers(0, self.n_windows))
             x, y, z = self.valid_coords[window_idx]
             grad_idx = slice(
                 grad_window_start, grad_window_start + self.num_input_volumes
