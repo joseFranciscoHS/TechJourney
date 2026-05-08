@@ -10,13 +10,13 @@ Todos los comandos se corren desde la raiz de `DWMRI/`.
 - [ ] Instalar entorno y deps
   - `uv sync --extra dev && source .venv/bin/activate`
 - [ ] Definir directorio de salida (debe coincidir con rutas del manifiesto si usas los defaults)
-  - `export PAPER_OUT="$PWD/tmp/paper_final_out"`
+  - `export PAPER_OUT="$PWD/tmp/paper_final_k16_out"`
 - [ ] Definir registry
   - `export PAPER_REGISTRY=$PAPER_OUT/registry.jsonl`
 - [ ] Directorio compartido export GT/noisy (mismo `--out-dir` que `export_dbrain_npy_final` en el YAML)
   - `export PAPER_SHARED_NPY="$PWD/tmp/paper_final_shared_npy"`
 - [ ] Reanudar solo jobs pendientes del manifiesto completo (salta los ya exitosos en `driver_state.json`)
-  - `python experiments/driver.py --manifest experiments/paper_manifest_final.yaml --exp-id paper_final --output-root "$PAPER_OUT" --registry-path "$PAPER_REGISTRY" --resume --retry-failed --fail-fast`
+  - `python experiments/driver.py --manifest experiments/paper_manifest_final.yaml --exp-id paper_final_k16 --output-root "$PAPER_OUT" --registry-path "$PAPER_REGISTRY" --resume --retry-failed --fail-fast`
 
 ---
 

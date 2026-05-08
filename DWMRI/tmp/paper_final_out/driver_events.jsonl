@@ -69,3 +69,30 @@
 {"event": "job_skipped", "job_id": "mds2s_stanford_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-05T03:39:01.659165+00:00"}
 {"event": "job_started", "job_id": "drcnet_dbrain_seq_k24_ablation", "timestamp_utc": "2026-05-05T03:39:01.662539+00:00"}
 {"event": "job_interrupted", "job_id": "drcnet_dbrain_seq_k24_ablation", "signal": 2, "timestamp_utc": "2026-05-05T16:40:15.203785+00:00"}
+{"event": "manifest_mismatch", "job_id": "drcnet_dbrain_seq_k24_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.927024+00:00"}
+{"event": "manifest_mismatch", "job_id": "restormer_dbrain_seq_k24_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.927733+00:00"}
+{"event": "manifest_mismatch", "job_id": "drcnet_dbrain_2d_rgs_k24_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.927995+00:00"}
+{"event": "manifest_mismatch", "job_id": "restormer_dbrain_2d_rgs_k24_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.928170+00:00"}
+{"event": "manifest_mismatch", "job_id": "drcnet_dbrain_k15_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.928326+00:00"}
+{"event": "manifest_mismatch", "job_id": "drcnet_dbrain_k20_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.928493+00:00"}
+{"event": "manifest_mismatch", "job_id": "drcnet_stanford_k20_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.928652+00:00"}
+{"event": "manifest_mismatch", "job_id": "drcnet_stanford_k50_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.928798+00:00"}
+{"event": "manifest_mismatch", "job_id": "restormer_dbrain_k15_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.928927+00:00"}
+{"event": "manifest_mismatch", "job_id": "restormer_dbrain_k20_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.929063+00:00"}
+{"event": "manifest_mismatch", "job_id": "restormer_stanford_k20_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.929223+00:00"}
+{"event": "manifest_mismatch", "job_id": "restormer_stanford_k50_ablation", "details": "state job not in current manifest", "timestamp_utc": "2026-05-08T02:50:20.929353+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.929588+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.929767+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.929933+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.930099+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.930264+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.930454+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.930624+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.930791+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.930969+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_sklearn_reference_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.931163+00:00"}
+{"event": "job_skipped", "job_id": "p2s_stanford_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.931384+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.931577+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_stanford_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-08T02:50:20.931765+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_seq_k16_ablation", "timestamp_utc": "2026-05-08T02:50:20.937168+00:00"}
+{"event": "job_interrupted", "job_id": "drcnet_dbrain_seq_k16_ablation", "signal": 2, "timestamp_utc": "2026-05-08T02:51:16.953731+00:00"}
