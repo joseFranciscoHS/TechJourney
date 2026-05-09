@@ -1,11 +1,11 @@
 dbrain:
   train:
-    num_epochs: 2000
+    num_epochs: 1000
     device: cuda
     mask_p: 0.3
     dropout_p: 0.3
     learning_rate: 0.0001
-    batch_size: 256
+    batch_size: 128
     use_scheduler: True
     scheduler_step_size: 500
     scheduler_gamma: 0.5
@@ -19,8 +19,8 @@ dbrain:
     compute_dti: true
     metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
   model:
-    in_channel: 16 # is the same as the number of volumes
-    out_channel: 16
+    in_channel: 60 # is the same as the number of volumes
+    out_channel: 60
   data:
     num_b0s: 6
     num_volumes: 16
@@ -34,13 +34,13 @@ dbrain:
     bvecs_path_tinieblas: "/home/paco/d_brain/D_BRAIN_b2500_6_60_HCP_b_matrix.txt"
 stanford:
   train:
-    num_epochs: 2000
+    num_epochs: 1000
     device: cuda
     mask_p: 0.3
     dropout_p: 0.3
     checkpoint_dir: "mds2s/checkpoints/stanford"
     learning_rate: 0.0003
-    batch_size: 256
+    batch_size: 128
     use_scheduler: false
     scheduler_step_size: 500
     scheduler_gamma: 0.5
@@ -53,8 +53,8 @@ stanford:
     compute_dti: false
     metrics_roi_threshold: 0.02  # ROI = original > threshold (tissue). Saves metrics.json + metrics_roi.json
   model:
-    in_channel: 16
-    out_channel: 16
+    in_channel: 150
+    out_channel: 150
   data:
     num_b0s: 10
     num_volumes: 16

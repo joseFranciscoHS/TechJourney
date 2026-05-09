@@ -16,7 +16,7 @@ dbrain:
     b0_threshold: 50        # bvals <= this are b0 (never denoised)
     # ---------- sklearn_reference backend options -----------------------
     sklearn_model: "ols"          # "ols" | "ridge" | "lasso" | "mlp"
-    patch_radius: [0, 0, 0]       # spatial half-width; [0,0,0] = per-voxel
+    patch_radius: [3, 3, 3]       # spatial half-width; [0,0,0] = per-voxel
     patch_stride: 1               # >1 subsamples the patch grid (faster, lower quality)
     use_b0_as_predictors: true    # include b0 vols as fixed predictor channels
   data:
@@ -48,7 +48,7 @@ stanford:
     b0_threshold: 50
     # ---------- sklearn_reference backend options -----------------------
     sklearn_model: "ols"          # "ols" | "ridge" | "lasso" | "mlp"
-    patch_radius: [0, 0, 0]       # [0,0,0] = single-voxel patches (fast, low RAM)
+    patch_radius: [3, 3, 3]       # [0,0,0] = single-voxel patches (fast, low RAM)
     patch_stride: 1               # increase to 2+ to subsample and cut memory usage
     use_b0_as_predictors: true    # include b0 volumes as fixed predictor channels
   data:

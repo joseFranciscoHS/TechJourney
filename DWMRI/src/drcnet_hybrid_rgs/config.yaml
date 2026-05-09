@@ -123,7 +123,7 @@ stanford:
     reproducible: false
     mask_p: 0.3
     learning_rate: 0.00045
-    batch_size: 24
+    batch_size: 128
     use_amp: true
     use_scheduler: false
     checkpoint_dir: "drcnet_hybrid_rgs/checkpoints/stanford"
@@ -139,15 +139,15 @@ stanford:
       enabled: true
       stages:
         - patch_size: 32
-          batch_size: 24
+          batch_size: 128
           epochs: 300
           step: 8
         - patch_size: 24
-          batch_size: 64
+          batch_size: 256
           epochs: 300
           step: 4
         - patch_size: 16
-          batch_size: 128
+          batch_size: 256
           epochs: 300
           step: 2
   model:
@@ -172,7 +172,7 @@ stanford:
     num_b0s: 10
     noise_sigma: 0.01
     bvalue: 1000
-    patch_size: 16
+    patch_size: 32
     step: 8
     take_x: 80
     take_y: 106
