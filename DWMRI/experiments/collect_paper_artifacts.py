@@ -68,9 +68,7 @@ def _metric_rows(output_root: Path) -> list[dict[str, Any]]:
         roi = _read_json(metrics_path.with_name("metrics_roi.json")) or {}
         dti = _read_json(metrics_path.with_name("dti_metrics.json")) or {}
         run_manifest = _read_json(metrics_path.with_name("run_manifest.json")) or {}
-        config = (
-            run_manifest.get("config", {}) if isinstance(run_manifest, dict) else {}
-        )
+        config = run_manifest.get("config", {}) if isinstance(run_manifest, dict) else {}
         rows.append(
             {
                 "metrics_relpath": rel,
@@ -131,9 +129,7 @@ def main() -> None:
         description="Collect standardized paper artifact tables from output-root."
     )
     parser.add_argument("--output-root", required=True)
-    parser.add_argument(
-        "--registry", default=None, help="Registry JSONL path (optional)."
-    )
+    parser.add_argument("--registry", default=None, help="Registry JSONL path (optional).")
     parser.add_argument("--out-dir", required=True)
     args = parser.parse_args()
 
