@@ -18,6 +18,16 @@ def _command_text(job):
     return " ".join(str(x) for x in job.get("command", []))
 
 
+def _argv_flag_value(cmd_list, flag):
+    try:
+        i = cmd_list.index(flag)
+    except ValueError:
+        return None
+    if i + 1 >= len(cmd_list):
+        return None
+    return cmd_list[i + 1]
+
+
 def _mask_tag(mask_p: float) -> str:
     return str(mask_p).replace("0.", "0").replace(".", "")
 
@@ -147,9 +157,28 @@ def validate(protocol_path: Path, manifest_path: Path):
                     errors.append(f"{jid}:missing_token:{token}")
 
     dbrain_seed = protocol["datasets"]["dbrain"]["seed"]
+    dbrain_bvalue = int(protocol["datasets"]["dbrain"]["bvalue"])
     stanford_seed = protocol["datasets"]["stanford"]["seed"]
     roi_thr = protocol["evaluation_policy"]["metrics_roi_threshold"]
     rescale_mode = protocol["evaluation_policy"]["rescale_mode"]
+
+    for jid, job in jobs.items():
+        if not str(jid).startswith("mppca_dbrain"):
+            continue
+        cmd_list = [str(x) for x in job.get("command", [])]
+        if "paper_eval.baselines.mppca_run" not in cmd_list:
+            continue
+        if "--bvecs-path" not in cmd_list:
+            errors.append(f"{jid}:missing_flag:--bvecs-path")
+        elif not _argv_flag_value(cmd_list, "--bvecs-path"):
+            errors.append(f"{jid}:--bvecs-path_requires_value")
+        bv = _argv_flag_value(cmd_list, "--bvalue")
+        if bv is None:
+            errors.append(f"{jid}:missing_flag:--bvalue")
+        elif bv != str(dbrain_bvalue):
+            errors.append(
+                f"{jid}:bvalue_mismatch cmd={bv} protocol_dbrain={dbrain_bvalue}"
+            )
 
     sigma_cfg = sweep_cfg.get("noise_sigma_sensitivity", {})
     sigma_values = [float(v) for v in sigma_cfg.get("dbrain", [])]

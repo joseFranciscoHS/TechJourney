@@ -24,6 +24,10 @@ jobs:
   - ../tmp/paper_final_shared_npy/gt_dwi_xyzv.npy
   - --norm-params
   - ../tmp/paper_final_shared_npy/norm_params.npy
+  - --bvecs-path
+  - /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt
+  - --bvalue
+  - '2500'
   - --out-dir
   - ../tmp/paper_final_k16_out/baselines/mppca/dbrain
   - --metrics-roi-threshold
@@ -3370,6 +3374,10 @@ jobs:
   - ../tmp/paper_final_shared_npy_sigma_050/gt_dwi_xyzv.npy
   - --norm-params
   - ../tmp/paper_final_shared_npy_sigma_050/norm_params.npy
+  - --bvecs-path
+  - /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt
+  - --bvalue
+  - '2500'
   - --out-dir
   - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_050
   - --metrics-roi-threshold
@@ -3530,6 +3538,10 @@ jobs:
   - ../tmp/paper_final_shared_npy_sigma_100/gt_dwi_xyzv.npy
   - --norm-params
   - ../tmp/paper_final_shared_npy_sigma_100/norm_params.npy
+  - --bvecs-path
+  - /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt
+  - --bvalue
+  - '2500'
   - --out-dir
   - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_100
   - --metrics-roi-threshold
@@ -3690,6 +3702,10 @@ jobs:
   - ../tmp/paper_final_shared_npy_sigma_150/gt_dwi_xyzv.npy
   - --norm-params
   - ../tmp/paper_final_shared_npy_sigma_150/norm_params.npy
+  - --bvecs-path
+  - /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt
+  - --bvalue
+  - '2500'
   - --out-dir
   - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_150
   - --metrics-roi-threshold
@@ -3850,6 +3866,10 @@ jobs:
   - ../tmp/paper_final_shared_npy_sigma_200/gt_dwi_xyzv.npy
   - --norm-params
   - ../tmp/paper_final_shared_npy_sigma_200/norm_params.npy
+  - --bvecs-path
+  - /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt
+  - --bvalue
+  - '2500'
   - --out-dir
   - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_200
   - --metrics-roi-threshold

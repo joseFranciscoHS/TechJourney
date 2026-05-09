@@ -30,7 +30,7 @@ Todos los comandos se corren desde la raiz de `DWMRI/`.
 ### 1.2 Baselines clasicos
 
 - [ ] `job_id: mppca_dbrain_final` (re-run required after DTI de-normalization fix)
-  - `python -m paper_eval.baselines.mppca_run --noisy "$PAPER_SHARED_NPY/noisy_dwi_xyzv.npy" --gt "$PAPER_SHARED_NPY/gt_dwi_xyzv.npy" --norm-params "$PAPER_SHARED_NPY/norm_params.npy" --out-dir "$PAPER_OUT/baselines/mppca/dbrain" --metrics-roi-threshold 0.02 --rescale-mode per_volume`
+  - `python -m paper_eval.baselines.mppca_run --noisy "$PAPER_SHARED_NPY/noisy_dwi_xyzv.npy" --gt "$PAPER_SHARED_NPY/gt_dwi_xyzv.npy" --norm-params "$PAPER_SHARED_NPY/norm_params.npy" --bvecs-path /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt --bvalue 2500 --out-dir "$PAPER_OUT/baselines/mppca/dbrain" --metrics-roi-threshold 0.02 --rescale-mode per_volume`
 - [x] `job_id: p2s_dbrain_dipy_final`
   - `python -m p2s.run --dataset dbrain --backend dipy --seed 91021 --reproducible true --no-wandb`
 - [x] `job_id: p2s_dbrain_sklearn_reference_final`
