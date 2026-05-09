@@ -11,3 +11,5 @@
 {"event": "job_started", "job_id": "restormer_dbrain_supervised_upperbound_final", "timestamp_utc": "2026-05-08T12:29:52.722182+00:00"}
 {"event": "job_finished", "job_id": "restormer_dbrain_supervised_upperbound_final", "status": "succeeded", "exit_code": 0, "duration_s": 18653.439359664917, "timestamp_utc": "2026-05-08T17:40:46.164226+00:00"}
 {"event": "job_started", "job_id": "drcnet_stanford_rgs_final", "timestamp_utc": "2026-05-08T17:40:46.165420+00:00"}
+{"event": "job_finished", "job_id": "drcnet_stanford_rgs_final", "status": "succeeded", "exit_code": 0, "duration_s": 39666.32844209671, "timestamp_utc": "2026-05-09T04:41:52.497231+00:00"}
+{"event": "job_started", "job_id": "restormer_stanford_rgs_final", "timestamp_utc": "2026-05-09T04:41:52.499113+00:00"}
