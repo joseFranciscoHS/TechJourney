@@ -10,6 +10,7 @@ from paper_eval.dti_metrics import (
     save_dti_metrics,
     try_compute_dti_errors,
 )
+from utils.data import invert_normalization
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
     compute_roi_mask,
@@ -34,6 +35,7 @@ def run_mppca(
     rescale_to_01: bool = True,
     rescale_mode: str = "per_volume",
     clip_to_range: bool = True,
+    norm_params: np.ndarray | None = None,
 ):
     denoised, sigma = mppca(noisy_xyzv, patch_radius=patch_radius, return_sigma=True)
     denoised = apply_reconstruction_eval_protocol(
@@ -60,9 +62,14 @@ def run_mppca(
         bvals, bvecs = bvals_bvecs_truncated_from_dbrain_matrix(
             bvecs_path, bvalue=bvalue, n_volumes=nv
         )
+        gt_for_dti = gt_xyzv
+        den_for_dti = denoised
+        if norm_params is not None:
+            gt_for_dti = invert_normalization(gt_for_dti, norm_params[:nv])
+            den_for_dti = invert_normalization(den_for_dti, norm_params[:nv])
         dti = try_compute_dti_errors(
-            denoised,
-            gt_xyzv,
+            den_for_dti,
+            gt_for_dti,
             bvals,
             bvecs,
             roi_threshold=metrics_roi_threshold,
@@ -116,6 +123,11 @@ if __name__ == "__main__":
         default=0.02,
         help="ROI for DTI MAE (voxels where GT > threshold on any channel); use negative to disable",
     )
+    parser.add_argument(
+        "--norm-params",
+        default=None,
+        help="Optional .npy with per-volume (min,max) normalization params for DTI de-normalization",
+    )
     parser.add_argument("--no-rescale-to-01", action="store_true")
     parser.add_argument(
         "--rescale-mode", default="per_volume", choices=["per_volume", "match_gt"]
@@ -125,6 +137,7 @@ if __name__ == "__main__":
 
     noisy = np.load(args.noisy)
     gt = np.load(args.gt)
+    norm_params = np.load(args.norm_params) if args.norm_params else None
     roi_thr = None if args.metrics_roi_threshold < 0 else args.metrics_roi_threshold
     run_mppca(
         noisy,
@@ -137,4 +150,5 @@ if __name__ == "__main__":
         rescale_to_01=not bool(args.no_rescale_to_01),
         rescale_mode=str(args.rescale_mode),
         clip_to_range=not bool(args.no_clip_to_range),
+        norm_params=norm_params,
     )

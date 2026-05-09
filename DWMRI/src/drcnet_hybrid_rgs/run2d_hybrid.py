@@ -25,7 +25,7 @@ from drcnet_hybrid_rgs.reconstruction2d import (
 )
 from paper_eval.dti_metrics import compute_dti_errors, save_dti_metrics
 from utils import setup_logging
-from utils.data import DBrainDataLoader
+from utils.data import DBrainDataLoader, invert_normalization
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
     compute_roi_mask,
@@ -302,6 +302,16 @@ def main():
                 den_xyzv = np.concatenate(
                     [gt_xyzv[..., :nb0], recon_xyzv.astype(np.float64)], axis=-1
                 )
+                norm_params = getattr(data_loader, "norm_params_", None)
+                if norm_params is not None:
+                    gt_xyzv = invert_normalization(gt_xyzv, norm_params[:take_volumes])
+                    den_dwis = invert_normalization(
+                        recon_xyzv.astype(np.float64),
+                        norm_params[nb0:take_volumes],
+                    )
+                    den_xyzv = np.concatenate(
+                        [gt_xyzv[..., :nb0], den_dwis.astype(np.float64)], axis=-1
+                    )
                 roi_m = (
                     (gt_xyzv > roi_thr).any(axis=-1) if roi_thr is not None else None
                 )

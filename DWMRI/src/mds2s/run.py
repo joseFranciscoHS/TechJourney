@@ -12,7 +12,7 @@ from mds2s.reconstruction import reconstruct_dwis
 from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from utils import setup_logging
 from utils.checkpoint import load_checkpoint
-from utils.data import DBrainDataLoader, StanfordDataLoader
+from utils.data import DBrainDataLoader, StanfordDataLoader, invert_normalization
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
     compute_roi_mask,
@@ -368,6 +368,18 @@ def main(
                     den_xyzv = np.concatenate(
                         [gt_xyzv_for_dti[..., :nb0], den_dwi_xyzv], axis=-1
                     )
+                    norm_params = getattr(data_loader, "norm_params_", None)
+                    if norm_params is not None:
+                        gt_xyzv_for_dti = invert_normalization(
+                            gt_xyzv_for_dti, norm_params[: int(take_volumes)]
+                        )
+                        den_dwis = invert_normalization(
+                            den_dwi_xyzv, norm_params[nb0 : int(take_volumes)]
+                        )
+                        den_xyzv = np.concatenate(
+                            [gt_xyzv_for_dti[..., :nb0], den_dwis.astype(np.float64)],
+                            axis=-1,
+                        )
                     gtab = data_loader.load_gradient_table()
                     bvals = np.asarray(gtab.bvals)[: int(take_volumes)]
                     bvecs = np.asarray(gtab.bvecs)[: int(take_volumes)]

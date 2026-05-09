@@ -24,6 +24,7 @@ from utils.data import (
     DBrainDataLoader,
     StanfordDataLoader,
     compute_brain_mask,
+    invert_normalization,
 )
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
@@ -840,6 +841,17 @@ def main(
                         [gt_xyzv[..., :nb0], reconstructed_dwis.astype(np.float64)],
                         axis=-1,
                     )
+                    norm_params = getattr(data_loader, "norm_params_", None)
+                    if norm_params is not None:
+                        gt_xyzv = invert_normalization(gt_xyzv, norm_params[:take_volumes])
+                        den_dwis = invert_normalization(
+                            reconstructed_dwis.astype(np.float64),
+                            norm_params[nb0:take_volumes],
+                        )
+                        den_xyzv = np.concatenate(
+                            [gt_xyzv[..., :nb0], den_dwis.astype(np.float64)],
+                            axis=-1,
+                        )
                     roi_thr = getattr(
                         settings.reconstruct, "metrics_roi_threshold", 0.02
                     )

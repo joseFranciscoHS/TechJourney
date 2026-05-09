@@ -33,6 +33,8 @@ evaluation_policy:
   dti:
     dbrain: true
     stanford: false
+    normalization_domain: "fit DTI on de-normalized intensities (invert per-volume [0,1] before TensorModel)"
+    mppca_requires_norm_params: true
 
 datasets:
   dbrain:

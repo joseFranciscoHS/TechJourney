@@ -73,12 +73,18 @@ def main():
     gt_full = original_data[:tx, :ty, :tz, :take_volumes]
     noisy_crop = noisy_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
     gt_dwi = original_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
+    norm_params = getattr(dl, "norm_params_", None)
 
     np.save(os.path.join(args.out_dir, "gt_full_xyzv.npy"), gt_full.astype(np.float32))
     np.save(os.path.join(args.out_dir, "gt_dwi_xyzv.npy"), gt_dwi.astype(np.float32))
     np.save(
         os.path.join(args.out_dir, "noisy_dwi_xyzv.npy"), noisy_crop.astype(np.float32)
     )
+    if norm_params is not None:
+        np.save(
+            os.path.join(args.out_dir, "norm_params.npy"),
+            np.asarray(norm_params[:take_volumes], dtype=np.float64),
+        )
 
     meta = {
         "take_x": int(tx),
@@ -89,6 +95,7 @@ def main():
         "shell_sampling_mode": mode,
         "noise_sigma": float(settings.data.noise_sigma),
         "bvalue": int(settings.data.bvalue),
+        "norm_params_saved": norm_params is not None,
     }
     with open(
         os.path.join(args.out_dir, "export_meta.json"), "w", encoding="utf-8"

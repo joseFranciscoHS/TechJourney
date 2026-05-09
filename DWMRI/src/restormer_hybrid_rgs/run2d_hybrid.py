@@ -25,7 +25,7 @@ from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model2d import Restormer2D
 from utils import setup_logging
-from utils.data import DBrainDataLoader
+from utils.data import DBrainDataLoader, invert_normalization
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
     compute_roi_mask,
@@ -332,6 +332,17 @@ def main():
                         [gt_xyzv[..., :nb0], recon_xyzv.astype(np.float64)],
                         axis=-1,
                     )
+                    norm_params = getattr(data_loader, "norm_params_", None)
+                    if norm_params is not None:
+                        gt_xyzv = invert_normalization(gt_xyzv, norm_params[:take_volumes])
+                        den_dwis = invert_normalization(
+                            recon_xyzv.astype(np.float64),
+                            norm_params[nb0:take_volumes],
+                        )
+                        den_xyzv = np.concatenate(
+                            [gt_xyzv[..., :nb0], den_dwis.astype(np.float64)],
+                            axis=-1,
+                        )
                     dti_metrics = try_compute_dti_errors(
                         den_xyzv,
                         gt_xyzv,

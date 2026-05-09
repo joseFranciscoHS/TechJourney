@@ -28,6 +28,7 @@ class DBrainDataLoader:
         self.noise_type = noise_type
         self.n_coils = n_coils
         self.bvalue = bvalue
+        self.norm_params_ = None
         logging.info(
             f"DBrainDataLoader initialized - nii_path: {nii_path}, bvecs_path: {bvecs_path}, bvalue: {bvalue}, noise_sigma: {noise_sigma}, noise_type: {noise_type}, n_coils: {n_coils}"
         )
@@ -73,7 +74,8 @@ class DBrainDataLoader:
         )
 
         logging.info("Normalizing spatial dimensions...")
-        data_norm_spatial = normalize_spatial_dimensions(data)
+        data_norm_spatial, norm_params = normalize_spatial_dimensions_with_params(data)
+        self.norm_params_ = norm_params
         logging.info(
             f"Normalized data stats - min: {data_norm_spatial.min():.4f}, max: {data_norm_spatial.max():.4f}, mean: {data_norm_spatial.mean():.4f}"
         )
@@ -150,22 +152,46 @@ def add_rician_noise_to_normalized(data, sigma):
 
 
 def normalize_spatial_dimensions(data):
+    normalized_data, _ = normalize_spatial_dimensions_with_params(data)
+    return normalized_data
+
+
+def normalize_spatial_dimensions_with_params(data):
     logging.info(f"Normalizing spatial dimensions for data of shape {data.shape}")
     # Assuming data shape is (x, y, z, c)
     normalized_data = np.zeros_like(data, dtype=np.float32)
+    norm_params = []
 
     for i in range(data.shape[-1]):  # Iterate over each volume
         volume = data[..., i]
-        min_val = np.min(volume)
-        max_val = np.max(volume)
+        min_val = float(np.min(volume))
+        max_val = float(np.max(volume))
 
         # Normalize to [0, 1] range
         normalized_data[..., i] = (volume - min_val) / (max_val - min_val + 1e-6)
+        norm_params.append((min_val, max_val))
 
     logging.info(
         f"Spatial normalization completed - output shape: {normalized_data.shape}"
     )
-    return normalized_data
+    return normalized_data, norm_params
+
+
+def invert_normalization(data_01, norm_params):
+    if data_01.ndim != 4:
+        raise ValueError(
+            f"invert_normalization expects 4D data, got ndim={data_01.ndim}"
+        )
+    if len(norm_params) != data_01.shape[-1]:
+        raise ValueError(
+            "invert_normalization requires one (min,max) pair per volume: "
+            f"got {len(norm_params)} for V={data_01.shape[-1]}"
+        )
+    data_original = np.zeros_like(data_01, dtype=np.float32)
+    for i, (min_val, max_val) in enumerate(norm_params):
+        scale = float(max_val) - float(min_val) + 1e-6
+        data_original[..., i] = data_01[..., i] * scale + float(min_val)
+    return data_original
 
 
 def rescale_reconstruction_to_01(data, mode="per_volume", reference=None, eps=1e-6):

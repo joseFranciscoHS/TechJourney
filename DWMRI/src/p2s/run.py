@@ -31,7 +31,7 @@ from dipy.io.image import load_nifti, save_nifti
 from p2s.sklearn_patch2self import patch2self_sklearn
 from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from utils import setup_logging
-from utils.data import DBrainDataLoader, StanfordDataLoader
+from utils.data import DBrainDataLoader, StanfordDataLoader, invert_normalization
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
     compute_roi_mask,
@@ -510,9 +510,19 @@ def main(
                 bvals_full = np.asarray(gtab.bvals)[:n_vols]
                 bvecs_full = np.asarray(gtab.bvecs)[:n_vols]
                 roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
+                gt_for_dti = original_data.astype(np.float64)
+                den_for_dti = denoised_data.astype(np.float64)
+                norm_params = getattr(data_loader, "norm_params_", None)
+                if norm_params is not None:
+                    gt_for_dti = invert_normalization(gt_for_dti, norm_params[:n_vols]).astype(
+                        np.float64
+                    )
+                    den_for_dti = invert_normalization(
+                        den_for_dti, norm_params[:n_vols]
+                    ).astype(np.float64)
                 dti = try_compute_dti_errors(
-                    denoised_data.astype(np.float64),
-                    original_data.astype(np.float64),
+                    den_for_dti,
+                    gt_for_dti,
                     bvals_full,
                     bvecs_full,
                     roi_threshold=roi_thr,
