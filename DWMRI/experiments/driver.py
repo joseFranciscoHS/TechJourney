@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import signal
 import subprocess
 import time
@@ -85,6 +86,38 @@ def _save_state(output_root, state):
     _atomic_json_dump(_state_path(output_root), state)
 
 
+def _apply_paper_shared_npy_out_dir(cmd, job_id):
+    """Override export --out-dir when env PAPER_SHARED_NPY is set."""
+    raw = os.environ.get("PAPER_SHARED_NPY")
+    if not raw:
+        return cmd
+    if not any(
+        "paper_export_dbrain_volume_pair.py" in str(x) for x in cmd
+    ):
+        return cmd
+    try:
+        idx = cmd.index("--out-dir")
+    except ValueError:
+        return cmd
+    if idx + 1 >= len(cmd):
+        return cmd
+
+    env_dir = os.path.abspath(os.path.expanduser(str(raw)))
+    cmd = list(cmd)
+
+    if job_id == "export_dbrain_npy_final":
+        cmd[idx + 1] = env_dir
+        return cmd
+
+    m = re.match(r"export_dbrain_npy_sigma_(\d+)_final$", job_id)
+    if m:
+        stag = m.group(1)
+        parent = os.path.dirname(env_dir)
+        base = os.path.basename(env_dir.rstrip(os.sep))
+        cmd[idx + 1] = os.path.join(parent, f"{base}_sigma_{stag}")
+    return cmd
+
+
 def _build_command(job, exp_id, output_root, registry_path):
     cmd = list(job["command"])
     if job.get("append_registry_flags", True):
@@ -97,6 +130,7 @@ def _build_command(job, exp_id, output_root, registry_path):
             job.get("recipe", job["id"]),
         ]
         cmd += ["--output-root", output_root, "--registry-path", registry_path]
+    cmd = _apply_paper_shared_npy_out_dir(cmd, job["id"])
     return cmd
 
 

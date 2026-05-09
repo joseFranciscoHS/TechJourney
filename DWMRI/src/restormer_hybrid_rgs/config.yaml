@@ -6,7 +6,7 @@ dbrain:
     reproducible: false
     mask_p: 0.3
     learning_rate: 0.00045
-    batch_size: 128
+    batch_size: 64
     use_amp: true
     use_scheduler: false
     scheduler_type: "step"
@@ -15,7 +15,7 @@ dbrain:
       enabled: true
       stages:
         - patch_size: 32
-          batch_size: 128
+          batch_size: 64
           epochs: 120
           step: 8
         - patch_size: 24
@@ -106,7 +106,7 @@ stanford:
     supervised: false  # true => full MSE vs target volume (no masked J-invariant loss)
     mask_p: 0.3
     learning_rate: 0.00045
-    batch_size: 128
+    batch_size: 64
     use_amp: true
     use_scheduler: false
     checkpoint_dir: "restormer_hybrid_rgs/checkpoints/stanford"
@@ -129,7 +129,7 @@ stanford:
       enabled: true
       stages:
         - patch_size: 32
-          batch_size: 128
+          batch_size: 64
           epochs: 300
           step: 8
         - patch_size: 24

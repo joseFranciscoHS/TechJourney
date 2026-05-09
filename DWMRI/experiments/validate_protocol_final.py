@@ -182,7 +182,7 @@ def validate(protocol_path: Path, manifest_path: Path):
                 cmd = _command_text(jobs[jid])
                 for token in (
                     "paper_eval.baselines.mppca_run",
-                    f"/tmp/paper_final_shared_npy_sigma_{stag}/noisy_dwi_xyzv.npy",
+                    f"../tmp/paper_final_shared_npy_sigma_{stag}/noisy_dwi_xyzv.npy",
                 ):
                     if token not in cmd:
                         errors.append(f"{jid}:missing_token:{token}")

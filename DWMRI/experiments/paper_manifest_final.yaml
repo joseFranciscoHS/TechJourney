@@ -9,7 +9,7 @@ jobs:
   - --config
   - src/drcnet_hybrid_rgs/config.yaml
   - --out-dir
-  - /tmp/paper_final_shared_npy
+  - tmp/paper_final_shared_npy
 - id: mppca_dbrain_final
   recipe: mppca_baseline
   cwd: null
@@ -19,13 +19,13 @@ jobs:
   - -m
   - paper_eval.baselines.mppca_run
   - --noisy
-  - /tmp/paper_final_shared_npy/noisy_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy/noisy_dwi_xyzv.npy
   - --gt
-  - /tmp/paper_final_shared_npy/gt_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy/gt_dwi_xyzv.npy
   - --norm-params
-  - /tmp/paper_final_shared_npy/norm_params.npy
+  - ../tmp/paper_final_shared_npy/norm_params.npy
   - --out-dir
-  - /tmp/paper_final_out/baselines/mppca/dbrain
+  - ../tmp/paper_final_k16_out/baselines/mppca/dbrain
   - --metrics-roi-threshold
   - '0.02'
   - --rescale-mode
@@ -3355,7 +3355,7 @@ jobs:
   - --noise-sigma
   - '0.05'
   - --out-dir
-  - /tmp/paper_final_shared_npy_sigma_050
+  - tmp/paper_final_shared_npy_sigma_050
 - id: mppca_dbrain_sigma_050_final
   recipe: mppca_noise_sigma
   cwd: null
@@ -3365,13 +3365,13 @@ jobs:
   - -m
   - paper_eval.baselines.mppca_run
   - --noisy
-  - /tmp/paper_final_shared_npy_sigma_050/noisy_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_050/noisy_dwi_xyzv.npy
   - --gt
-  - /tmp/paper_final_shared_npy_sigma_050/gt_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_050/gt_dwi_xyzv.npy
   - --norm-params
-  - /tmp/paper_final_shared_npy_sigma_050/norm_params.npy
+  - ../tmp/paper_final_shared_npy_sigma_050/norm_params.npy
   - --out-dir
-  - /tmp/paper_final_out/baselines/mppca/dbrain_sigma_050
+  - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_050
   - --metrics-roi-threshold
   - '0.02'
   - --rescale-mode
@@ -3515,7 +3515,7 @@ jobs:
   - --noise-sigma
   - '0.10'
   - --out-dir
-  - /tmp/paper_final_shared_npy_sigma_100
+  - tmp/paper_final_shared_npy_sigma_100
 - id: mppca_dbrain_sigma_100_final
   recipe: mppca_noise_sigma
   cwd: null
@@ -3525,13 +3525,13 @@ jobs:
   - -m
   - paper_eval.baselines.mppca_run
   - --noisy
-  - /tmp/paper_final_shared_npy_sigma_100/noisy_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_100/noisy_dwi_xyzv.npy
   - --gt
-  - /tmp/paper_final_shared_npy_sigma_100/gt_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_100/gt_dwi_xyzv.npy
   - --norm-params
-  - /tmp/paper_final_shared_npy_sigma_100/norm_params.npy
+  - ../tmp/paper_final_shared_npy_sigma_100/norm_params.npy
   - --out-dir
-  - /tmp/paper_final_out/baselines/mppca/dbrain_sigma_100
+  - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_100
   - --metrics-roi-threshold
   - '0.02'
   - --rescale-mode
@@ -3675,7 +3675,7 @@ jobs:
   - --noise-sigma
   - '0.15'
   - --out-dir
-  - /tmp/paper_final_shared_npy_sigma_150
+  - tmp/paper_final_shared_npy_sigma_150
 - id: mppca_dbrain_sigma_150_final
   recipe: mppca_noise_sigma
   cwd: null
@@ -3685,13 +3685,13 @@ jobs:
   - -m
   - paper_eval.baselines.mppca_run
   - --noisy
-  - /tmp/paper_final_shared_npy_sigma_150/noisy_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_150/noisy_dwi_xyzv.npy
   - --gt
-  - /tmp/paper_final_shared_npy_sigma_150/gt_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_150/gt_dwi_xyzv.npy
   - --norm-params
-  - /tmp/paper_final_shared_npy_sigma_150/norm_params.npy
+  - ../tmp/paper_final_shared_npy_sigma_150/norm_params.npy
   - --out-dir
-  - /tmp/paper_final_out/baselines/mppca/dbrain_sigma_150
+  - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_150
   - --metrics-roi-threshold
   - '0.02'
   - --rescale-mode
@@ -3835,7 +3835,7 @@ jobs:
   - --noise-sigma
   - '0.20'
   - --out-dir
-  - /tmp/paper_final_shared_npy_sigma_200
+  - tmp/paper_final_shared_npy_sigma_200
 - id: mppca_dbrain_sigma_200_final
   recipe: mppca_noise_sigma
   cwd: null
@@ -3845,13 +3845,13 @@ jobs:
   - -m
   - paper_eval.baselines.mppca_run
   - --noisy
-  - /tmp/paper_final_shared_npy_sigma_200/noisy_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_200/noisy_dwi_xyzv.npy
   - --gt
-  - /tmp/paper_final_shared_npy_sigma_200/gt_dwi_xyzv.npy
+  - ../tmp/paper_final_shared_npy_sigma_200/gt_dwi_xyzv.npy
   - --norm-params
-  - /tmp/paper_final_shared_npy_sigma_200/norm_params.npy
+  - ../tmp/paper_final_shared_npy_sigma_200/norm_params.npy
   - --out-dir
-  - /tmp/paper_final_out/baselines/mppca/dbrain_sigma_200
+  - ../tmp/paper_final_k16_out/baselines/mppca/dbrain_sigma_200
   - --metrics-roi-threshold
   - '0.02'
   - --rescale-mode
@@ -4396,9 +4396,9 @@ jobs:
   - -m
   - paper_eval.summarize_registry
   - --registry
-  - /tmp/paper_final_out/registry.jsonl
+  - ../tmp/paper_final_k16_out/registry.jsonl
   - --out
-  - /tmp/paper_final_out/paper_tables/registry_summary.csv
+  - ../tmp/paper_final_k16_out/paper_tables/registry_summary.csv
 - id: collect_paper_artifacts_final
   recipe: artifact_summary
   cwd: null
@@ -4407,8 +4407,8 @@ jobs:
   - python
   - ../experiments/collect_paper_artifacts.py
   - --output-root
-  - /tmp/paper_final_out
+  - ../tmp/paper_final_k16_out
   - --registry
-  - /tmp/paper_final_out/registry.jsonl
+  - ../tmp/paper_final_k16_out/registry.jsonl
   - --out-dir
-  - /tmp/paper_final_out/paper_tables
+  - ../tmp/paper_final_k16_out/paper_tables
