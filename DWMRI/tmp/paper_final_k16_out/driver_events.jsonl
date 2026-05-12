@@ -3,3 +3,34 @@
 {"event": "job_started", "job_id": "mppca_dbrain_final", "timestamp_utc": "2026-05-09T18:40:46.738744+00:00"}
 {"event": "job_finished", "job_id": "mppca_dbrain_final", "status": "succeeded", "exit_code": 0, "duration_s": 1303.3227853775024, "timestamp_utc": "2026-05-09T19:02:30.063009+00:00"}
 {"event": "job_started", "job_id": "drcnet_dbrain_rgs_final", "timestamp_utc": "2026-05-09T19:02:30.064208+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_rgs_final", "status": "succeeded", "exit_code": 0, "duration_s": 6876.083430051804, "timestamp_utc": "2026-05-09T20:57:06.150326+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_rgs_final", "timestamp_utc": "2026-05-09T20:57:06.151539+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_rgs_final", "status": "failed", "exit_code": 1, "duration_s": 3375.573046684265, "timestamp_utc": "2026-05-09T21:53:21.726807+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-10T18:32:05.901833+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-10T18:32:05.902206+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-10T18:32:05.902448+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_rgs_final", "timestamp_utc": "2026-05-10T18:32:05.905285+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_rgs_final", "status": "succeeded", "exit_code": 0, "duration_s": 16120.911851644516, "timestamp_utc": "2026-05-10T23:00:46.819368+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_supervised_upperbound_final", "timestamp_utc": "2026-05-10T23:00:46.821505+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_supervised_upperbound_final", "status": "succeeded", "exit_code": 0, "duration_s": 6999.069885492325, "timestamp_utc": "2026-05-11T00:57:25.893461+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_supervised_upperbound_final", "timestamp_utc": "2026-05-11T00:57:25.894908+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_supervised_upperbound_final", "status": "succeeded", "exit_code": 0, "duration_s": 19424.606623888016, "timestamp_utc": "2026-05-11T06:21:10.503562+00:00"}
+{"event": "job_started", "job_id": "drcnet_stanford_rgs_final", "timestamp_utc": "2026-05-11T06:21:10.505086+00:00"}
+{"event": "job_finished", "job_id": "drcnet_stanford_rgs_final", "status": "succeeded", "exit_code": 0, "duration_s": 39169.676684617996, "timestamp_utc": "2026-05-11T17:14:00.183742+00:00"}
+{"event": "job_started", "job_id": "restormer_stanford_rgs_final", "timestamp_utc": "2026-05-11T17:14:00.185233+00:00"}
+{"event": "job_finished", "job_id": "restormer_stanford_rgs_final", "status": "succeeded", "exit_code": 0, "duration_s": 29546.462038755417, "timestamp_utc": "2026-05-12T01:26:26.649596+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_dipy_final", "timestamp_utc": "2026-05-12T01:26:26.651233+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_dipy_final", "status": "succeeded", "exit_code": 0, "duration_s": 248.84510850906372, "timestamp_utc": "2026-05-12T01:30:35.499362+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_sklearn_reference_final", "timestamp_utc": "2026-05-12T01:30:35.500986+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_sklearn_reference_final", "status": "failed", "exit_code": -9, "duration_s": 71.15735507011414, "timestamp_utc": "2026-05-12T01:31:46.673251+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.677314+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.677576+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.677855+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.678043+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.678246+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.678411+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.678600+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.678788+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-12T03:35:37.678953+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_sklearn_reference_final", "timestamp_utc": "2026-05-12T03:35:37.682801+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_sklearn_reference_final", "status": "failed", "exit_code": -9, "duration_s": 87.39049458503723, "timestamp_utc": "2026-05-12T03:37:05.198246+00:00"}

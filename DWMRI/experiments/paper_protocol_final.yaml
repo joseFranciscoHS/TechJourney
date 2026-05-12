@@ -61,13 +61,13 @@ matrix:
   baselines:
     - "mppca"
     - "patch2self_dipy"
-    - "patch2self_sklearn_reference"
     - "mds2s"
     - "drcnet_supervised_upperbound"
     - "restormer_supervised_upperbound"
   baseline_scope_notes:
     mppca_stanford: "excluded from manifest due to lack of clean GT pair expected by current baseline runner"
     bm4d: "optional baseline, explicitly out of scope for this manifest version"
+    patch2self_sklearn_reference: "excluded from manifest — sklearn_reference backend OOM/SIGKILL on full D-Brain volume (dense patch grid); reported P2S baseline is patch2self_dipy only (see src/plan_para_escribir_el_paper.md §2.3)"
   ablations:
     - "sampling_sequential_vs_rgs"
     - "conv2d_vs_conv3d"
@@ -94,7 +94,7 @@ matrix:
       dbrain: [0.05, 0.10, 0.15, 0.20]
       methods:
         proposed_architectures: ["drcnet", "restormer"]
-        baselines: ["mppca", "p2s_dipy", "p2s_sklearn_reference", "mds2s"]
+        baselines: ["mppca", "p2s_dipy", "mds2s"]
     architectures: ["drcnet", "restormer"]
   parity_2d_vs_3d:
     dataset: "dbrain"

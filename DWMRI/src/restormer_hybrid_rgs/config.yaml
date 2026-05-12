@@ -19,7 +19,7 @@ dbrain:
           epochs: 120
           step: 8
         - patch_size: 24
-          batch_size: 256
+          batch_size: 128
           epochs: 120
           step: 6
         - patch_size: 16
@@ -133,7 +133,7 @@ stanford:
           epochs: 300
           step: 8
         - patch_size: 24
-          batch_size: 256
+          batch_size: 128
           epochs: 300
           step: 6
         - patch_size: 16

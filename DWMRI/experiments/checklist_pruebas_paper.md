@@ -1,6 +1,9 @@
 # Checklist operativo de pruebas para paper (ejecucion 1 a 1)
 
 Este checklist traduce el plan de `src/plan_para_escribir_el_paper.md` a ejecucion practica y enumera **cada** `job_id` de `experiments/paper_manifest_final.yaml`.
+
+El manifiesto **no** incluye todos los baselines que el plan teorico menciona: los omitidos por recursos o alcance quedan documentados en `experiments/paper_protocol_final.yaml` (`baseline_scope_notes`) y en el plan (p. ej. §2.3 sklearn_reference).
+
 Todos los comandos se corren desde la raiz de `DWMRI/`.
 
 ---
@@ -33,7 +36,7 @@ Todos los comandos se corren desde la raiz de `DWMRI/`.
   - `python -m paper_eval.baselines.mppca_run --noisy "$PAPER_SHARED_NPY/noisy_dwi_xyzv.npy" --gt "$PAPER_SHARED_NPY/gt_dwi_xyzv.npy" --norm-params "$PAPER_SHARED_NPY/norm_params.npy" --bvecs-path /teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_HCP_b_matrix.txt --bvalue 2500 --out-dir "$PAPER_OUT/baselines/mppca/dbrain" --metrics-roi-threshold 0.02 --rescale-mode per_volume`
 - [x] `job_id: p2s_dbrain_dipy_final`
   - `python -m p2s.run --dataset dbrain --backend dipy --seed 91021 --reproducible true --no-wandb`
-- [x] `job_id: p2s_dbrain_sklearn_reference_final`
+- [ ] **omitido** — `p2s_dbrain_sklearn_reference_final` (no está en el manifiesto): el backend `sklearn_reference` agota RAM en D-Brain volumen completo (OOM/SIGKILL). Baseline P2S en tablas = DIPY arriba. Comando de referencia manual (solo con RAM suficiente o tras optimizar `p2s/sklearn_patch2self.py`):
   - `python -m p2s.run --dataset dbrain --backend sklearn_reference --seed 91021 --reproducible true --no-wandb`
 - [ ] `job_id: mds2s_dbrain_final`
   - `python -m mds2s.run --dataset dbrain --seed 91021 --reproducible true --no-wandb`
@@ -191,7 +194,7 @@ Los `export_*_sigma_*` del YAML escriben bajo `$PWD/tmp/paper_final_shared_npy_s
 - [ ] `job_id: export_dbrain_npy_sigma_050_final`
 - [ ] `job_id: mppca_dbrain_sigma_050_final`
 - [ ] `job_id: p2s_dbrain_dipy_sigma_050_final`
-- [ ] `job_id: p2s_dbrain_sklearn_reference_sigma_050_final`
+- [ ] **omitido** — `p2s_dbrain_sklearn_reference_sigma_050_final` (misma razón que §1.2; no en manifiesto)
 - [ ] `job_id: mds2s_dbrain_sigma_050_final`
 - [ ] `job_id: drcnet_dbrain_sigma_050_ablation`
 - [ ] `job_id: restormer_dbrain_sigma_050_ablation`
@@ -203,7 +206,7 @@ Los `export_*_sigma_*` del YAML escriben bajo `$PWD/tmp/paper_final_shared_npy_s
 - [ ] `job_id: export_dbrain_npy_sigma_100_final`
 - [ ] `job_id: mppca_dbrain_sigma_100_final`
 - [ ] `job_id: p2s_dbrain_dipy_sigma_100_final`
-- [ ] `job_id: p2s_dbrain_sklearn_reference_sigma_100_final`
+- [ ] **omitido** — `p2s_dbrain_sklearn_reference_sigma_100_final` (misma razón que §1.2; no en manifiesto)
 - [ ] `job_id: mds2s_dbrain_sigma_100_final`
 - [ ] `job_id: drcnet_dbrain_sigma_100_ablation`
 - [ ] `job_id: restormer_dbrain_sigma_100_ablation`
@@ -215,7 +218,7 @@ Los `export_*_sigma_*` del YAML escriben bajo `$PWD/tmp/paper_final_shared_npy_s
 - [ ] `job_id: export_dbrain_npy_sigma_150_final`
 - [ ] `job_id: mppca_dbrain_sigma_150_final`
 - [ ] `job_id: p2s_dbrain_dipy_sigma_150_final`
-- [ ] `job_id: p2s_dbrain_sklearn_reference_sigma_150_final`
+- [ ] **omitido** — `p2s_dbrain_sklearn_reference_sigma_150_final` (misma razón que §1.2; no en manifiesto)
 - [ ] `job_id: mds2s_dbrain_sigma_150_final`
 - [ ] `job_id: drcnet_dbrain_sigma_150_ablation`
 - [ ] `job_id: restormer_dbrain_sigma_150_ablation`
@@ -227,7 +230,7 @@ Los `export_*_sigma_*` del YAML escriben bajo `$PWD/tmp/paper_final_shared_npy_s
 - [ ] `job_id: export_dbrain_npy_sigma_200_final`
 - [ ] `job_id: mppca_dbrain_sigma_200_final`
 - [ ] `job_id: p2s_dbrain_dipy_sigma_200_final`
-- [ ] `job_id: p2s_dbrain_sklearn_reference_sigma_200_final`
+- [ ] **omitido** — `p2s_dbrain_sklearn_reference_sigma_200_final` (misma razón que §1.2; no en manifiesto)
 - [ ] `job_id: mds2s_dbrain_sigma_200_final`
 - [ ] `job_id: drcnet_dbrain_sigma_200_ablation`
 - [ ] `job_id: restormer_dbrain_sigma_200_ablation`

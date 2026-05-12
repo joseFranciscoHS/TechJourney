@@ -53,7 +53,6 @@ def validate(protocol_path: Path, manifest_path: Path):
         "drcnet_stanford_rgs_final",
         "restormer_stanford_rgs_final",
         "p2s_dbrain_dipy_final",
-        "p2s_dbrain_sklearn_reference_final",
         "mds2s_dbrain_final",
         "mds2s_stanford_final",
     ]
@@ -326,7 +325,6 @@ def validate(protocol_path: Path, manifest_path: Path):
 
     p2s_jobs = {
         "p2s_dbrain_dipy_final": "dipy",
-        "p2s_dbrain_sklearn_reference_final": "sklearn_reference",
     }
     for jid, backend in p2s_jobs.items():
         if jid not in jobs:

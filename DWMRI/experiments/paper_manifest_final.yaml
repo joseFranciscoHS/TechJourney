@@ -1,4 +1,5 @@
 jobs:
+# Omitted by design: p2s_*_sklearn_reference_* — D-Brain full volume + dense patch grid exceeds RAM (OOM/SIGKILL); see src/plan_para_escribir_el_paper.md §2.3. Paper P2S baseline = DIPY (p2s_*_dipy_*).
 - id: export_dbrain_npy_final
   recipe: export_dbrain_npy
   cwd: repo_root
@@ -266,23 +267,6 @@ jobs:
   - dbrain
   - --backend
   - dipy
-  - --seed
-  - '91021'
-  - --reproducible
-  - 'true'
-  - --no-wandb
-- id: p2s_dbrain_sklearn_reference_final
-  recipe: p2s_baseline
-  cwd: null
-  append_registry_flags: false
-  command:
-  - python
-  - -m
-  - p2s.run
-  - --dataset
-  - dbrain
-  - --backend
-  - sklearn_reference
   - --seed
   - '91021'
   - --reproducible
@@ -3403,25 +3387,6 @@ jobs:
   - --noise-sigma
   - '0.05'
   - --no-wandb
-- id: p2s_dbrain_sklearn_reference_sigma_050_final
-  recipe: p2s_noise_sigma
-  cwd: null
-  append_registry_flags: false
-  command:
-  - python
-  - -m
-  - p2s.run
-  - --dataset
-  - dbrain
-  - --backend
-  - sklearn_reference
-  - --seed
-  - '91021'
-  - --reproducible
-  - 'true'
-  - --noise-sigma
-  - '0.05'
-  - --no-wandb
 - id: mds2s_dbrain_sigma_050_final
   recipe: mds2s_noise_sigma
   cwd: null
@@ -3560,25 +3525,6 @@ jobs:
   - dbrain
   - --backend
   - dipy
-  - --seed
-  - '91021'
-  - --reproducible
-  - 'true'
-  - --noise-sigma
-  - '0.10'
-  - --no-wandb
-- id: p2s_dbrain_sklearn_reference_sigma_100_final
-  recipe: p2s_noise_sigma
-  cwd: null
-  append_registry_flags: false
-  command:
-  - python
-  - -m
-  - p2s.run
-  - --dataset
-  - dbrain
-  - --backend
-  - sklearn_reference
   - --seed
   - '91021'
   - --reproducible
@@ -3731,25 +3677,6 @@ jobs:
   - --noise-sigma
   - '0.15'
   - --no-wandb
-- id: p2s_dbrain_sklearn_reference_sigma_150_final
-  recipe: p2s_noise_sigma
-  cwd: null
-  append_registry_flags: false
-  command:
-  - python
-  - -m
-  - p2s.run
-  - --dataset
-  - dbrain
-  - --backend
-  - sklearn_reference
-  - --seed
-  - '91021'
-  - --reproducible
-  - 'true'
-  - --noise-sigma
-  - '0.15'
-  - --no-wandb
 - id: mds2s_dbrain_sigma_150_final
   recipe: mds2s_noise_sigma
   cwd: null
@@ -3888,25 +3815,6 @@ jobs:
   - dbrain
   - --backend
   - dipy
-  - --seed
-  - '91021'
-  - --reproducible
-  - 'true'
-  - --noise-sigma
-  - '0.20'
-  - --no-wandb
-- id: p2s_dbrain_sklearn_reference_sigma_200_final
-  recipe: p2s_noise_sigma
-  cwd: null
-  append_registry_flags: false
-  command:
-  - python
-  - -m
-  - p2s.run
-  - --dataset
-  - dbrain
-  - --backend
-  - sklearn_reference
   - --seed
   - '91021'
   - --reproducible

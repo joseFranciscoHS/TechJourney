@@ -228,6 +228,8 @@ El `data_4d` debe estar en unidades originales (no normalizado a [0,1]); aplicar
 
 ### 2.3 Patch2Self — backend sklearn_reference
 
+**Estado (corrida paper / manifiesto `paper_final_k16`):** Este baseline **no se ejecutó** en D-Brain con el volumen completo: la implementación actual (`p2s/sklearn_patch2self.py`, grilla densa de parches) supera la RAM disponible y el proceso termina en OOM/SIGKILL. En tablas y protocolo congelado, el baseline Patch2Self reportado es el de **§2.2 (DIPY / `patch2self_dipy`)**. Lo que sigue describe el experimento de referencia por si en el futuro se optimiza memoria (stride, bloques, subsampling) o se dispone de más RAM.
+
 **Qué es:** Reimplementación del Patch2Self siguiendo el estilo MD-S2S (Kang et al.) con regresores sklearn. Ya implementado en `p2s/sklearn_patch2self.py`.
 
 **Configuración a correr:**

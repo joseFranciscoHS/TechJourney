@@ -5,7 +5,7 @@ protocol_ablations:
 - mask_p_sensitivity
 - n_context_sensitivity
 - progressive_vs_standard
-manifest_job_count: 21
+manifest_job_count: 20
 manifest_ids:
 - export_dbrain_npy_final
 - mppca_dbrain_final
@@ -14,7 +14,6 @@ manifest_ids:
 - drcnet_stanford_rgs_final
 - restormer_stanford_rgs_final
 - p2s_dbrain_dipy_final
-- p2s_dbrain_sklearn_reference_final
 - mds2s_dbrain_final
 - mds2s_stanford_final
 - drcnet_dbrain_seq_k16_ablation
