@@ -5,7 +5,7 @@ dbrain:
     mask_p: 0.3
     dropout_p: 0.3
     learning_rate: 0.0001
-    batch_size: 128
+    batch_size: 8
     use_scheduler: True
     scheduler_step_size: 500
     scheduler_gamma: 0.5
@@ -23,7 +23,7 @@ dbrain:
     out_channel: 60
   data:
     num_b0s: 6
-    num_volumes: 16
+    num_volumes: 60
     noise_sigma: 0.1
     bvalue: 2500
     nii_path: "/teamspace/s3_folders/dwmri-dataset/D_BRAIN_b2500_6_60_14_HCP_nless.nii"
@@ -40,7 +40,7 @@ stanford:
     dropout_p: 0.3
     checkpoint_dir: "mds2s/checkpoints/stanford"
     learning_rate: 0.0003
-    batch_size: 128
+    batch_size: 8
     use_scheduler: false
     scheduler_step_size: 500
     scheduler_gamma: 0.5
@@ -57,6 +57,6 @@ stanford:
     out_channel: 150
   data:
     num_b0s: 10
-    num_volumes: 16
+    num_volumes: 150
     noise_sigma: 0.01
     bvalue: 2500
