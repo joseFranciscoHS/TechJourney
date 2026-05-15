@@ -113,3 +113,4 @@
 {"event": "job_skipped", "job_id": "drcnet_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-15T00:01:23.287191+00:00"}
 {"event": "job_skipped", "job_id": "drcnet_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-15T00:01:23.287317+00:00"}
 {"event": "job_started", "job_id": "restormer_dbrain_seq_k16_ablation", "timestamp_utc": "2026-05-15T00:01:23.290856+00:00"}
+{"event": "job_interrupted", "job_id": "restormer_dbrain_seq_k16_ablation", "signal": 2, "timestamp_utc": "2026-05-15T00:38:33.712154+00:00"}
