@@ -39,6 +39,7 @@ from utils.experiment_runtime import (
     apply_overrides,
     gpu_peak_mem_mb,
     hardware_info,
+    losses_dir_from_train_checkpoint_dir,
     now_utc_iso,
 )
 from utils.metrics import compute_metrics, save_metrics
@@ -180,6 +181,17 @@ def main():
         f"learning_rate_{settings.train.learning_rate}",
     )
     os.makedirs(checkpoint_dir, exist_ok=True)
+    _loss_train_root = losses_dir_from_train_checkpoint_dir(
+        settings.train.checkpoint_dir
+    )
+    loss_dir = os.path.join(
+        _loss_train_root,
+        bvalue_segment,
+        f"2d_{vol_seg}",
+        noise_segment,
+        f"learning_rate_{settings.train.learning_rate}",
+    )
+    os.makedirs(loss_dir, exist_ok=True)
     metrics_dir = os.path.join(
         settings.reconstruct.metrics_dir,
         *_path_mid,
@@ -238,14 +250,7 @@ def main():
                 num_epochs=int(getattr(settings.train, "num_epochs", 5)),
                 device=device,
                 checkpoint_dir=checkpoint_dir,
-                loss_dir=os.path.join(
-                    "restormer_hybrid_rgs/losses",
-                    "dbrain",
-                    bvalue_segment,
-                    f"2d_{vol_seg}",
-                    noise_segment,
-                    f"learning_rate_{settings.train.learning_rate}",
-                ),
+                loss_dir=loss_dir,
                 use_amp=getattr(settings.train, "use_amp", True),
                 supervised_mode=bool(getattr(settings.train, "supervised", False)),
                 cudnn_fast=cudnn_fast,

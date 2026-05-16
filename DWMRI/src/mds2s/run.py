@@ -20,6 +20,7 @@ from utils.eval_protocol import (
     save_run_manifest,
     summarize_roi,
 )
+from utils.experiment_runtime import losses_dir_from_train_checkpoint_dir
 from utils.metrics import (
     compute_metrics,
     fully_compare_volumes,
@@ -236,9 +237,11 @@ def main(
         os.makedirs(checkpoint_dir, exist_ok=True)
 
         # setting loss dir taking into account run/model parameters
+        _loss_train_root = losses_dir_from_train_checkpoint_dir(
+            settings.train.checkpoint_dir
+        )
         loss_dir = os.path.join(
-            "mds2s/losses",
-            dataset,
+            _loss_train_root,
             f"bvalue_{settings.data.bvalue}",
             f"num_volumes_{settings.data.num_volumes}",
             f"noise_sigma_{settings.data.noise_sigma}",

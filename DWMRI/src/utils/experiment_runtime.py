@@ -47,6 +47,18 @@ def apply_output_root(settings, output_root: Optional[str]) -> None:
     settings.reconstruct.images_dir = os.path.join(output_root, images_dir)
 
 
+def losses_dir_from_train_checkpoint_dir(train_checkpoint_dir: str) -> str:
+    """Training-losses root parallel to ``settings.train.checkpoint_dir``.
+
+    Config paths look like ``.../<pkg>/checkpoints/<dataset>``; losses must
+    live under ``.../<pkg>/losses/<dataset>`` with the same ``output_root``
+    prefix as checkpoints.
+    """
+    if "checkpoints" in train_checkpoint_dir:
+        return train_checkpoint_dir.replace("checkpoints", "losses", 1)
+    return train_checkpoint_dir
+
+
 def gpu_peak_mem_mb(device: str) -> float:
     if not (isinstance(device, str) and device.startswith("cuda")):
         return 0.0

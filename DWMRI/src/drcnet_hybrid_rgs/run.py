@@ -39,6 +39,7 @@ from utils.experiment_runtime import (
     apply_overrides,
     gpu_peak_mem_mb,
     hardware_info,
+    losses_dir_from_train_checkpoint_dir,
     now_utc_iso,
 )
 from utils.metrics import (
@@ -270,9 +271,17 @@ def fit_progressive(
         if stage_num == total_stages:
             stage_best = os.path.join(stage_checkpoint_dir, "best_loss_checkpoint.pth")
             final_best = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+            stage_latest = os.path.join(stage_checkpoint_dir, "latest_checkpoint.pth")
             if os.path.exists(stage_best):
                 shutil.copy(stage_best, final_best)
                 logging.info(f"Copied final stage best checkpoint to: {final_best}")
+            elif os.path.exists(stage_latest):
+                logging.warning(
+                    "Final stage has no best_loss_checkpoint.pth; copying latest_checkpoint.pth "
+                    "to best_loss_checkpoint for reconstruction."
+                )
+                shutil.copy(stage_latest, stage_best)
+                shutil.copy(stage_latest, final_best)
 
     logging.info("Progressive learning completed successfully")
 
@@ -447,9 +456,11 @@ def main(
         )
         os.makedirs(checkpoint_dir, exist_ok=True)
         # setting loss dir taking into account run/model parameters (includes bvalue)
+        _loss_train_root = losses_dir_from_train_checkpoint_dir(
+            settings.train.checkpoint_dir
+        )
         loss_dir = os.path.join(
-            "drcnet_hybrid_rgs/losses",
-            dataset,
+            _loss_train_root,
             *_path_mid,
             noise_segment,
             f"learning_rate_{settings.train.learning_rate}",

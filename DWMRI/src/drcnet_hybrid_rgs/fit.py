@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 
 import numpy as np
 import torch
@@ -88,13 +89,13 @@ def fit_model(
     loss_tracker = None
     if loss_dir is not None:
         loss_tracker = TrainingLossTracker(loss_dir)
-        # Sync best loss from checkpoint if available
-        tracker_best_loss, tracker_best_epoch = loss_tracker.get_best_loss()
-        if tracker_best_loss < best_loss:
-            best_loss = tracker_best_loss
-            logging.info(
-                f"Updated best loss from tracker: {best_loss:.6f} at epoch {tracker_best_epoch}"
-            )
+        if start_epoch > 0:
+            tracker_best_loss, tracker_best_epoch = loss_tracker.get_best_loss()
+            if tracker_best_loss < best_loss:
+                best_loss = tracker_best_loss
+                logging.info(
+                    f"Updated best loss from tracker: {best_loss:.6f} at epoch {tracker_best_epoch}"
+                )
 
     for epoch in tqdm(
         range(start_epoch, num_epochs), desc="Training DRCnet-hybrid", total=num_epochs
@@ -232,6 +233,13 @@ def fit_model(
                     "train/best_loss": best_loss,
                 }
             )
+
+    best_loss_ckpt = os.path.join(checkpoint_dir, "best_loss_checkpoint.pth")
+    if not os.path.isfile(best_loss_ckpt) and os.path.isfile(latest_checkpoint):
+        logging.warning(
+            "No best_loss_checkpoint.pth after training; copying latest_checkpoint.pth as fallback."
+        )
+        shutil.copy2(latest_checkpoint, best_loss_ckpt)
 
     logging.info("Training completed successfully.")
     logging.info(f"Final best loss: {best_loss:.6f}")
