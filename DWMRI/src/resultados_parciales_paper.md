@@ -10,13 +10,13 @@ Documento vivo para ir consolidando números antes de redactar el paper. **No** 
 
 | Campo | Valor |
 | --- | --- |
-| **Última actualización de este doc** | 2026-05-14 |
+| **Última actualización de este doc** | 2026-05-16 |
 | **exp_id** | `paper_final_k16` |
 | **Comando típico** | Ver [`experiments/checklist_pruebas_paper.md`](../experiments/checklist_pruebas_paper.md) §0 (`driver.py` + `paper_manifest_final.yaml`) |
 | **Registry** | [`tmp/paper_final_k16_out/registry.jsonl`](../tmp/paper_final_k16_out/registry.jsonl) |
 | **Driver state** | [`tmp/paper_final_k16_out/driver_state.json`](../tmp/paper_final_k16_out/driver_state.json) |
 | **Driver events** | [`tmp/paper_final_k16_out/driver_events.jsonl`](../tmp/paper_final_k16_out/driver_events.jsonl) |
-| **Job en curso (driver_state)** | `restormer_dbrain_seq_k16_ablation` — `running` (intento 2 al momento del snapshot) |
+| **Job en curso (driver_state)** | `restormer_dbrain_progressive_off_ablation` — `running` |
 
 ### Resumen de jobs (`driver_state.json`)
 
@@ -24,10 +24,10 @@ Totales sobre **143** claves en estado (= **138** jobs del manifiesto + **5** en
 
 | status | count |
 | --- | ---: |
-| succeeded | 14 |
+| succeeded | 15 |
 | failed | 1 |
 | running | 1 |
-| pending | 127 |
+| pending | 126 |
 
 El job `failed` corresponde a `p2s_dbrain_sklearn_reference_final` (SIGKILL / OOM); omitido por diseño en el manifiesto actual.
 
@@ -36,7 +36,7 @@ El job `failed` corresponde a `p2s_dbrain_sklearn_reference_final` (SIGKILL / OO
 | Bloque | succeeded | running | pending |
 | --- | ---: | ---: | ---: |
 | Tabla principal + baselines (`*_final` núcleo) | 12 | 0 | 4 |
-| Ablación sampling / progressive (`seq_k16`, `progressive_off`) | 2 | 1 | 1 |
+| Ablación sampling / progressive (`seq_k16`, `progressive_off`) | 3 | 1 | 0 |
 | Ablación K (`*_k*_ablation`) | 0 | 0 | 22 |
 | Ablación 2D vs 3D (`*_2d_rgs_k16_ablation`) | 0 | 0 | 2 |
 | Ablación `mask_p` | 0 | 0 | 20 |
@@ -53,19 +53,9 @@ Los **4** pendientes del núcleo son: `drcnet_dbrain_arch_compare_parity_final`,
 
 Revisar **antes** de copiar cifras al manuscrito.
 
-- **Alerta A — DRCNet-RGS D-Brain por debajo de baselines clásicos**  
-  PSNR_full ≈ **13.33** para `drcnet_dbrain_rgs_final` está ~9 dB por debajo de MP-PCA (~22.59) y ~7 dB por debajo de DRCNet-sequential (~20.78). La cota supervisada DRCNet (~13.32) es casi idéntica al self-sup. Hipótesis: rescaling en reconstrucción RGS, checkpoint del último stage progressive, o `n_context`/`n_preds` insuficientes frente al entrenamiento.
+- **Alertas A–D (cerradas, 2026-05-16)** — Las métricas pobres de DRCNet y Restormer (PSNR ~13, SSIM negativo, discrepancia progressive ON/OFF, DRCNet Stanford ~3 dB) se debían a reconstrucción **sin** cargar el checkpoint entrenado. Tras regenerar con pesos entrenados, las cifras de las tablas siguientes son las válidas para el paper.
 
-- **Alerta B — SSIM negativo en Restormer (D-Brain)**  
-  `ssim ≈ -0.071` (RGS) y `≈ -0.069` (supervisado). Suele indicar `data_range` mal fijado en `skimage.metrics.structural_similarity` o rango de tensores inconsistente frente al GT.
-
-- **Alerta C — Progressive OFF >> progressive ON (DRCNet)**  
-  `drcnet_dbrain_progressive_off_ablation`: PSNR_full ≈ **23.83** vs `drcnet_dbrain_rgs_final` (progressive ON, 360 épocas): **13.33**. Hay que verificar stages finales (patch size, batch) y que la corrida “principal” no esté en un estado degenerado.
-
-- **Alerta D — DRCNet vs Restormer en Stanford (PSNR respecto al input)**  
-  `drcnet_stanford_rgs_final`: PSNR_full ≈ **3.03** vs `restormer_stanford_rgs_final`: **26.99** (mismo `n_context`/`n_preds` en registry). Sin GT, el PSNR mide coherencia con el input ruidoso; la magnitud sugiere revisar si DRCNet altera demasiado la señal o si hay asimetría de pipeline.
-
-- **Alerta E — Rutas de métricas P2S / MD-S2S D-Brain (resuelta para localización)**  
+- **Alerta E — Rutas de métricas P2S / MD-S2S D-Brain (resuelta)**  
   Las métricas **sí** existen; el job corre con `cwd` = `src/`, pero también hay duplicado bajo la raíz del repo (`DWMRI/p2s/...`). Referencia canónica usada aquí:  
   - P2S DIPY D-Brain: `src/p2s/metrics/dbrain/bvalue_2500/noise_sigma_0.1/backend_dipy_model_ols/`  
   - MD-S2S D-Brain (paper `num_volumes=60`): `src/mds2s/metrics/dbrain/bvalue_2500/num_volumes_60/noise_sigma_0.1/learning_rate_0.0001/`
@@ -80,10 +70,10 @@ Revisar **antes** de copiar cifras al manuscrito.
 | MP-PCA | 22.59 | 0.435 | 28.44 | 0.521 | 0.0898 | — | — | [`tmp/paper_final_k16_out/baselines/mppca/dbrain/`](../tmp/paper_final_k16_out/baselines/mppca/dbrain/) |
 | P2S DIPY | 17.65 | 0.381 | 21.31 | 0.465 | 0.239 | — | — | `src/p2s/metrics/dbrain/.../backend_dipy_model_ols/` |
 | MD-S2S (Self2self, 60 vol) | 15.26 | 0.425 | 15.40 | 0.508 | 0.230 | — | — | `src/mds2s/metrics/dbrain/.../num_volumes_60/...` |
-| DRCNet-hybrid-RGS | 13.33⚠ | 0.005⚠ | 14.04⚠ | 0.005⚠ | 0.249⚠ | 116002 | 33.4 | [`registry.jsonl`](../tmp/paper_final_k16_out/registry.jsonl) — Alerta A |
-| Restormer-hybrid-RGS | 10.08⚠ | -0.071⚠ | 12.55⚠ | -0.088⚠ | 0.247⚠ | 177883 | 129.3 | 1ª corrida OOM en T4; éxito en reintento — Alertas A/B |
-| DRCNet supervisado (upper bound) | 13.32⚠ | 0.007⚠ | 14.09⚠ | 0.007⚠ | 0.258⚠ | 116002 | 34.3 | Alerta A |
-| Restormer supervisado (upper bound) | 10.12⚠ | -0.069⚠ | 12.58⚠ | -0.085⚠ | 0.268⚠ | 177883 | 129.0 | Alerta B |
+| DRCNet-hybrid-RGS | 23.93 | 0.440 | 26.88 | 0.525 | 0.259 | 116002 | 34.0 | [`registry.jsonl`](../tmp/paper_final_k16_out/registry.jsonl) — reconstrucción con checkpoint |
+| Restormer-hybrid-RGS | 22.83 | 0.427 | 23.22 | 0.509 | 0.238 | 177883 | 126.2 | reconstrucción con checkpoint |
+| DRCNet supervisado (upper bound) | 21.37 | 0.369 | 22.92 | 0.446 | 0.239 | 116002 | 34.0 | |
+| Restormer supervisado (upper bound) | 21.57 | 0.370 | 22.60 | 0.447 | 0.237 | 177883 | 125.3 | |
 
 ---
 
@@ -95,8 +85,8 @@ PSNR/SSIM aquí son **respecto al volumen de entrada** (coherencia), no calidad 
 | --- | ---: | ---: | ---: | --- |
 | P2S DIPY | 29.88 | 0.706 | 29.33 | `src/p2s/metrics/stanford/bvalue_2000/noise_sigma_0.01/backend_dipy_model_ols/` |
 | MD-S2S | 19.07 | 0.690 | 18.88 | `src/mds2s/metrics/stanford/bvalue_2500/num_volumes_150/noise_sigma_0.01/learning_rate_0.0003/` |
-| DRCNet-hybrid-RGS | 3.03⚠ | -0.067⚠ | 3.82⚠ | Alerta D |
-| Restormer-hybrid-RGS | 26.99 | 0.617 | 26.05 | |
+| DRCNet-hybrid-RGS | 39.80 | 0.969 | 38.07 | reconstrucción con checkpoint |
+| Restormer-hybrid-RGS | 27.02 | 0.618 | 26.08 | |
 
 ---
 
@@ -107,30 +97,27 @@ PSNR/SSIM aquí son **respecto al volumen de entrada** (coherencia), no calidad 
 | Configuración | PSNR_full | SSIM_full | PSNR_ROI | FA_MAE |
 | --- | ---: | ---: | ---: | ---: |
 | DRCNet `sequential` | 20.78 | 0.396 | 23.60 | 0.239 |
-| DRCNet `rgs` (mismo job que fila principal) | 13.33⚠ | 0.005⚠ | 14.04⚠ | 0.249⚠ |
-| Restormer `sequential` | —pend— | —pend— | —pend— | —pend— |
-
-**Estado:** `restormer_dbrain_seq_k16_ablation` estaba **running** al 2026-05-14. Al terminar, añadir una fila leyendo la última entrada `success` de `registry.jsonl` para ese `job_id` y mover esta fila a números firmes.
+| DRCNet `rgs` (mismo job que fila principal) | 23.93 | 0.440 | 26.88 | 0.259 |
+| Restormer `sequential` | 20.49 | 0.385 | 21.64 | 0.246 |
 
 ### §1.7 — Progressive vs estándar (DRCNet)
 
 | Configuración | PSNR_full | SSIM_full | PSNR_ROI | FA_MAE | Train |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Progressive **OFF** (`drcnet_dbrain_progressive_off_ablation`) | 23.83 | 0.434 | 25.83 | 0.261 | 300 épocas, RGS |
-| Progressive **ON** (`drcnet_dbrain_rgs_final`) | 13.33⚠ | 0.005⚠ | 14.04⚠ | 0.249⚠ | 360 épocas, RGS |
+| Progressive **OFF** (`drcnet_dbrain_progressive_off_ablation`) | 23.91 | 0.440 | 26.91 | 0.238 | 300 épocas, RGS |
+| Progressive **ON** (`drcnet_dbrain_rgs_final`) | 23.93 | 0.440 | 26.88 | 0.259 | 360 épocas, RGS |
 | Restormer progressive OFF | —pend— | —pend— | —pend— | —pend— | Job `restormer_dbrain_progressive_off_ablation` |
 
 ---
 
 ## Próximos resultados esperados
 
-1. Completar **`restormer_dbrain_seq_k16_ablation`** → cierra la tabla §1.1 para Restormer.
-2. **`restormer_dbrain_progressive_off_ablation`** → cierra §1.7 para Restormer.
-3. **K-sweep** (20 jobs) → curva PSNR vs K (plan §1.2).
-4. **2D vs 3D** (`drcnet_dbrain_2d_rgs_k16_ablation`, `restormer_dbrain_2d_rgs_k16_ablation`) → plan §1.4.
-5. **mask_p**, **n_context**, **n_preds** → plan §1.5–1.6 y §5.
-6. **Bloque σ** (24 jobs) → plan §4.2.
-7. Jobs de **inferencia / gap / tiempos** y **`summarize_registry_final`** / **`collect_paper_artifacts_final`**.
+1. **`restormer_dbrain_progressive_off_ablation`** → cierra §1.7 para Restormer.
+2. **K-sweep** (20 jobs) → curva PSNR vs K (plan §1.2).
+3. **2D vs 3D** (`drcnet_dbrain_2d_rgs_k16_ablation`, `restormer_dbrain_2d_rgs_k16_ablation`) → plan §1.4.
+4. **mask_p**, **n_context**, **n_preds** → plan §1.5–1.6 y §5.
+5. **Bloque σ** (24 jobs) → plan §4.2.
+6. Jobs de **inferencia / gap / tiempos** y **`summarize_registry_final`** / **`collect_paper_artifacts_final`**.
 
 ---
 
@@ -139,3 +126,4 @@ PSNR/SSIM aquí son **respecto al volumen de entrada** (coherencia), no calidad 
 | Fecha | Cambio |
 | --- | --- |
 | 2026-05-14 | Creación del documento: tablas desde `registry.jsonl`, MP-PCA desde `tmp/.../baselines/`, P2S/MD-S2S D-Brain desde `src/p2s/metrics/...` y `src/mds2s/metrics/...`; alertas A–E; estado del driver; Restormer-seq marcado como en curso. |
+| 2026-05-16 | Métricas DRCNet y Restormer actualizadas tras reconstrucción con checkpoint entrenado; `restormer_dbrain_seq_k16_ablation` completado; alertas A–D cerradas; driver: 15 succeeded, job en curso `restormer_dbrain_progressive_off_ablation`. |
