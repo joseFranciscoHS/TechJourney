@@ -1,0 +1,4 @@
+orientation encoding (P2S, MDS2S, MPPCA)
+Prism - medical image analysis journal Elsevier format
+
+3 cosenos directores y magnitud (b) / b_reconstruccion -> NN (lineal) -> 1024 (32x32) -> ReLU salida se suma a cada capa de la image de entrada

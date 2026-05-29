@@ -20,7 +20,6 @@ Todos los comandos se corren desde la raiz de `DWMRI/`.
   - `export PAPER_SHARED_NPY="$PWD/tmp/paper_final_shared_npy"`
 - [ ] Reanudar solo jobs pendientes del manifiesto completo (salta los ya exitosos en `driver_state.json`)
   - `python experiments/driver.py --manifest experiments/paper_manifest_final.yaml --exp-id paper_final_k16 --output-root "$PAPER_OUT" --registry-path "$PAPER_REGISTRY" --resume --retry-failed --fail-fast`
-- [ ] **Recuperación Restormer / DRCNet (corrida antigua sin `best_loss_checkpoint.pth`):** los pesos suelen estar en `.../checkpoints/.../stage_N_patch*/latest_checkpoint.pth` bajo `$PAPER_OUT`. Para inferencia sin re-entrenar, pasa `--checkpoint` con esa ruta o copia ese archivo a `best_loss_checkpoint.pth` junto al checkpoint por defecto del job. Tras el arreglo de rutas de `losses.json` respecto a `--output-root`, el driver no debería volver a dejar el job sin `best_loss_checkpoint.pth` en condiciones normales.
 
 ---
 

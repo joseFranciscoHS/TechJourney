@@ -1,2 +1,4 @@
 paper_final_shared_npy/*.npy
+paper_final_shared_npy_sigma_*/*.npy
 *.png
+*npy
