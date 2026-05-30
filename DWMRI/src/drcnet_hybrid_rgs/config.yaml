@@ -84,6 +84,9 @@ dbrain:
     dense_convs: 2  # More dense connections for better feature learning
     residual: true
     base_filters: 32  # Doubled for more model capacity
+    use_orientation_encoding: false
+    orientation_embed_dim: 1024
+    orientation_spatial_size: 32
   data:
     patch_size: 32  # Larger patches for better context
     step: 8  # Larger step for more diverse training data
@@ -158,6 +161,9 @@ stanford:
     dense_convs: 2
     residual: true
     base_filters: 32
+    use_orientation_encoding: false
+    orientation_embed_dim: 1024
+    orientation_spatial_size: 32
   data:
     num_volumes: 16
     shell_sampling_mode: rgs

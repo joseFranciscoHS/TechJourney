@@ -648,3 +648,520 @@
 {"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:38:42.858047+00:00"}
 {"event": "job_started", "job_id": "p2s_dbrain_dipy_final", "timestamp_utc": "2026-05-29T01:38:42.870433+00:00"}
 {"event": "job_finished", "job_id": "p2s_dbrain_dipy_final", "status": "failed", "exit_code": 1, "duration_s": 7.848998546600342, "timestamp_utc": "2026-05-29T01:38:50.724739+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:56:46.346628+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_050_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:56:46.346867+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_100_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:56:46.347064+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_150_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:56:46.351235+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_200_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:56:46.351600+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.351892+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.352083+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.352272+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.352443+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.352709+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.352952+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353107+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353234+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353352+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_stanford_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353469+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353583+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353700+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353814+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.353927+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354040+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354153+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354265+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354377+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354506+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354621+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354735+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354847+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.354961+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355077+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355189+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355309+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355422+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355531+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355706+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.355868+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.356025+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.356196+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.356378+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.356531+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.356699+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.356843+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357015+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357149+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357313+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357471+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357601+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357722+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.357892+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358064+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358206+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358385+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358523+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358640+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358754+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358866+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.358976+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359088+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359198+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359310+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359424+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359534+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359671+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359785+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.359895+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360003+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360168+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360299+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360416+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360580+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360715+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.360870+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361012+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361172+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361302+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361428+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361545+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361672+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361790+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.361903+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362017+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362133+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362244+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362355+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362468+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362580+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362692+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362804+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.362916+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363026+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363135+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363245+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363355+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363466+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363574+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363719+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363831+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.363942+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364108+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364264+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364412+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364546+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364679+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364814+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.364942+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.365076+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.365196+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.365316+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:56:46.365435+00:00"}
+{"event": "job_started", "job_id": "p2s_stanford_dipy_final", "timestamp_utc": "2026-05-29T01:56:46.377779+00:00"}
+{"event": "job_interrupted", "job_id": "p2s_stanford_dipy_final", "signal": 2, "timestamp_utc": "2026-05-29T01:57:49.233452+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:57:53.109702+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_050_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:57:53.109930+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_100_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:57:53.110170+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_150_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:57:53.110359+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_200_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T01:57:53.110521+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.110754+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.110911+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111073+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111221+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111349+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111490+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111651+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111804+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.111946+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_stanford_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112078+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112205+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112333+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112457+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112593+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112736+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.112862+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113044+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113203+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113335+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113457+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113572+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113686+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113798+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.113910+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114023+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114134+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114247+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114356+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114468+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114578+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114689+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114800+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.114910+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115019+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115131+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115242+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115352+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115461+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115570+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115711+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115831+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.115947+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116059+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116180+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116291+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116401+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116511+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116623+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116734+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116843+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.116955+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117065+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117188+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117302+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117413+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117524+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117638+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117748+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117859+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.117969+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118079+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118189+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118298+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118408+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118516+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118625+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118743+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118854+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.118963+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119073+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119183+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119293+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119405+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119516+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119652+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119769+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119880+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.119991+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120104+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120216+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120328+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120440+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120552+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120665+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120776+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120886+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.120995+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.121114+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.121296+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.121442+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.121573+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.121704+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.121883+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122020+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122143+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122261+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122374+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122500+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122667+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122803+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.122963+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.123125+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T01:57:53.123244+00:00"}
+{"event": "job_started", "job_id": "p2s_stanford_dipy_final", "timestamp_utc": "2026-05-29T01:57:53.135706+00:00"}
+{"event": "job_interrupted", "job_id": "p2s_stanford_dipy_final", "signal": 2, "timestamp_utc": "2026-05-29T01:58:28.947229+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T02:00:23.325307+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_050_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T02:00:23.325524+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_100_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T02:00:23.325718+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_150_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T02:00:23.325873+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_200_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T02:00:23.326090+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.326355+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.326521+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.326699+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.326860+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327023+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327179+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327321+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327451+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_stanford_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327604+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327769+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.327923+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328063+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328189+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328348+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328482+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328601+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328725+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328846+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.328977+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329095+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329208+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329376+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329513+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329634+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329795+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.329923+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330038+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330151+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330277+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330390+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330502+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330612+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330722+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330834+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.330943+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331064+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331176+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331288+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331398+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331507+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331643+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331761+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331874+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.331985+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332097+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332259+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332392+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332516+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332645+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332766+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.332890+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333003+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333110+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333217+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333331+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333439+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333546+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333653+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333762+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333870+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.333979+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334093+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334201+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334309+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334414+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334518+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334625+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334733+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334843+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.334949+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335056+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335165+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335271+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335376+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335483+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335616+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335733+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335840+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.335947+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336053+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336161+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336268+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336372+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336480+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336585+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336689+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336793+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.336904+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337010+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337116+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337232+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337355+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337463+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337569+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337674+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337779+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337888+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.337994+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.338109+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.338218+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.338323+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T02:00:23.338429+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_dipy_final", "timestamp_utc": "2026-05-29T02:00:23.346815+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_dipy_final", "status": "succeeded", "exit_code": 0, "duration_s": 316.6795103549957, "timestamp_utc": "2026-05-29T02:05:40.032179+00:00"}
+{"event": "job_started", "job_id": "p2s_stanford_dipy_final", "timestamp_utc": "2026-05-29T02:05:40.036604+00:00"}
+{"event": "job_finished", "job_id": "p2s_stanford_dipy_final", "status": "succeeded", "exit_code": 0, "duration_s": 143.38452291488647, "timestamp_utc": "2026-05-29T02:08:03.426133+00:00"}
+{"event": "job_started", "job_id": "mds2s_dbrain_final", "timestamp_utc": "2026-05-29T02:08:03.430584+00:00"}
+{"event": "job_finished", "job_id": "mds2s_dbrain_final", "status": "succeeded", "exit_code": 0, "duration_s": 247.3878149986267, "timestamp_utc": "2026-05-29T02:12:10.829317+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_dipy_sigma_050_final", "timestamp_utc": "2026-05-29T02:12:10.837091+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_dipy_sigma_050_final", "status": "succeeded", "exit_code": 0, "duration_s": 270.3686535358429, "timestamp_utc": "2026-05-29T02:16:41.211572+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_dipy_sigma_100_final", "timestamp_utc": "2026-05-29T02:16:41.216387+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_dipy_sigma_100_final", "status": "succeeded", "exit_code": 0, "duration_s": 267.5107126235962, "timestamp_utc": "2026-05-29T02:21:08.734059+00:00"}
+{"event": "job_started", "job_id": "mppca_dbrain_sigma_150_final", "timestamp_utc": "2026-05-29T02:21:08.740635+00:00"}
+{"event": "job_finished", "job_id": "mppca_dbrain_sigma_150_final", "status": "succeeded", "exit_code": 0, "duration_s": 1441.473014831543, "timestamp_utc": "2026-05-29T02:45:10.219994+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_dipy_sigma_150_final", "timestamp_utc": "2026-05-29T02:45:10.225060+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_dipy_sigma_150_final", "status": "succeeded", "exit_code": 0, "duration_s": 249.73327612876892, "timestamp_utc": "2026-05-29T02:49:19.967282+00:00"}
+{"event": "job_started", "job_id": "mds2s_dbrain_sigma_150_final", "timestamp_utc": "2026-05-29T02:49:19.973760+00:00"}
+{"event": "job_finished", "job_id": "mds2s_dbrain_sigma_150_final", "status": "succeeded", "exit_code": 0, "duration_s": 4171.298360109329, "timestamp_utc": "2026-05-29T03:58:51.279826+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_sigma_150_ablation", "timestamp_utc": "2026-05-29T03:58:51.287288+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_sigma_150_ablation", "status": "succeeded", "exit_code": 0, "duration_s": 6841.884854078293, "timestamp_utc": "2026-05-29T05:52:53.179388+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_sigma_150_ablation", "timestamp_utc": "2026-05-29T05:52:53.184760+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_sigma_150_ablation", "status": "succeeded", "exit_code": 0, "duration_s": 18883.462152957916, "timestamp_utc": "2026-05-29T11:07:36.653137+00:00"}
+{"event": "job_started", "job_id": "export_dbrain_npy_sigma_200_final", "timestamp_utc": "2026-05-29T11:07:36.702220+00:00"}
+{"event": "job_finished", "job_id": "export_dbrain_npy_sigma_200_final", "status": "succeeded", "exit_code": 0, "duration_s": 17.085638284683228, "timestamp_utc": "2026-05-29T11:07:53.793028+00:00"}
+{"event": "job_started", "job_id": "mppca_dbrain_sigma_200_final", "timestamp_utc": "2026-05-29T11:07:53.797871+00:00"}
+{"event": "job_finished", "job_id": "mppca_dbrain_sigma_200_final", "status": "succeeded", "exit_code": 0, "duration_s": 1433.3063151836395, "timestamp_utc": "2026-05-29T11:31:47.109362+00:00"}
+{"event": "job_started", "job_id": "p2s_dbrain_dipy_sigma_200_final", "timestamp_utc": "2026-05-29T11:31:47.113900+00:00"}
+{"event": "job_finished", "job_id": "p2s_dbrain_dipy_sigma_200_final", "status": "succeeded", "exit_code": 0, "duration_s": 247.411199092865, "timestamp_utc": "2026-05-29T11:35:54.530125+00:00"}
+{"event": "job_started", "job_id": "mds2s_dbrain_sigma_200_final", "timestamp_utc": "2026-05-29T11:35:54.534860+00:00"}
+{"event": "job_finished", "job_id": "mds2s_dbrain_sigma_200_final", "status": "succeeded", "exit_code": 0, "duration_s": 3946.0511240959167, "timestamp_utc": "2026-05-29T12:41:40.591168+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_sigma_200_ablation", "timestamp_utc": "2026-05-29T12:41:40.595986+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_sigma_200_ablation", "status": "succeeded", "exit_code": 0, "duration_s": 6851.231388568878, "timestamp_utc": "2026-05-29T14:35:51.832520+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_sigma_200_ablation", "timestamp_utc": "2026-05-29T14:35:51.836634+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T15:40:53.888947+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_050_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T15:40:53.889257+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_100_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T15:40:53.889518+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_150_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T15:40:53.889715+00:00"}
+{"event": "manifest_mismatch", "job_id": "p2s_dbrain_sklearn_reference_sigma_200_final", "details": "state job not in current manifest", "timestamp_utc": "2026-05-29T15:40:53.889899+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.890189+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.890360+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.890534+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.890699+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.890868+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_supervised_upperbound_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.891023+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.891185+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_rgs_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.891362+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.891533+00:00"}
+{"event": "job_skipped", "job_id": "p2s_stanford_dipy_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.891693+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.891857+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_stanford_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892003+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892134+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892239+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_seq_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892401+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_progressive_off_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892537+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892657+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_2d_rgs_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892787+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.892903+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893017+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893130+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893242+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893354+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893463+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893626+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893756+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893862+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.893982+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894089+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894189+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894289+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894385+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894481+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894578+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894674+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k16_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894775+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894874+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_k30_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.894971+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895068+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895167+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895294+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895399+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895498+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895594+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895690+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895786+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895881+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.895976+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896071+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896166+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896268+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896363+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896458+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_01_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896556+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_02_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896657+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_03_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896754+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_05_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896849+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_maskp_07_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.896945+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897039+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897133+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897228+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897324+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897419+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897525+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897625+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897722+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897824+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.897926+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898029+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898126+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898222+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898317+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898413+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898512+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898607+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898701+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898796+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898890+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.898984+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_12_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899085+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_24_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899183+00:00"}
+{"event": "job_skipped", "job_id": "restormer_stanford_ncontext_48_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899307+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899409+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899506+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899602+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899696+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899791+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899884+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_1_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.899977+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_3_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900079+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_5_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900180+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_10_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900275+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_15_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900370+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_npreds_20_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900465+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900559+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900652+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900746+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_050_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900843+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.900938+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_050_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901032+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901126+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901222+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901317+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_100_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901411+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901516+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_100_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901615+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901715+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901813+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.901907+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_150_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902005+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_150_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902100+00:00"}
+{"event": "job_skipped", "job_id": "restormer_dbrain_sigma_150_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902194+00:00"}
+{"event": "job_skipped", "job_id": "export_dbrain_npy_sigma_200_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902288+00:00"}
+{"event": "job_skipped", "job_id": "mppca_dbrain_sigma_200_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902383+00:00"}
+{"event": "job_skipped", "job_id": "p2s_dbrain_dipy_sigma_200_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902477+00:00"}
+{"event": "job_skipped", "job_id": "mds2s_dbrain_sigma_200_final", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902572+00:00"}
+{"event": "job_skipped", "job_id": "drcnet_dbrain_sigma_200_ablation", "reason": "already_succeeded", "timestamp_utc": "2026-05-29T15:40:53.902667+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_sigma_200_ablation", "timestamp_utc": "2026-05-29T15:40:53.911102+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_sigma_200_ablation", "status": "succeeded", "exit_code": 0, "duration_s": 16087.700326442719, "timestamp_utc": "2026-05-29T20:09:01.616538+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_arch_compare_parity_final", "timestamp_utc": "2026-05-29T20:09:01.620639+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_arch_compare_parity_final", "status": "succeeded", "exit_code": 0, "duration_s": 1831.7458503246307, "timestamp_utc": "2026-05-29T20:39:33.372736+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_arch_compare_parity_final", "timestamp_utc": "2026-05-29T20:39:33.376823+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_arch_compare_parity_final", "status": "succeeded", "exit_code": 0, "duration_s": 6680.7145256996155, "timestamp_utc": "2026-05-29T22:30:54.097792+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_ncontext24_seed_91031_infer", "timestamp_utc": "2026-05-29T22:30:54.101890+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_ncontext24_seed_91031_infer", "status": "succeeded", "exit_code": 0, "duration_s": 1816.102366924286, "timestamp_utc": "2026-05-29T23:01:10.211126+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_ncontext24_seed_91041_infer", "timestamp_utc": "2026-05-29T23:01:10.215400+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_ncontext24_seed_91041_infer", "status": "succeeded", "exit_code": 0, "duration_s": 1811.1423637866974, "timestamp_utc": "2026-05-29T23:31:21.362128+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_ncontext24_seed_91031_infer", "timestamp_utc": "2026-05-29T23:31:21.366258+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_ncontext24_seed_91031_infer", "status": "succeeded", "exit_code": 0, "duration_s": 6643.332521677017, "timestamp_utc": "2026-05-30T01:22:04.703622+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_ncontext24_seed_91041_infer", "timestamp_utc": "2026-05-30T01:22:04.707855+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_ncontext24_seed_91041_infer", "status": "succeeded", "exit_code": 0, "duration_s": 6583.6618485450745, "timestamp_utc": "2026-05-30T03:11:48.374160+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_gap_standard_infer", "timestamp_utc": "2026-05-30T03:11:48.378162+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_gap_standard_infer", "status": "succeeded", "exit_code": 0, "duration_s": 1789.8213708400726, "timestamp_utc": "2026-05-30T03:41:38.204074+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_gap_masked_proxy_infer", "timestamp_utc": "2026-05-30T03:41:38.208191+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_gap_masked_proxy_infer", "status": "succeeded", "exit_code": 0, "duration_s": 1790.247060060501, "timestamp_utc": "2026-05-30T04:11:28.462446+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_gap_standard_infer", "timestamp_utc": "2026-05-30T04:11:28.468967+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_gap_standard_infer", "status": "succeeded", "exit_code": 0, "duration_s": 6597.739392995834, "timestamp_utc": "2026-05-30T06:01:26.213084+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_gap_masked_proxy_infer", "timestamp_utc": "2026-05-30T06:01:26.217345+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_gap_masked_proxy_infer", "status": "succeeded", "exit_code": 0, "duration_s": 6602.199454545975, "timestamp_utc": "2026-05-30T07:51:28.423263+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_inference_time_ctx5_pred5", "timestamp_utc": "2026-05-30T07:51:28.430259+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_inference_time_ctx5_pred5", "status": "succeeded", "exit_code": 0, "duration_s": 423.39938259124756, "timestamp_utc": "2026-05-30T07:58:31.834620+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_inference_time_ctx12_pred10", "timestamp_utc": "2026-05-30T07:58:31.838924+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_inference_time_ctx12_pred10", "status": "succeeded", "exit_code": 0, "duration_s": 1255.842074394226, "timestamp_utc": "2026-05-30T08:19:27.685657+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_inference_time_ctx24_pred12", "timestamp_utc": "2026-05-30T08:19:27.689995+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_inference_time_ctx24_pred12", "status": "succeeded", "exit_code": 0, "duration_s": 1879.4526982307434, "timestamp_utc": "2026-05-30T08:50:47.147320+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_inference_time_ctx48_pred20", "timestamp_utc": "2026-05-30T08:50:47.151650+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_inference_time_ctx48_pred20", "status": "succeeded", "exit_code": 0, "duration_s": 8587.215418338776, "timestamp_utc": "2026-05-30T11:13:54.372119+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_inference_time_ctx5_pred5", "timestamp_utc": "2026-05-30T11:13:54.376352+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_inference_time_ctx5_pred5", "status": "succeeded", "exit_code": 0, "duration_s": 1192.4656219482422, "timestamp_utc": "2026-05-30T11:33:46.846566+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_inference_time_ctx12_pred10", "timestamp_utc": "2026-05-30T11:33:46.851190+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_inference_time_ctx12_pred10", "status": "succeeded", "exit_code": 0, "duration_s": 4753.12441110611, "timestamp_utc": "2026-05-30T12:52:59.980251+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_inference_time_ctx24_pred12", "timestamp_utc": "2026-05-30T12:52:59.984654+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_inference_time_ctx24_pred12", "status": "succeeded", "exit_code": 0, "duration_s": 7414.3112535476685, "timestamp_utc": "2026-05-30T14:56:34.300927+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_inference_time_ctx48_pred20", "timestamp_utc": "2026-05-30T14:56:34.306221+00:00"}

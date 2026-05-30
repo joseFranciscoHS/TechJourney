@@ -5,6 +5,24 @@ import torch
 from tqdm import tqdm
 
 
+def _orientation_info_from_order(order, bvecs, bvals, device, batch_size):
+    if bvecs is None or bvals is None:
+        return None
+    order = np.asarray(order, dtype=np.int64)
+    bvals_max = float(np.max(bvals))
+    if bvals_max <= 0:
+        bvals_max = 1.0
+    orientation_np = np.column_stack([bvecs[order], bvals[order] / bvals_max]).astype(
+        np.float32
+    )
+    return (
+        torch.from_numpy(orientation_np)
+        .to(device=device)
+        .unsqueeze(0)
+        .expand(batch_size, -1, -1)
+    )
+
+
 def reconstruct_dwis_rgs(
     model,
     data,
@@ -16,6 +34,8 @@ def reconstruct_dwis_rgs(
     num_input=10,
     seed=None,
     pred_chunk_size=None,
+    bvecs=None,
+    bvals=None,
 ):
     """
     RGS–Hybrid inference: for each gradient index ``k``, Monte-Carlo average over
@@ -103,7 +123,10 @@ def reconstruct_dwis_rgs(
                     # receive a different spatial mask on target_channel.
                     inp_b = stack.unsqueeze(0).expand(chunk, -1, -1, -1, -1).clone()
                     inp_b[:, target_channel] = inp_b[:, target_channel] * masks
-                    out = model(inp_b).squeeze(1)  # (chunk, X, Y, Z)
+                    orientation_info = _orientation_info_from_order(
+                        order, bvecs, bvals, device, chunk
+                    )
+                    out = model(inp_b, orientation_info=orientation_info).squeeze(1)
                     acc = acc + out.sum(dim=0)
                     done += chunk
             sum_preds[vol_k] = (acc / denom).detach().cpu().numpy()
@@ -125,6 +148,8 @@ def reconstruct_dwis_sequential_sliding_k(
     target_channel=9,
     seed=None,
     pred_chunk_size=None,
+    bvecs=None,
+    bvals=None,
 ):
     """
     Sequential-K inference over full shell G using sliding windows.
@@ -183,7 +208,10 @@ def reconstruct_dwis_sequential_sliding_k(
                 # NOTE: clone() is required because each batch item gets a different mask.
                 inp_b = stack.unsqueeze(0).expand(chunk, -1, -1, -1, -1).clone()
                 inp_b[:, target_channel] = inp_b[:, target_channel] * masks
-                out = model(inp_b).squeeze(1)  # (chunk, X, Y, Z)
+                orientation_info = _orientation_info_from_order(
+                    order, bvecs, bvals, device, chunk
+                )
+                out = model(inp_b, orientation_info=orientation_info).squeeze(1)
                 sum_preds[global_target] += out.sum(dim=0).detach().cpu().numpy()
                 pred_counts[global_target] += float(chunk)
                 done += chunk

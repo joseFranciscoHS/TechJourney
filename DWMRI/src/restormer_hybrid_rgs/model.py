@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
+from utils.orientation_encoder import OrientationEncoder
 
 ##########################################################################
 # 3D Reshape Utilities
@@ -319,15 +320,28 @@ class Restormer3D(nn.Module):
         LayerNorm_type="WithBias",
         output_activation="prelu",
         scale_and_shift: bool = True,
+        use_orientation_encoding: bool = False,
+        orientation_embed_dim: int = 1024,
+        orientation_spatial_size: int = 32,
     ):
         super(Restormer3D, self).__init__()
 
         logging.info(
             f"Initializing Restormer3D (3-level): inp_channels={inp_channels}, out_channels={out_channels}, "
             f"dim={dim}, num_blocks={num_blocks}, heads={heads}, "
-            f"ffn_expansion_factor={ffn_expansion_factor}, output_activation={output_activation}, scale_and_shift={scale_and_shift}"
+            f"ffn_expansion_factor={ffn_expansion_factor}, output_activation={output_activation}, "
+            f"scale_and_shift={scale_and_shift}, use_orientation_encoding={use_orientation_encoding}"
         )
         self.scale_and_shift = scale_and_shift
+        self.use_orientation_encoding = use_orientation_encoding
+        self.orientation_encoder = (
+            OrientationEncoder(
+                embed_dim=orientation_embed_dim,
+                spatial_size=orientation_spatial_size,
+            )
+            if use_orientation_encoding
+            else None
+        )
 
         self.patch_embed = OverlapPatchEmbed3D(inp_channels, dim)
 
@@ -458,16 +472,26 @@ class Restormer3D(nn.Module):
         logging.info(f"Total parameters: {total_params:,}")
         logging.info(f"Trainable parameters: {trainable_params:,}")
 
-    def forward(self, inp_img):
+    def forward(self, inp_img, orientation_info=None):
         """
         Forward pass.
 
         Args:
             inp_img: Input tensor of shape (B, num_vols, D, H, W)
+            orientation_info: Optional tensor of shape (B, num_vols, 4) with
+                [cos_x, cos_y, cos_z, b_norm] per input channel.
 
         Returns:
             Output tensor of shape (B, out_channels, D, H, W)
         """
+        if self.use_orientation_encoding and orientation_info is not None:
+            orientation_info = orientation_info.to(
+                device=inp_img.device, dtype=inp_img.dtype
+            )
+            inp_img = inp_img + self.orientation_encoder(
+                orientation_info, target_shape=inp_img.shape[2:]
+            )
+
         # Patch embedding
         inp_enc_level1 = self.patch_embed(inp_img)
 

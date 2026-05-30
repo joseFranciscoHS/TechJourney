@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 import torch
 import torch.nn as nn
+from utils.orientation_encoder import OrientationEncoder
 
 
 class FactorizedBlock(nn.Module):
@@ -331,17 +332,29 @@ class DenoiserNet(nn.Module):
         output_shape=(1, 128, 128, 128),
         device="cpu",
         output_activation="prelu",
+        use_orientation_encoding: bool = False,
+        orientation_embed_dim: int = 1024,
+        orientation_spatial_size: int = 32,
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
             f"Initializing DenoiserNet: input_channels={input_channels}, output_channels={output_channels}, "
             f"groups={groups}, dense_convs={dense_convs}, residual={residual}, base_filters={base_filters}, "
-            f"output_activation={output_activation}"
+            f"output_activation={output_activation}, use_orientation_encoding={use_orientation_encoding}"
         )
         groups = groups
 
         dense_convs = dense_convs
         self.residual = residual
+        self.use_orientation_encoding = use_orientation_encoding
+        self.orientation_encoder = (
+            OrientationEncoder(
+                embed_dim=orientation_embed_dim,
+                spatial_size=orientation_spatial_size,
+            )
+            if use_orientation_encoding
+            else None
+        )
         filters_0 = base_filters
         filters_1 = filters_0
 
@@ -434,8 +447,16 @@ class DenoiserNet(nn.Module):
         )
         self.device = device
 
-    def forward(self, inputs):
+    def forward(self, inputs, orientation_info=None):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
+        if self.use_orientation_encoding and orientation_info is not None:
+            orientation_info = orientation_info.to(
+                device=inputs.device, dtype=inputs.dtype
+            )
+            inputs = inputs + self.orientation_encoder(
+                orientation_info, target_shape=inputs.shape[2:]
+            )
+
         up_0 = self.input_block(inputs)
         logging.debug(f"up_0 shape={up_0.shape}")
         x = self.down_block(up_0)

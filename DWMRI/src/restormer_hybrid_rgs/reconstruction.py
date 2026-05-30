@@ -5,6 +5,26 @@ import torch
 from tqdm import tqdm
 
 
+def _orientation_info_from_order(order, bvecs, bvals, device, batch_size):
+    if bvecs is None or bvals is None:
+        return None
+    if torch.is_tensor(order):
+        order = order.detach().cpu().numpy()
+    order = np.asarray(order, dtype=np.int64)
+    bvals_max = float(np.max(bvals))
+    if bvals_max <= 0:
+        bvals_max = 1.0
+    orientation_np = np.column_stack([bvecs[order], bvals[order] / bvals_max]).astype(
+        np.float32
+    )
+    return (
+        torch.from_numpy(orientation_np)
+        .to(device=device)
+        .unsqueeze(0)
+        .expand(batch_size, -1, -1)
+    )
+
+
 def _cuda_device(device) -> bool:
     if isinstance(device, torch.device):
         return device.type == "cuda"
@@ -21,6 +41,8 @@ def reconstruct_dwis(
     overlap=8,
     use_amp=True,
     pred_chunk_size=None,
+    bvecs=None,
+    bvals=None,
 ):
     """
     Reconstruct full-size DWI data using sliding window approach.
@@ -66,6 +88,7 @@ def reconstruct_dwis(
         torch.cuda.empty_cache()
 
     num_vols, x_size, y_size, z_size = data.shape
+    full_order = np.arange(num_vols, dtype=np.int64)
     stride = patch_size - overlap
 
     pad_x = (stride - (x_size - patch_size) % stride) % stride
@@ -134,14 +157,21 @@ def reconstruct_dwis(
                                 patch_b = patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
                                 patch_b[:, vol_idx] = patch[vol_idx].unsqueeze(0) * masks
                                 patch_b = patch_b.to(device)
+                                orientation_info = _orientation_info_from_order(
+                                    full_order, bvecs, bvals, device, bsz
+                                )
 
                                 if amp_ok:
                                     with torch.amp.autocast(
                                         device_type="cuda", dtype=torch.float16
                                     ):
-                                        pred = model(patch_b)
+                                        pred = model(
+                                            patch_b, orientation_info=orientation_info
+                                        )
                                 else:
-                                    pred = model(patch_b)
+                                    pred = model(
+                                        patch_b, orientation_info=orientation_info
+                                    )
 
                                 part = pred.float().sum(dim=0)
                                 pred_sum_t = part if pred_sum_t is None else pred_sum_t + part
@@ -187,6 +217,8 @@ def reconstruct_dwis_rgs(
     use_amp=True,
     seed=None,
     pred_chunk_size=None,
+    bvecs=None,
+    bvals=None,
 ):
     """
     RGS–Hybrid inference with patch-based sliding windows (Restormer memory budget).
@@ -352,14 +384,22 @@ def reconstruct_dwis_rgs(
                                     patch_b[:, target_channel] = (
                                         patch[target_channel].unsqueeze(0) * masks
                                     )
+                                    orientation_info = _orientation_info_from_order(
+                                        order_t, bvecs, bvals, device, bsz
+                                    )
 
                                     if amp_ok:
                                         with torch.amp.autocast(
                                             device_type="cuda", dtype=torch.float16
                                         ):
-                                            pred = model(patch_b)
+                                            pred = model(
+                                                patch_b,
+                                                orientation_info=orientation_info,
+                                            )
                                     else:
-                                        pred = model(patch_b)
+                                        pred = model(
+                                            patch_b, orientation_info=orientation_info
+                                        )
 
                                     patch_acc_t[vol_k] += pred.float().sum(dim=0).squeeze(0)
 
@@ -391,6 +431,8 @@ def reconstruct_dwis_sequential_sliding_k(
     overlap=8,
     use_amp=True,
     pred_chunk_size=None,
+    bvecs=None,
+    bvals=None,
 ):
     """
     Sequential-K inference over full shell G using contiguous sliding windows.
@@ -428,6 +470,8 @@ def reconstruct_dwis_sequential_sliding_k(
             overlap=overlap,
             use_amp=use_amp,
             pred_chunk_size=pred_chunk_size,
+            bvecs=bvecs[order_t.detach().cpu().numpy()] if bvecs is not None else None,
+            bvals=bvals[order_t.detach().cpu().numpy()] if bvals is not None else None,
         )
         global_target = int(order_t[target_channel].item())
         sums_t[global_target] += torch.from_numpy(rec_win[target_channel]).to(

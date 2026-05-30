@@ -131,6 +131,8 @@ def fit_progressive(
     min_signal_threshold,
     dl_generator,
     cudnn_fast: bool,
+    bvecs=None,
+    bvals=None,
 ):
     """
     Train model progressively with increasing patch sizes.
@@ -180,6 +182,8 @@ def fit_progressive(
             brain_mask=brain_mask,
             patch_filter_method=patch_filter_method,
             min_signal_threshold=min_signal_threshold,
+            bvecs=bvecs,
+            bvals=bvals,
             **_training_sample_kwargs(settings),
         )
 
@@ -436,6 +440,26 @@ def main(
             f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
         )
 
+        use_orientation_encoding = bool(
+            getattr(settings.model, "use_orientation_encoding", False)
+        )
+        orientation_bvecs = None
+        orientation_bvals = None
+        if use_orientation_encoding:
+            logging.info("Loading gradient table for orientation encoding")
+            gtab = data_loader.load_gradient_table()
+            orientation_bvecs = np.asarray(gtab.bvecs)[
+                settings.data.num_b0s : take_volumes
+            ]
+            orientation_bvals = np.asarray(gtab.bvals)[
+                settings.data.num_b0s : take_volumes
+            ]
+            if orientation_bvecs.shape[0] != noisy_data.shape[-1]:
+                raise ValueError(
+                    "Orientation metadata length does not match DWI volume count: "
+                    f"{orientation_bvecs.shape[0]} vs {noisy_data.shape[-1]}"
+                )
+
         patch_filter_method = getattr(settings.data, "patch_filter_method", "none")
         min_signal_threshold = getattr(settings.data, "min_signal_threshold", 0.0)
         otsu_median_radius = getattr(settings.data, "otsu_median_radius", 2)
@@ -468,6 +492,11 @@ def main(
             LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
             output_activation=getattr(settings.model, "output_activation", "prelu"),
             scale_and_shift=getattr(settings.model, "scale_and_shift", True),
+            use_orientation_encoding=use_orientation_encoding,
+            orientation_embed_dim=getattr(settings.model, "orientation_embed_dim", 1024),
+            orientation_spatial_size=getattr(
+                settings.model, "orientation_spatial_size", 32
+            ),
         )
         logging.info(
             f"Model initialized - in_channel: {settings.model.in_channel}, out_channel: {settings.model.out_channel}"
@@ -589,6 +618,8 @@ def main(
                     min_signal_threshold=min_signal_threshold,
                     dl_generator=dl_generator,
                     cudnn_fast=cudnn_fast,
+                    bvecs=orientation_bvecs,
+                    bvals=orientation_bvals,
                 )
             else:
                 logging.info("Using standard training (progressive learning disabled)")
@@ -607,6 +638,8 @@ def main(
                     brain_mask=brain_mask,
                     patch_filter_method=patch_filter_method,
                     min_signal_threshold=min_signal_threshold,
+                    bvecs=orientation_bvecs,
+                    bvals=orientation_bvals,
                     **_training_sample_kwargs(settings),
                 )
                 train_set, _n_tot, _n_used = (
@@ -668,6 +701,11 @@ def main(
                 LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
                 scale_and_shift=getattr(settings.model, "scale_and_shift", True),
+                use_orientation_encoding=use_orientation_encoding,
+                orientation_embed_dim=getattr(settings.model, "orientation_embed_dim", 1024),
+                orientation_spatial_size=getattr(
+                    settings.model, "orientation_spatial_size", 32
+                ),
             )
             reconstruct_model, _, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,
@@ -708,6 +746,8 @@ def main(
                     overlap=overlap,
                     use_amp=rec_use_amp,
                     pred_chunk_size=pred_chunk,
+                    bvecs=orientation_bvecs,
+                    bvals=orientation_bvals,
                 )
             elif _is_sequential(settings):
                 reconstructed_dwis = reconstruct_dwis_sequential_sliding_k(
@@ -728,6 +768,8 @@ def main(
                     overlap=overlap,
                     use_amp=rec_use_amp,
                     pred_chunk_size=pred_chunk,
+                    bvecs=orientation_bvecs,
+                    bvals=orientation_bvals,
                 )
             else:
                 raise ValueError(

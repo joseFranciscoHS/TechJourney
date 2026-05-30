@@ -110,7 +110,73 @@ Optimization uses Adam with optional learning-rate schedules (`config.yaml`: e.g
 
 **Training subset (implementation detail):** Progressive training in `drcnet_hybrid_rgs/run.py` uses a random subset of patch indices per stage (`subset_fraction = 0.6`). `restormer_hybrid_rgs/run.py` uses the full patch set in progressive mode (`subset_fraction = 1`) and may subsample in non-progressive mode depending on configuration—check the active `run.py` branch when reproducing experiments.
 
-### 4.4 Reconstruction and inference
+### 4.4 Optional orientation encoding
+
+The Hybrid RGS formulation identifies volumes by their position in the sampled $K$-channel stack. In RGS mode, however, that position is intentionally randomized: channel $c$ may contain a different physical gradient direction at each training sample. The optional **orientation encoding** adds explicit acquisition metadata to each input channel, so the network can distinguish not only "which slot" a volume occupies, but also **which diffusion direction and b-value** generated that volume.
+
+For each DWI shell volume $g$, the encoding vector is:
+
+$$o^{(g)} = \bigl[\hat{b}^{(g)}_x,\hat{b}^{(g)}_y,\hat{b}^{(g)}_z,\ b^{(g)}_{\mathrm{norm}}\bigr] \in \mathbb{R}^4,$$
+
+where $(\hat{b}_x,\hat{b}_y,\hat{b}_z)$ are the three unit direction cosines from the gradient table and $b_{\mathrm{norm}} = b / \max(b)$ is the normalized b-value within the active DWI shell. b0 volumes are discarded before the Hybrid RGS stack is formed, so the orientation metadata is sliced with the same `num_b0s:take_volumes` range as the image data.
+
+#### General idea
+
+The encoding follows the same intuition as positional encodings in NLP or vision models: the network receives a learnable representation of a sample's position in a domain that is not purely spatial. Here that domain is q-space / gradient space. Two channels can have similar anatomy but different diffusion attenuation because their gradient directions differ; the orientation encoding provides this physical identity explicitly.
+
+The current design uses an additive input encoding:
+
+1. Start from `[cos_x, cos_y, cos_z, b_norm]`.
+2. Project the 4-vector with a linear layer: $\mathbb{R}^4 \rightarrow \mathbb{R}^{1024}$.
+3. Apply ReLU.
+4. Reshape the 1024 values into a learned $32 \times 32$ pattern.
+5. Interpolate that pattern bilinearly to the axial plane size $(X_p,Y_p)$ for patches or $(X,Y)$ for full-volume inference.
+6. Broadcast the interpolated 2D pattern along the $Z$ axis.
+7. Add the resulting tensor to the corresponding image channel before the first backbone operation.
+
+In tensor notation, for image input $X \in \mathbb{R}^{B \times K \times D \times H \times W}$ and orientation metadata $O \in \mathbb{R}^{B \times K \times 4}$, the encoder produces
+
+$$E_\phi(O) \in \mathbb{R}^{B \times K \times D \times H \times W},$$
+
+and the backbone receives
+
+$$X_{\mathrm{enc}} = X + E_\phi(O).$$
+
+The base grid is independent of the final image size. Therefore the same learned encoder can be used with progressive training patches (`16^3`, `24^3`, `32^3`), DRCNet full-volume reconstruction, and Restormer tiled reconstruction.
+
+#### During training
+
+When `model.use_orientation_encoding: true`, `run.py` loads the gradient table and passes the non-b0 `bvecs` and `bvals` to `TrainingDataSet`. For each training sample:
+
+1. The dataset samples the usual RGS ordered tuple $(g_1,\ldots,g_K)$.
+2. It extracts the matching image patches into the $K$-channel stack.
+3. It builds `orientation_info` with shape $(K,4)$ in the same order:
+   $$[o^{(g_1)},\ldots,o^{(g_K)}].$$
+4. The DataLoader batches this metadata into $(B,K,4)$.
+5. The model computes $E_\phi(O)$ and adds it to the masked image input before the first convolution in DRCNet or before the patch embedding in Restormer.
+6. The masked MSE objective is unchanged: loss is still computed only on occluded voxels of `target_channel`.
+
+This does **not** weaken the J-invariance construction. The orientation vector is deterministic acquisition metadata, not the noisy intensity value at the held-out voxel. For fixed mask $M$, the network still does not receive $\tilde{Y}_{t,J}$ at the occluded target sites; it receives only the angular identity of the target and context volumes.
+
+#### During reconstruction
+
+During reconstruction, the same rule is applied to every forward pass so that the model sees orientation metadata in the same channel order as the image stack.
+
+In **DRCNet RGS reconstruction**, the implementation can process the cropped volume stack directly. For every target volume $k$ and sampled angular context:
+
+1. Build the ordered stack `[context indices..., k]`, with $k$ in `target_channel` when `target_channel = K-1`.
+2. Build the matching orientation tensor in exactly that same order.
+3. Apply each spatial Bernoulli mask draw to the target channel.
+4. Forward `model(input_batch, orientation_info=orientation_batch)`.
+5. Accumulate and average over `n_context_samples * n_preds`.
+
+In **Restormer RGS reconstruction**, the angular stack and orientation tensor are the same, but the spatial tensor is processed tile by tile because Restormer uses sliding-window inference for memory control. For every spatial tile, target volume, context sample, and mask batch, the same $(K,4)$ orientation metadata is expanded over the mask batch and passed to the model. Tile outputs are blended with the Gaussian weight map exactly as in the non-encoded path.
+
+In **sequential reconstruction**, each contiguous $K$-window gets the corresponding contiguous orientation window. Restormer passes this orientation window into the tiled helper; DRCNet passes it directly to the full-volume forward batches.
+
+If `use_orientation_encoding` is false, datasets return an empty orientation tensor, reconstruction functions pass `None`, and both backbones reduce to their original behavior.
+
+### 4.5 Reconstruction and inference
 
 Inference must match the **channel semantics** learned during training: $K$ inputs, mask on `target_channel`, single-channel output for the volume placed in that slot.
 
@@ -126,21 +192,24 @@ This design estimates the denoised volume by expectations over **random angular 
 
 **Post-processing (metrics pipeline in `run.py`):** Optional `rescale_to_01` (e.g. `per_volume` or `match_gt`), `clip_to_range` to $[0,1]`, optional background median subtraction, and ROI metrics using `metrics_roi_threshold`.
 
-### 4.5 Assumptions, threats to validity, and computational cost
+### 4.6 Assumptions, threats to validity, and computational cost
 
 **Statistical assumptions (as in classic hybrid / blind-spot training):** Conditional independence of noise across the voxels used as targets and the information used for prediction; sufficient signal correlation along the unmasked support (other gradients in the $K$-stack, plus visible voxels of the target channel) to identify the clean signal. **Violations:** shared structured noise across DWIs, motion, Gibbs artifacts, or Rician coupling can break the ideal J-invariance story and introduce bias.
 
 **RGS-specific caveat:** Each sample uses a **random permutation** of $K$ distinct shell indices as channel order; `target_channel` fixes **which slot** is masked and supervised (typically $K-1$), while the physical gradient occupying that slot varies with the draw. If $K \ll G$, many tuples never appear in one forward during training; inference averages over many random $(K-1)$-tuple context draws (`n_context_samples`) to marginalize over angular neighbors when estimating each volume $k$.
 
+**Orientation-encoding caveat:** The learned encoding gives the model a compact representation of q-space identity, but it is not a replacement for angular context. If b-vectors are misaligned with the cropped DWI shell, if b-values are normalized inconsistently between training and reconstruction, or if acquisition metadata are noisy or incomplete, the encoding can introduce a systematic conditioning error. It should therefore be evaluated as an ablation (`use_orientation_encoding=true` vs `false`) rather than assumed to improve every dataset.
+
 **Complexity:** RGS inference scales roughly as $O\bigl(G \cdot \texttt{n\_context\_samples} \cdot \texttt{n\_preds} \cdot \text{forward}\bigr)$ per full volume set, multiplied by the number of spatial patches when using tiled Restormer reconstruction. Tuning `n_context_samples`, `n_preds`, and patch tiling is a speed–quality tradeoff.
 
-### 4.6 Implementation variants (DRCNet vs Restormer)
+### 4.7 Implementation variants (DRCNet vs Restormer)
 
 | Aspect | `drcnet_hybrid_rgs` | `restormer_hybrid_rgs` |
 |--------|---------------------|-------------------------|
 | Backbone | `DenoiserNet` (gated / factorized 3D CNN) | `Restormer3D` (transformer-style 3D blocks) |
 | Full-volume inference | Direct forward on cropped $(V,X,Y,Z)$ tensors | Tiled patches: `patch_size`, `overlap`, Gaussian blend weights |
 | Memory controls | Whole-volume RGS loops | `pred_chunk_size` batches mask passes inside each patch tile |
+| Orientation encoding | Additive input encoding before the first convolution | Additive input encoding before patch embedding |
 | Config entry points | `drcnet_hybrid_rgs/config.yaml`, `python -m drcnet_hybrid_rgs.run` | `restormer_hybrid_rgs/config.yaml`, `python -m restormer_hybrid_rgs.run` |
 
 The **statistical** training object (RGS subset, blind-spot mask, masked MSE) is the same; only the inductive bias and inference tiling differ.
@@ -154,3 +223,4 @@ The **statistical** training object (RGS subset, blind-spot mask, masked MSE) is
 - Loss loop: [`drcnet_hybrid_rgs/fit.py`](drcnet_hybrid_rgs/fit.py), [`restormer_hybrid_rgs/fit.py`](restormer_hybrid_rgs/fit.py)
 - Data crop + progressive + reconstruct dispatch: [`drcnet_hybrid_rgs/run.py`](drcnet_hybrid_rgs/run.py), [`restormer_hybrid_rgs/run.py`](restormer_hybrid_rgs/run.py)
 - Reconstruction: [`drcnet_hybrid_rgs/reconstruction.py`](drcnet_hybrid_rgs/reconstruction.py), [`restormer_hybrid_rgs/reconstruction.py`](restormer_hybrid_rgs/reconstruction.py)
+- Orientation encoding: [`utils/orientation_encoder.py`](utils/orientation_encoder.py)

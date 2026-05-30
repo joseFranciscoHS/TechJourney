@@ -127,6 +127,8 @@ class TrainingDataSet(torch.utils.data.Dataset):
         num_input_volumes: Optional[int] = None,
         target_channel: int = 9,
         sample_rng_seed: Optional[int] = None,
+        bvecs: Optional[np.ndarray] = None,
+        bvals: Optional[np.ndarray] = None,
     ):
         """
         Args:
@@ -139,6 +141,13 @@ class TrainingDataSet(torch.utils.data.Dataset):
         """
         self.shell_sampling_mode = shell_sampling_mode
         self.target_channel = int(target_channel)
+        if (bvecs is None) != (bvals is None):
+            raise ValueError("bvecs and bvals must be provided together")
+        self.bvecs = bvecs
+        self.bvals = bvals
+        self.bvals_max = float(np.max(bvals)) if bvals is not None else 1.0
+        if self.bvals_max <= 0:
+            self.bvals_max = 1.0
         self._rng = (
             np.random.default_rng(sample_rng_seed)
             if sample_rng_seed is not None
@@ -221,6 +230,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         )
 
     def __getitem__(self, index: int):
+        target_volume_idx = 0
         px, py, pz = (
             self.patch_size_tuple[1],
             self.patch_size_tuple[2],
@@ -244,6 +254,11 @@ class TrainingDataSet(torch.utils.data.Dataset):
             grad_idx = slice(
                 grad_window_start, grad_window_start + self.num_input_volumes
             )
+            indices = np.arange(
+                grad_window_start,
+                grad_window_start + self.num_input_volumes,
+                dtype=np.int64,
+            )
             window = self.data_transposed[
                 grad_idx, x : x + px, y : y + py, z : z + pz
             ].copy()
@@ -252,6 +267,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
             window_idx = index // self.n_volumes
             target_volume_idx = index % self.n_volumes
             x, y, z = self.valid_coords[window_idx]
+            indices = np.arange(self.n_volumes, dtype=np.int64)
             window = self.data_transposed[:, x : x + px, y : y + py, z : z + pz].copy()
             window = torch.from_numpy(window).float()
 
@@ -275,7 +291,15 @@ class TrainingDataSet(torch.utils.data.Dataset):
             f"__getitem__ index={index}, window_idx={window_idx}, "
             f"x_masked.shape={x_masked.shape}, noisy_target_volume.shape={noisy_target_volume.shape}"
         )
-        return x_masked, mask, noisy_target_volume
+        orientation_info = torch.empty(0)
+        if self.bvecs is not None:
+            bvecs_k = self.bvecs[indices]
+            bvals_k = self.bvals[indices] / self.bvals_max
+            orientation_info = torch.tensor(
+                np.column_stack([bvecs_k, bvals_k]), dtype=torch.float32
+            )
+
+        return x_masked, mask, noisy_target_volume, orientation_info
 
     def __len__(self):
         return self.total_samples

@@ -109,13 +109,23 @@ def fit_model(
         current_lr = optimizer.param_groups[0]["lr"]
         logging.info(f"Current learning rate: {current_lr:.6f}")
 
-        for batch_idx, (x, mask, noisy_target_volume) in enumerate(train_loader):
+        for batch_idx, batch in enumerate(train_loader):
+            if len(batch) == 4:
+                x, mask, noisy_target_volume, orientation_info = batch
+            else:
+                x, mask, noisy_target_volume = batch
+                orientation_info = None
             # x: training data is the noisy data containing all volumes
             # with a single masked volume for the target volume
             x = x.to(device)
             mask = mask.to(device)
             # noisy_target_volume: the original noisy target volume
             noisy_target_volume = noisy_target_volume.to(device)
+            orientation_info = (
+                orientation_info.to(device)
+                if orientation_info is not None and orientation_info.numel() > 0
+                else None
+            )
 
             # Log batch information occasionally
             if batch_idx % 10 == 0:
@@ -131,7 +141,7 @@ def fit_model(
 
             # forward pass with AMP autocast
             with torch.amp.autocast(device_type=device_type, enabled=amp_enabled):
-                x_recon = model(x)
+                x_recon = model(x, orientation_info=orientation_info)
                 if supervised_mode:
                     loss = torch.mean((x_recon - noisy_target_volume) ** 2)
                 else:

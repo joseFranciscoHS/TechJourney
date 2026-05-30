@@ -187,6 +187,35 @@ Crear una variante del mismo esquema de entrenamiento (RGS + máscara de Bernoul
 
 ---
 
+### 1.8 Ablación: Orientation Encoding
+
+**Pregunta que responde:**
+¿Codificar explícitamente la orientación del gradiente de difusión ayuda al modelo a distinguir volúmenes del shell que pueden tener anatomía espacial similar pero atenuaciones dependientes de la dirección?
+
+**Mecanismo:**
+Para cada volumen de entrada se toma `[cos_x, cos_y, cos_z, b_norm]`, se proyecta con una capa lineal a 1024 valores, se aplica ReLU, se reshapea a un patrón 2D 32×32, se interpola al plano XY del patch o volumen completo, se replica a lo largo de Z y se suma al canal correspondiente antes del backbone.
+
+**Configuraciones:**
+
+| Variante | Descripción |
+| -------- | ----------- |
+| Sin OE   | Modelo base actual (`use_orientation_encoding=false`) |
+| Con OE   | Modelo con orientation encoding (`use_orientation_encoding=true`) |
+
+**Arquitecturas involucradas:** Ambas — DRCNet-hybrid-RGS y Restormer-hybrid-RGS.
+
+**Dataset:** D-Brain (b=2500, tiene GT para PSNR/SSIM/MSE y métricas DTI). Stanford puede usarse como verificación cualitativa posterior.
+
+**Condiciones fijas:** K=16, `shell_sampling_mode=rgs`, `target_channel=15`, misma semilla, mismo subset_fraction, mismo protocolo de reconstrucción y mismas métricas ROI/DTI que las corridas finales.
+
+**Salida esperada:**
+
+- Tabla pareada por arquitectura: base vs orientation encoding.
+- Si OE mejora FA/MD o PSNR-ROI: reportarlo como variante enriquecida del método que inyecta conocimiento físico del protocolo de adquisición.
+- Si OE no mejora: mantenerlo como resultado de ablación negativo y discutir que el RGS ya expone suficiente diversidad angular.
+
+---
+
 ## Sección 2 — Baselines de Comparación
 
 El método propuesto se compara contra estos baselines en todos los experimentos que reportan métricas finales. La tabla principal del paper incluirá todas las filas.
