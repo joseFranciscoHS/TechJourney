@@ -305,7 +305,7 @@ Los `export_*_sigma_*` del YAML escriben bajo `$PWD/tmp/paper_final_shared_npy_s
 
 - [ ] `job_id: summarize_registry_final`
   - `python -m paper_eval.summarize_registry --registry "$PAPER_REGISTRY" --out "$PAPER_OUT/paper_tables/registry_summary.csv"`
-- [ ] `job_id: collect_paper_artifacts_final`
+- [x] `job_id: collect_paper_artifacts_final`
   - `python experiments/collect_paper_artifacts.py --output-root "$PAPER_OUT" --registry "$PAPER_REGISTRY" --out-dir "$PAPER_OUT/paper_tables"`
 
 ---

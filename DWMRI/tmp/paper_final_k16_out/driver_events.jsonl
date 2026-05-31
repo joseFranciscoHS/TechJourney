@@ -1165,3 +1165,8 @@
 {"event": "job_started", "job_id": "restormer_dbrain_inference_time_ctx24_pred12", "timestamp_utc": "2026-05-30T12:52:59.984654+00:00"}
 {"event": "job_finished", "job_id": "restormer_dbrain_inference_time_ctx24_pred12", "status": "succeeded", "exit_code": 0, "duration_s": 7414.3112535476685, "timestamp_utc": "2026-05-30T14:56:34.300927+00:00"}
 {"event": "job_started", "job_id": "restormer_dbrain_inference_time_ctx48_pred20", "timestamp_utc": "2026-05-30T14:56:34.306221+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_inference_time_ctx48_pred20", "status": "succeeded", "exit_code": 0, "duration_s": 35381.81574296951, "timestamp_utc": "2026-05-31T00:46:16.127537+00:00"}
+{"event": "job_started", "job_id": "summarize_registry_final", "timestamp_utc": "2026-05-31T00:46:16.132887+00:00"}
+{"event": "job_finished", "job_id": "summarize_registry_final", "status": "succeeded", "exit_code": 0, "duration_s": 0.05082345008850098, "timestamp_utc": "2026-05-31T00:46:16.188604+00:00"}
+{"event": "job_started", "job_id": "collect_paper_artifacts_final", "timestamp_utc": "2026-05-31T00:46:16.195551+00:00"}
+{"event": "job_finished", "job_id": "collect_paper_artifacts_final", "status": "failed", "exit_code": 1, "duration_s": 0.3530569076538086, "timestamp_utc": "2026-05-31T00:46:16.553766+00:00"}

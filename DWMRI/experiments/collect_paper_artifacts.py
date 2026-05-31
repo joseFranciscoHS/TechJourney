@@ -3,15 +3,25 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import logging
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
-    with path.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except json.JSONDecodeError as exc:
+        logger.warning("Skipping invalid JSON at %s: %s", path, exc)
+        return None
+    except OSError as exc:
+        logger.warning("Could not read JSON at %s: %s", path, exc)
+        return None
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
