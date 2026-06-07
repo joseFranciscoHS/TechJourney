@@ -183,6 +183,52 @@ Todos los comandos se corren desde la raiz de `DWMRI/`.
 - [ ] `job_id: restormer_dbrain_inference_time_ctx48_pred20`
   - `python -m restormer_hybrid_rgs.run --dataset dbrain --skip-train --checkpoint restormer_hybrid_rgs/checkpoints/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00044/best_loss_checkpoint.pth --no-wandb --set dbrain.reconstruct.n_context_samples=48 --set dbrain.reconstruct.n_preds=20 --exp-id paper_final --job-id restormer_dbrain_inference_time_ctx48_pred20 --recipe inference_time_grid --output-root "$PAPER_OUT" --registry-path "$PAPER_REGISTRY"`
 
+### 2.9 Comparación: OrientationEncoder vs FiLM Conditioning
+
+**Contexto:**
+Se implementaron dos enfoques para incorporar información de orientación del gradiente:
+
+1. **OrientationEncoder (descartado):** Encoding aditivo espacial (patrón 2D interpolado sumado al input)
+2. **FiLM Conditioning (actual):** Modulación multiplicativa en capas intermedias
+
+Los experimentos `*_orientation_encoding_OLD` ya completados usaron el método 1. Los nuevos experimentos `*_film_conditioning` usan el método 2.
+
+**Jobs a correr:**
+
+| Job ID | Arquitectura | Dataset | Status | Notas |
+|--------|--------------|---------|--------|-------|
+| `drcnet_dbrain_rgs_film_conditioning` | DRCNet | D-Brain | Pending | FiLM nuevo, comparar con OLD |
+| `restormer_dbrain_rgs_film_conditioning` | Restormer | D-Brain | Pending | FiLM nuevo, comparar con OLD |
+| `drcnet_stanford_rgs_film_conditioning` | DRCNet | Stanford | Pending | Primera corrida FiLM en Stanford |
+| `restormer_stanford_rgs_film_conditioning` | Restormer | Stanford | Pending | Primera corrida FiLM en Stanford |
+
+**Comparaciones a reportar:**
+
+Para D-Brain (tiene GT):
+- PSNR / SSIM / MSE (full y ROI): Baseline vs OrientationEncoder_OLD vs FiLM
+- FA-error / MD-error: idem
+- Tabla de overhead: parámetros, tiempo de entrenamiento, tiempo de inferencia
+
+Para Stanford (sin GT):
+- Comparación cualitativa de mapas FA/MD: suavidad, coherencia anatómica
+- Tiempo de inferencia sobre shell grande (G=150)
+
+**Hipótesis a validar:**
+- FiLM debería superar a OrientationEncoder_OLD en métricas downstream (FA/MD)
+- Si FiLM no mejora sobre baseline: RGS diversity es suficiente, conditioning es innecesario
+- Stanford es prueba de generalización (distinto b-value, G mucho mayor)
+
+**Comando de corrida:**
+```bash
+python experiments/driver.py \
+  --manifest experiments/paper_manifest_final.yaml \
+  --exp-id paper_film_k16 \
+  --output-root "$PAPER_OUT" \
+  --registry-path "$PAPER_REGISTRY" \
+  --filter-jobs "drcnet_dbrain_rgs_film_conditioning,restormer_dbrain_rgs_film_conditioning,drcnet_stanford_rgs_film_conditioning,restormer_stanford_rgs_film_conditioning" \
+  --fail-fast
+```
+
 ---
 
 ## 3) Ruido sintetico: sigma sweep (D-Brain only, hay GT limpio)

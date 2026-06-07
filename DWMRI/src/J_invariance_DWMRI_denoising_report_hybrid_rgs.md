@@ -192,13 +192,47 @@ This design estimates the denoised volume by expectations over **random angular 
 
 **Post-processing (metrics pipeline in `run.py`):** Optional `rescale_to_01` (e.g. `per_volume` or `match_gt`), `clip_to_range` to $[0,1]`, optional background median subtraction, and ROI metrics using `metrics_roi_threshold`.
 
+### 4.5 Optional: FiLM Conditioning for Gradient Direction Awareness
+
+**Motivation:** While the RGS scheme exploits angular redundancy by randomly sampling K-tuples from the shell, the network receives no explicit signal about **which** gradient direction corresponds to the target volume. In anatomically complex regions (e.g., crossing fibers), knowing the gradient direction could help the network selectively emphasize or suppress features aligned with that direction.
+
+**Implementation:** FiLM (Feature-wise Linear Modulation; Perez et al., 2018) applies learnable per-channel affine transformations conditioned on the target gradient metadata:
+
+$$
+\text{FiLM}(F) = \gamma \odot F + \beta
+$$
+
+Where:
+- `F ∈ R^(C×D×H×W)` are intermediate feature maps
+- Condition vector: `c = orientation_info[:, target_channel, :] ∈ R^4` containing `[cos_x, cos_y, cos_z, b_norm]` for the target volume
+- MLP: `c → ReLU(Linear(c, hidden_dim)) → Linear(hidden_dim, 2C)` outputs concatenated `[γ, β] ∈ R^(2C)`
+- Reshape `γ, β` to `(C, 1, 1, 1)` for broadcasting
+- Identity initialization: weights of final Linear layer zeroed; bias set to `[1, 1, ..., 1, 0, 0, ..., 0]` so γ≈1, β≈0 at initialization
+
+**Placement in architectures:**
+
+| Model | FiLM locations | Feature channels modulated |
+|-------|----------------|----------------------------|
+| DRCNet | Post-downblock (bottleneck entry), post-upblock (decoder) | 32, 32 (default base_filters) |
+| Restormer | Post-encoder_level2, post-latent, post-decoder_level2 | 24, 48, 24 (dim=12 default) |
+
+**Training:** The condition vector `c` is deterministic acquisition metadata (not noisy observations), so FiLM does not break J-invariance. The masked loss still applies only to occluded voxels in the target channel, and gradients from `c` flow only through the FiLM MLPs (not through the input masking).
+
+**Inference (RGS mode):** For each true gradient index `k`, each of the `n_context_samples` random (K-1)-tuples is stacked with volume `k` at `target_channel`. The FiLM condition is `orientation_info[k]` (the bvec/bval of the volume being reconstructed), consistent across all context draws for that `k`. The network applies the same γ, β modulation for all spatial masks (`n_preds`), ensuring the conditioning is tied to the target gradient, not the random mask.
+
+**Parameter overhead:** Minimal. For `hidden_dim=32`:
+- DRCNet: ~4.5K additional params (+3.92% of 116K base)
+- Restormer: ~6.8K additional params (+3.43% of 199K base)
+
+**Evaluation (ablation):** Set `use_film_conditioning=true` vs `false` in config. Compare PSNR-ROI, FA-error, and MD-error on D-Brain (with GT) and visual FA/MD quality on Stanford (no GT). If FiLM improves downstream metrics, it indicates the model benefits from explicit directional cues; if no improvement, the RGS diversity alone may be sufficient.
+
+**Caveat:** If bvecs/bvals are misaligned, noisy, or inconsistently normalized between training and inference, FiLM can introduce systematic conditioning errors. Validate metadata integrity before using FiLM.
+
 ### 4.6 Assumptions, threats to validity, and computational cost
 
 **Statistical assumptions (as in classic hybrid / blind-spot training):** Conditional independence of noise across the voxels used as targets and the information used for prediction; sufficient signal correlation along the unmasked support (other gradients in the $K$-stack, plus visible voxels of the target channel) to identify the clean signal. **Violations:** shared structured noise across DWIs, motion, Gibbs artifacts, or Rician coupling can break the ideal J-invariance story and introduce bias.
 
 **RGS-specific caveat:** Each sample uses a **random permutation** of $K$ distinct shell indices as channel order; `target_channel` fixes **which slot** is masked and supervised (typically $K-1$), while the physical gradient occupying that slot varies with the draw. If $K \ll G$, many tuples never appear in one forward during training; inference averages over many random $(K-1)$-tuple context draws (`n_context_samples`) to marginalize over angular neighbors when estimating each volume $k$.
-
-**Orientation-encoding caveat:** The learned encoding gives the model a compact representation of q-space identity, but it is not a replacement for angular context. If b-vectors are misaligned with the cropped DWI shell, if b-values are normalized inconsistently between training and reconstruction, or if acquisition metadata are noisy or incomplete, the encoding can introduce a systematic conditioning error. It should therefore be evaluated as an ablation (`use_orientation_encoding=true` vs `false`) rather than assumed to improve every dataset.
 
 **Complexity:** RGS inference scales roughly as $O\bigl(G \cdot \texttt{n\_context\_samples} \cdot \texttt{n\_preds} \cdot \text{forward}\bigr)$ per full volume set, multiplied by the number of spatial patches when using tiled Restormer reconstruction. Tuning `n_context_samples`, `n_preds`, and patch tiling is a speed–quality tradeoff.
 
@@ -209,7 +243,7 @@ This design estimates the denoised volume by expectations over **random angular 
 | Backbone | `DenoiserNet` (gated / factorized 3D CNN) | `Restormer3D` (transformer-style 3D blocks) |
 | Full-volume inference | Direct forward on cropped $(V,X,Y,Z)$ tensors | Tiled patches: `patch_size`, `overlap`, Gaussian blend weights |
 | Memory controls | Whole-volume RGS loops | `pred_chunk_size` batches mask passes inside each patch tile |
-| Orientation encoding | Additive input encoding before the first convolution | Additive input encoding before patch embedding |
+| FiLM conditioning | Optional FiLM layers at post-downblock and post-upblock | Optional FiLM layers at post-encoder_level2, post-latent, post-decoder_level2 |
 | Config entry points | `drcnet_hybrid_rgs/config.yaml`, `python -m drcnet_hybrid_rgs.run` | `restormer_hybrid_rgs/config.yaml`, `python -m restormer_hybrid_rgs.run` |
 
 The **statistical** training object (RGS subset, blind-spot mask, masked MSE) is the same; only the inductive bias and inference tiling differ.
@@ -223,4 +257,4 @@ The **statistical** training object (RGS subset, blind-spot mask, masked MSE) is
 - Loss loop: [`drcnet_hybrid_rgs/fit.py`](drcnet_hybrid_rgs/fit.py), [`restormer_hybrid_rgs/fit.py`](restormer_hybrid_rgs/fit.py)
 - Data crop + progressive + reconstruct dispatch: [`drcnet_hybrid_rgs/run.py`](drcnet_hybrid_rgs/run.py), [`restormer_hybrid_rgs/run.py`](restormer_hybrid_rgs/run.py)
 - Reconstruction: [`drcnet_hybrid_rgs/reconstruction.py`](drcnet_hybrid_rgs/reconstruction.py), [`restormer_hybrid_rgs/reconstruction.py`](restormer_hybrid_rgs/reconstruction.py)
-- Orientation encoding: [`utils/orientation_encoder.py`](utils/orientation_encoder.py)
+- FiLM conditioning: [`utils/film_layer.py`](utils/film_layer.py) (replaces deprecated `orientation_encoder.py`)

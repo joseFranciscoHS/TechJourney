@@ -420,12 +420,12 @@ def main(
             f"Data type: {noisy_data.dtype}, Min: {noisy_data.min():.4f}, Max: {noisy_data.max():.4f}, Mean: {noisy_data.mean():.4f}"
         )
 
-        use_orientation_encoding = bool(
-            getattr(settings.model, "use_orientation_encoding", False)
+        use_film_conditioning = bool(
+            getattr(settings.model, "use_film_conditioning", False)
         )
         orientation_bvecs = None
         orientation_bvals = None
-        if use_orientation_encoding:
+        if use_film_conditioning:
             logging.info("Loading gradient table for orientation encoding")
             gtab = data_loader.load_gradient_table()
             orientation_bvecs = np.asarray(gtab.bvecs)[
@@ -517,13 +517,9 @@ def main(
                     output_activation=getattr(
                         settings.model, "output_activation", "prelu"
                     ),
-                    use_orientation_encoding=use_orientation_encoding,
-                    orientation_embed_dim=getattr(
-                        settings.model, "orientation_embed_dim", 1024
-                    ),
-                    orientation_spatial_size=getattr(
-                        settings.model, "orientation_spatial_size", 32
-                    ),
+                    use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                    film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
+                    target_channel=int(getattr(settings.data, "target_channel", 15)),
                 )
                 logging.info(
                     f"Model initialized - in_channel: {settings.model.in_channel}, "
@@ -614,13 +610,9 @@ def main(
                     output_activation=getattr(
                         settings.model, "output_activation", "prelu"
                     ),
-                    use_orientation_encoding=use_orientation_encoding,
-                    orientation_embed_dim=getattr(
-                        settings.model, "orientation_embed_dim", 1024
-                    ),
-                    orientation_spatial_size=getattr(
-                        settings.model, "orientation_spatial_size", 32
-                    ),
+                    use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                    film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
+                    target_channel=int(getattr(settings.data, "target_channel", 15)),
                 )
                 logging.info(
                     f"Model initialized - in_channel: {settings.model.in_channel}, "
@@ -732,11 +724,9 @@ def main(
                 ),
                 device=settings.train.device,
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
-                use_orientation_encoding=use_orientation_encoding,
-                orientation_embed_dim=getattr(settings.model, "orientation_embed_dim", 1024),
-                orientation_spatial_size=getattr(
-                    settings.model, "orientation_spatial_size", 32
-                ),
+                use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
+                target_channel=int(getattr(settings.data, "target_channel", 15)),
             )
             reconstruct_model, _, _, _, _, _ = load_checkpoint(
                 model=reconstruct_model,

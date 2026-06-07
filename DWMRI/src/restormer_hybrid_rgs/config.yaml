@@ -71,9 +71,8 @@ dbrain:
     bias: false
     LayerNorm_type: "WithBias"
     scale_and_shift: true
-    use_orientation_encoding: false
-    orientation_embed_dim: 1024
-    orientation_spatial_size: 32
+    use_film_conditioning: false
+    film_hidden_dim: 32
   data:
     patch_size: 32
     step: 8
@@ -155,9 +154,8 @@ stanford:
     bias: false
     LayerNorm_type: "WithBias"
     scale_and_shift: true
-    use_orientation_encoding: false
-    orientation_embed_dim: 1024
-    orientation_spatial_size: 32
+    use_film_conditioning: false
+    film_hidden_dim: 32
   data:
     num_volumes: 16
     shell_sampling_mode: rgs  # sequential (sliding-K over full shell) | rgs

@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 import torch
 import torch.nn as nn
-from utils.orientation_encoder import OrientationEncoder
 
 
 class FactorizedBlock(nn.Module):
@@ -332,31 +331,33 @@ class DenoiserNet(nn.Module):
         output_shape=(1, 128, 128, 128),
         device="cpu",
         output_activation="prelu",
-        use_orientation_encoding: bool = False,
-        orientation_embed_dim: int = 1024,
-        orientation_spatial_size: int = 32,
+        use_film_conditioning: bool = False,
+        film_hidden_dim: int = 32,
+        target_channel: int = 15,
     ):
         super(DenoiserNet, self).__init__()
         logging.info(
             f"Initializing DenoiserNet: input_channels={input_channels}, output_channels={output_channels}, "
             f"groups={groups}, dense_convs={dense_convs}, residual={residual}, base_filters={base_filters}, "
-            f"output_activation={output_activation}, use_orientation_encoding={use_orientation_encoding}"
+            f"output_activation={output_activation}, use_film_conditioning={use_film_conditioning}"
         )
         groups = groups
 
         dense_convs = dense_convs
         self.residual = residual
-        self.use_orientation_encoding = use_orientation_encoding
-        self.orientation_encoder = (
-            OrientationEncoder(
-                embed_dim=orientation_embed_dim,
-                spatial_size=orientation_spatial_size,
-            )
-            if use_orientation_encoding
-            else None
-        )
+        self.use_film_conditioning = use_film_conditioning
+        self.target_channel = target_channel
         filters_0 = base_filters
         filters_1 = filters_0
+        
+        if use_film_conditioning:
+            from utils.film_layer import FiLMLayer
+            self.film_bottleneck = FiLMLayer(
+                cond_dim=4, feature_channels=filters_1, hidden_dim=film_hidden_dim
+            )
+            self.film_decoder = FiLMLayer(
+                cond_dim=4, feature_channels=filters_0, hidden_dim=film_hidden_dim
+            )
 
         self.input_block = nn.Sequential(
             OrderedDict(
@@ -449,18 +450,23 @@ class DenoiserNet(nn.Module):
 
     def forward(self, inputs, orientation_info=None):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
-        if self.use_orientation_encoding and orientation_info is not None:
+        
+        # Extract condition vector for FiLM
+        cond = None
+        if self.use_film_conditioning and orientation_info is not None:
             orientation_info = orientation_info.to(
                 device=inputs.device, dtype=inputs.dtype
             )
-            inputs = inputs + self.orientation_encoder(
-                orientation_info, target_shape=inputs.shape[2:]
-            )
+            cond = orientation_info[:, self.target_channel, :]  # (B, 4)
 
         up_0 = self.input_block(inputs)
         logging.debug(f"up_0 shape={up_0.shape}")
         x = self.down_block(up_0)
         logging.debug(f"x shape={x.shape}")
+
+        # FiLM at bottleneck entry
+        if cond is not None:
+            x = self.film_bottleneck(x, cond)
 
         # x 1
         h = None
@@ -470,6 +476,11 @@ class DenoiserNet(nn.Module):
 
         up_3 = self.up_block(x)
         logging.debug(f"up_3 shape={up_3.shape}")
+        
+        # FiLM at decoder
+        if cond is not None:
+            up_3 = self.film_decoder(up_3, cond)
+
         out = self.output_block(torch.cat([up_0, up_3], 1))
         logging.debug(f"out shape={out.shape}")
 

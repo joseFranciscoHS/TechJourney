@@ -103,8 +103,8 @@ jobs:
   - dbrain.reconstruct.clip_to_range=true
   - --set
   - dbrain.reconstruct.compute_dti=true
-- id: drcnet_dbrain_rgs_orientation_encoding_final
-  recipe: drcnet_orientation_encoding
+- id: drcnet_dbrain_rgs_orientation_encoding_OLD
+  recipe: drcnet_orientation_encoding_OLD
   cwd: null
   command:
   - python
@@ -130,11 +130,11 @@ jobs:
   - --set
   - dbrain.model.use_orientation_encoding=true
   - --set
-  - dbrain.train.checkpoint_dir=drcnet_hybrid_rgs/checkpoints/dbrain_orientation_encoding
+  - dbrain.train.checkpoint_dir=drcnet_hybrid_rgs/checkpoints/dbrain_orientation_encoding_OLD
   - --set
-  - dbrain.reconstruct.metrics_dir=drcnet_hybrid_rgs/metrics/dbrain_orientation_encoding
+  - dbrain.reconstruct.metrics_dir=drcnet_hybrid_rgs/metrics/dbrain_orientation_encoding_OLD
   - --set
-  - dbrain.reconstruct.images_dir=drcnet_hybrid_rgs/images/dbrain_orientation_encoding
+  - dbrain.reconstruct.images_dir=drcnet_hybrid_rgs/images/dbrain_orientation_encoding_OLD
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -145,8 +145,8 @@ jobs:
   - dbrain.reconstruct.clip_to_range=true
   - --set
   - dbrain.reconstruct.compute_dti=true
-- id: restormer_dbrain_rgs_orientation_encoding_final
-  recipe: restormer_orientation_encoding
+- id: restormer_dbrain_rgs_orientation_encoding_OLD
+  recipe: restormer_orientation_encoding_OLD
   cwd: null
   command:
   - python
@@ -172,11 +172,11 @@ jobs:
   - --set
   - dbrain.model.use_orientation_encoding=true
   - --set
-  - dbrain.train.checkpoint_dir=restormer_hybrid_rgs/checkpoints/dbrain_orientation_encoding
+  - dbrain.train.checkpoint_dir=restormer_hybrid_rgs/checkpoints/dbrain_orientation_encoding_OLD
   - --set
-  - dbrain.reconstruct.metrics_dir=restormer_hybrid_rgs/metrics/dbrain_orientation_encoding
+  - dbrain.reconstruct.metrics_dir=restormer_hybrid_rgs/metrics/dbrain_orientation_encoding_OLD
   - --set
-  - dbrain.reconstruct.images_dir=restormer_hybrid_rgs/images/dbrain_orientation_encoding
+  - dbrain.reconstruct.images_dir=restormer_hybrid_rgs/images/dbrain_orientation_encoding_OLD
   - --set
   - dbrain.reconstruct.metrics_roi_threshold=0.02
   - --set
@@ -187,6 +187,178 @@ jobs:
   - dbrain.reconstruct.clip_to_range=true
   - --set
   - dbrain.reconstruct.compute_dti=true
+- id: drcnet_dbrain_rgs_film_conditioning
+  recipe: film_conditioning_drcnet
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
+  - dbrain.data.shell_sampling_mode=rgs
+  - --set
+  - dbrain.data.num_input_volumes=16
+  - --set
+  - dbrain.data.shell_gradient_volumes=60
+  - --set
+  - dbrain.data.target_channel=15
+  - --set
+  - dbrain.model.use_film_conditioning=true
+  - --set
+  - dbrain.model.film_hidden_dim=32
+  - --set
+  - dbrain.train.checkpoint_dir=drcnet_hybrid_rgs/checkpoints/dbrain_film_conditioning
+  - --set
+  - dbrain.reconstruct.metrics_dir=drcnet_hybrid_rgs/metrics/dbrain_film_conditioning
+  - --set
+  - dbrain.reconstruct.images_dir=drcnet_hybrid_rgs/images/dbrain_film_conditioning
+  - --set
+  - dbrain.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - dbrain.reconstruct.rescale_to_01=true
+  - --set
+  - dbrain.reconstruct.rescale_mode=per_volume
+  - --set
+  - dbrain.reconstruct.clip_to_range=true
+  - --set
+  - dbrain.reconstruct.compute_dti=true
+- id: restormer_dbrain_rgs_film_conditioning
+  recipe: film_conditioning_restormer
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - dbrain
+  - --no-wandb
+  - --set
+  - dbrain.train.seed=91021
+  - --set
+  - dbrain.train.reproducible=true
+  - --set
+  - dbrain.train.subset_fraction=0.6
+  - --set
+  - dbrain.data.shell_sampling_mode=rgs
+  - --set
+  - dbrain.data.num_input_volumes=16
+  - --set
+  - dbrain.data.shell_gradient_volumes=60
+  - --set
+  - dbrain.data.target_channel=15
+  - --set
+  - dbrain.model.use_film_conditioning=true
+  - --set
+  - dbrain.model.film_hidden_dim=32
+  - --set
+  - dbrain.train.checkpoint_dir=restormer_hybrid_rgs/checkpoints/dbrain_film_conditioning
+  - --set
+  - dbrain.reconstruct.metrics_dir=restormer_hybrid_rgs/metrics/dbrain_film_conditioning
+  - --set
+  - dbrain.reconstruct.images_dir=restormer_hybrid_rgs/images/dbrain_film_conditioning
+  - --set
+  - dbrain.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - dbrain.reconstruct.rescale_to_01=true
+  - --set
+  - dbrain.reconstruct.rescale_mode=per_volume
+  - --set
+  - dbrain.reconstruct.clip_to_range=true
+  - --set
+  - dbrain.reconstruct.compute_dti=true
+- id: drcnet_stanford_rgs_film_conditioning
+  recipe: film_conditioning_drcnet_stanford
+  cwd: null
+  command:
+  - python
+  - -m
+  - drcnet_hybrid_rgs.run
+  - --dataset
+  - stanford
+  - --no-wandb
+  - --set
+  - stanford.train.seed=91021
+  - --set
+  - stanford.train.reproducible=true
+  - --set
+  - stanford.train.subset_fraction=0.6
+  - --set
+  - stanford.data.shell_sampling_mode=rgs
+  - --set
+  - stanford.data.num_input_volumes=16
+  - --set
+  - stanford.data.shell_gradient_volumes=150
+  - --set
+  - stanford.data.target_channel=15
+  - --set
+  - stanford.model.use_film_conditioning=true
+  - --set
+  - stanford.model.film_hidden_dim=32
+  - --set
+  - stanford.train.checkpoint_dir=drcnet_hybrid_rgs/checkpoints/stanford_film_conditioning
+  - --set
+  - stanford.reconstruct.metrics_dir=drcnet_hybrid_rgs/metrics/stanford_film_conditioning
+  - --set
+  - stanford.reconstruct.images_dir=drcnet_hybrid_rgs/images/stanford_film_conditioning
+  - --set
+  - stanford.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - stanford.reconstruct.rescale_to_01=true
+  - --set
+  - stanford.reconstruct.rescale_mode=per_volume
+  - --set
+  - stanford.reconstruct.clip_to_range=true
+- id: restormer_stanford_rgs_film_conditioning
+  recipe: film_conditioning_restormer_stanford
+  cwd: null
+  command:
+  - python
+  - -m
+  - restormer_hybrid_rgs.run
+  - --dataset
+  - stanford
+  - --no-wandb
+  - --set
+  - stanford.train.seed=91021
+  - --set
+  - stanford.train.reproducible=true
+  - --set
+  - stanford.train.subset_fraction=0.6
+  - --set
+  - stanford.data.shell_sampling_mode=rgs
+  - --set
+  - stanford.data.num_input_volumes=16
+  - --set
+  - stanford.data.shell_gradient_volumes=150
+  - --set
+  - stanford.data.target_channel=15
+  - --set
+  - stanford.model.use_film_conditioning=true
+  - --set
+  - stanford.model.film_hidden_dim=32
+  - --set
+  - stanford.train.checkpoint_dir=restormer_hybrid_rgs/checkpoints/stanford_film_conditioning
+  - --set
+  - stanford.reconstruct.metrics_dir=restormer_hybrid_rgs/metrics/stanford_film_conditioning
+  - --set
+  - stanford.reconstruct.images_dir=restormer_hybrid_rgs/images/stanford_film_conditioning
+  - --set
+  - stanford.reconstruct.metrics_roi_threshold=0.02
+  - --set
+  - stanford.reconstruct.rescale_to_01=true
+  - --set
+  - stanford.reconstruct.rescale_mode=per_volume
+  - --set
+  - stanford.reconstruct.clip_to_range=true
 - id: drcnet_dbrain_supervised_upperbound_final
   recipe: supervised_upperbound
   cwd: null

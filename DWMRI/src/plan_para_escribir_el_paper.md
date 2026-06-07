@@ -187,32 +187,65 @@ Crear una variante del mismo esquema de entrenamiento (RGS + máscara de Bernoul
 
 ---
 
-### 1.8 Ablación: Orientation Encoding
+### 1.8 Ablación: FiLM Conditioning (Feature-wise Linear Modulation)
 
 **Pregunta que responde:**
-¿Codificar explícitamente la orientación del gradiente de difusión ayuda al modelo a distinguir volúmenes del shell que pueden tener anatomía espacial similar pero atenuaciones dependientes de la dirección?
+¿Condicionar explícitamente las características internas de la red con la orientación del gradiente de difusión (mediante modulación adaptativa por canal) ayuda al modelo a distinguir volúmenes del shell que pueden tener anatomía espacial similar pero atenuaciones dependientes de la dirección?
 
-**Mecanismo:**
-Para cada volumen de entrada se toma `[cos_x, cos_y, cos_z, b_norm]`, se proyecta con una capa lineal a 1024 valores, se aplica ReLU, se reshapea a un patrón 2D 32×32, se interpola al plano XY del patch o volumen completo, se replica a lo largo de Z y se suma al canal correspondiente antes del backbone.
+**Mecanismo FiLM:**
+
+En lugar de sumar un patrón espacial al input (método descartado por crear patrones artificiales), FiLM modula las características internas de la red mediante transformaciones afines por canal:
+
+$$
+\text{FiLM}(F_c) = \gamma_c \cdot F_c + \beta_c
+$$
+
+Donde:
+- `F_c` son las características del canal c en una capa intermedia
+- `γ` (gamma, escala) y `β` (beta, desplazamiento) se predicen desde el vector de condición `[cos_x, cos_y, cos_z, b_norm]` del volumen objetivo mediante un MLP pequeño: `4 → hidden_dim → 2C`
+- Solo se usa la metadata del canal objetivo (`target_channel`), no de todos los K canales
+- Inicialización identidad: γ=1, β=0 (el modelo inicia desde el baseline sin FiLM)
+
+**Ubicación de las capas FiLM:**
+
+| Arquitectura | Ubicaciones FiLM | Overhead parámetros |
+|--------------|------------------|---------------------|
+| DRCNet       | Post-downblock (bottleneck), post-upblock (decoder) | +3.92% (~4.5K params) |
+| Restormer    | Post-encoder_level2, post-latent, post-decoder_level2 | +3.43% (~6.8K params) |
+
+**Ventajas teóricas sobre el encoding aditivo:**
+
+1. **Modulación multiplicativa:** γ puede amplificar o atenuar canales según la dirección del gradiente
+2. **Nivel de abstracción correcto:** Actúa sobre características extraídas, no sobre intensidades crudas
+3. **Sin confusión espacial:** La orientación es global; FiLM respeta esto (sin interpolar patrones artificiales)
+4. **Entrenamiento estable:** Identidad initialization asegura que FiLM se activa gradualmente
 
 **Configuraciones:**
 
-| Variante | Descripción |
-| -------- | ----------- |
-| Sin OE   | Modelo base actual (`use_orientation_encoding=false`) |
-| Con OE   | Modelo con orientation encoding (`use_orientation_encoding=true`) |
+| Variante     | Descripción |
+| ------------ | ----------- |
+| Sin FiLM     | Modelo base actual (`use_film_conditioning=false`) |
+| Con FiLM     | Modelo con FiLM conditioning (`use_film_conditioning=true`, `film_hidden_dim=32`) |
 
 **Arquitecturas involucradas:** Ambas — DRCNet-hybrid-RGS y Restormer-hybrid-RGS.
 
-**Dataset:** D-Brain (b=2500, tiene GT para PSNR/SSIM/MSE y métricas DTI). Stanford puede usarse como verificación cualitativa posterior.
+**Datasets:** D-Brain (b=2500, tiene GT para PSNR/SSIM/MSE y métricas DTI) y Stanford HARDI (b=1000, sin GT, evaluación cualitativa de mapas FA/MD).
 
 **Condiciones fijas:** K=16, `shell_sampling_mode=rgs`, `target_channel=15`, misma semilla, mismo subset_fraction, mismo protocolo de reconstrucción y mismas métricas ROI/DTI que las corridas finales.
 
+**Hipótesis:** FiLM debería mejorar especialmente en:
+- Métricas downstream (FA/MD error) al proporcionar información direccional explícita
+- Volúmenes con gradientes desafiantes (alta anisotropía, tractos cruzados)
+- Generalización a nuevos protocolos (Stanford tiene b-value y G distintos)
+
 **Salida esperada:**
 
-- Tabla pareada por arquitectura: base vs orientation encoding.
-- Si OE mejora FA/MD o PSNR-ROI: reportarlo como variante enriquecida del método que inyecta conocimiento físico del protocolo de adquisición.
-- Si OE no mejora: mantenerlo como resultado de ablación negativo y discutir que el RGS ya expone suficiente diversidad angular.
+- Tabla pareada por arquitectura y dataset: base vs FiLM conditioning
+- Si FiLM mejora FA/MD o PSNR-ROI: reportarlo como enriquecimiento del método que inyecta física de adquisición
+- Si FiLM no mejora o degrada: analizar si el RGS ya expone suficiente diversidad angular sin necesidad de conditioning explícito
+- Comparación de tiempos de inferencia (el overhead de FiLM es mínimo: solo 2-3 MLPs pequeños por forward)
+
+**Nota sobre implementación anterior:** Se exploró primero un OrientationEncoder aditivo (suma de patrón 2D interpolado al input) que fue descartado por problemas teóricos (patrones espaciales artificiales desde cantidad invariante espacialmente). FiLM es la solución correcta al problema de conditioning.
 
 ---
 

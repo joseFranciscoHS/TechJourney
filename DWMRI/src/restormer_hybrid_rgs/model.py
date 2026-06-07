@@ -12,7 +12,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-from utils.orientation_encoder import OrientationEncoder
 
 ##########################################################################
 # 3D Reshape Utilities
@@ -320,9 +319,9 @@ class Restormer3D(nn.Module):
         LayerNorm_type="WithBias",
         output_activation="prelu",
         scale_and_shift: bool = True,
-        use_orientation_encoding: bool = False,
-        orientation_embed_dim: int = 1024,
-        orientation_spatial_size: int = 32,
+        use_film_conditioning: bool = False,
+        film_hidden_dim: int = 32,
+        target_channel: int = 15,
     ):
         super(Restormer3D, self).__init__()
 
@@ -330,18 +329,23 @@ class Restormer3D(nn.Module):
             f"Initializing Restormer3D (3-level): inp_channels={inp_channels}, out_channels={out_channels}, "
             f"dim={dim}, num_blocks={num_blocks}, heads={heads}, "
             f"ffn_expansion_factor={ffn_expansion_factor}, output_activation={output_activation}, "
-            f"scale_and_shift={scale_and_shift}, use_orientation_encoding={use_orientation_encoding}"
+            f"scale_and_shift={scale_and_shift}, use_film_conditioning={use_film_conditioning}"
         )
         self.scale_and_shift = scale_and_shift
-        self.use_orientation_encoding = use_orientation_encoding
-        self.orientation_encoder = (
-            OrientationEncoder(
-                embed_dim=orientation_embed_dim,
-                spatial_size=orientation_spatial_size,
+        self.use_film_conditioning = use_film_conditioning
+        self.target_channel = target_channel
+        
+        if use_film_conditioning:
+            from utils.film_layer import FiLMLayer
+            self.film_enc2 = FiLMLayer(
+                cond_dim=4, feature_channels=int(dim * 2), hidden_dim=film_hidden_dim
             )
-            if use_orientation_encoding
-            else None
-        )
+            self.film_latent = FiLMLayer(
+                cond_dim=4, feature_channels=int(dim * 4), hidden_dim=film_hidden_dim
+            )
+            self.film_dec2 = FiLMLayer(
+                cond_dim=4, feature_channels=int(dim * 2), hidden_dim=film_hidden_dim
+            )
 
         self.patch_embed = OverlapPatchEmbed3D(inp_channels, dim)
 
@@ -484,13 +488,13 @@ class Restormer3D(nn.Module):
         Returns:
             Output tensor of shape (B, out_channels, D, H, W)
         """
-        if self.use_orientation_encoding and orientation_info is not None:
+        # Extract condition vector for FiLM
+        cond = None
+        if self.use_film_conditioning and orientation_info is not None:
             orientation_info = orientation_info.to(
                 device=inp_img.device, dtype=inp_img.dtype
             )
-            inp_img = inp_img + self.orientation_encoder(
-                orientation_info, target_shape=inp_img.shape[2:]
-            )
+            cond = orientation_info[:, self.target_channel, :]  # (B, 4)
 
         # Patch embedding
         inp_enc_level1 = self.patch_embed(inp_img)
@@ -503,16 +507,28 @@ class Restormer3D(nn.Module):
         inp_enc_level2 = self.down1_2(out_enc_level1)
         out_enc_level2 = self.encoder_level2(inp_enc_level2)
         enc2_size = out_enc_level2.shape[2:]
+        
+        # FiLM after encoder level 2
+        if cond is not None:
+            out_enc_level2 = self.film_enc2(out_enc_level2, cond)
 
         # Latent (quarter resolution)
         inp_latent = self.down2_latent(out_enc_level2)
         latent = self.latent(inp_latent)
+        
+        # FiLM at bottleneck
+        if cond is not None:
+            latent = self.film_latent(latent, cond)
 
         # Decoder Level 2: upsample latent and concatenate with encoder level 2
         inp_dec_level2 = self.up_latent_2(latent, target_size=enc2_size)
         inp_dec_level2 = torch.cat([inp_dec_level2, out_enc_level2], dim=1)
         inp_dec_level2 = self.reduce_chan_level2(inp_dec_level2)
         out_dec_level2 = self.decoder_level2(inp_dec_level2)
+        
+        # FiLM after decoder level 2
+        if cond is not None:
+            out_dec_level2 = self.film_dec2(out_dec_level2, cond)
 
         # Decoder Level 1: upsample and concatenate with encoder level 1
         inp_dec_level1 = self.up2_1(out_dec_level2, target_size=enc1_size)
