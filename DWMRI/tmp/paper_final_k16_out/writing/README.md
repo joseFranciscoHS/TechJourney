@@ -86,6 +86,11 @@ draft, a table, etc.>
 | # | Slug | Section | Status |
 |---|------|---------|--------|
 | 001 | `orientation_conditioning` | Gradient Direction Conditioning via FiLM (ablation subsection) | ready |
+| 002 | `main_comparison_table` | Main Comparison Table and Results (primary experimental results) | ready |
+| 003 | `sampling_ablations` | Sequential vs RGS and K Sweep (sampling strategy ablations) | ready |
+| 004 | `3d_vs_2d_ablation` | 3D vs 2D Convolutions (critical architectural ablation) | ready |
+| 005 | `sigma_robustness` | Robustness to Noise Level (sigma sweep across SNR regimes) | ready |
+| 006 | `stanford_generalization` | Generalization to Real Scanner Noise (Stanford HARDI evaluation) | ready |
 
 ---
 
