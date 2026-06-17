@@ -1,4 +1,0 @@
-{"event": "job_started", "job_id": "export_dbrain_npy_final", "timestamp_utc": "2026-06-07T22:15:09.501196+00:00"}
-{"event": "job_finished", "job_id": "export_dbrain_npy_final", "status": "succeeded", "exit_code": 0, "duration_s": 47.59076380729675, "timestamp_utc": "2026-06-07T22:15:57.094217+00:00"}
-{"event": "job_started", "job_id": "mppca_dbrain_final", "timestamp_utc": "2026-06-07T22:15:57.097745+00:00"}
-{"event": "job_interrupted", "job_id": "mppca_dbrain_final", "signal": 2, "timestamp_utc": "2026-06-07T22:16:50.474687+00:00"}

@@ -1608,3 +1608,14 @@
 {"event": "job_skipped", "job_id": "summarize_registry_final", "reason": "already_succeeded", "timestamp_utc": "2026-06-07T22:18:52.876589+00:00"}
 {"event": "job_skipped", "job_id": "collect_paper_artifacts_final", "reason": "already_succeeded", "timestamp_utc": "2026-06-07T22:18:52.876799+00:00"}
 {"event": "job_started", "job_id": "drcnet_dbrain_rgs_orientation_encoding_OLD", "timestamp_utc": "2026-06-07T22:18:52.894638+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_rgs_orientation_encoding_OLD", "status": "succeeded", "exit_code": 0, "duration_s": 7517.430896282196, "timestamp_utc": "2026-06-08T00:24:10.336493+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_rgs_orientation_encoding_OLD", "timestamp_utc": "2026-06-08T00:24:10.342919+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_rgs_orientation_encoding_OLD", "status": "succeeded", "exit_code": 0, "duration_s": 19890.24036693573, "timestamp_utc": "2026-06-08T05:55:40.592902+00:00"}
+{"event": "job_started", "job_id": "drcnet_dbrain_rgs_film_conditioning", "timestamp_utc": "2026-06-08T05:55:40.603280+00:00"}
+{"event": "job_finished", "job_id": "drcnet_dbrain_rgs_film_conditioning", "status": "succeeded", "exit_code": 0, "duration_s": 7574.9530601501465, "timestamp_utc": "2026-06-08T08:01:55.591346+00:00"}
+{"event": "job_started", "job_id": "restormer_dbrain_rgs_film_conditioning", "timestamp_utc": "2026-06-08T08:01:55.600680+00:00"}
+{"event": "job_finished", "job_id": "restormer_dbrain_rgs_film_conditioning", "status": "succeeded", "exit_code": 0, "duration_s": 19865.07729959488, "timestamp_utc": "2026-06-08T13:33:00.687996+00:00"}
+{"event": "job_started", "job_id": "drcnet_stanford_rgs_film_conditioning", "timestamp_utc": "2026-06-08T13:33:00.703608+00:00"}
+{"event": "job_finished", "job_id": "drcnet_stanford_rgs_film_conditioning", "status": "succeeded", "exit_code": 0, "duration_s": 27015.7597720623, "timestamp_utc": "2026-06-08T21:03:16.484265+00:00"}
+{"event": "job_started", "job_id": "restormer_stanford_rgs_film_conditioning", "timestamp_utc": "2026-06-08T21:03:16.492511+00:00"}
+{"event": "job_finished", "job_id": "restormer_stanford_rgs_film_conditioning", "status": "succeeded", "exit_code": 0, "duration_s": 23595.331466913223, "timestamp_utc": "2026-06-09T03:36:31.833726+00:00"}

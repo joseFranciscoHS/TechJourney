@@ -110,73 +110,57 @@ Optimization uses Adam with optional learning-rate schedules (`config.yaml`: e.g
 
 **Training subset (implementation detail):** Progressive training in `drcnet_hybrid_rgs/run.py` uses a random subset of patch indices per stage (`subset_fraction = 0.6`). `restormer_hybrid_rgs/run.py` uses the full patch set in progressive mode (`subset_fraction = 1`) and may subsample in non-progressive mode depending on configuration—check the active `run.py` branch when reproducing experiments.
 
-### 4.4 Optional orientation encoding
+### 4.4 Gradient direction conditioning: Motivation and discarded additive approach
 
-The Hybrid RGS formulation identifies volumes by their position in the sampled $K$-channel stack. In RGS mode, however, that position is intentionally randomized: channel $c$ may contain a different physical gradient direction at each training sample. The optional **orientation encoding** adds explicit acquisition metadata to each input channel, so the network can distinguish not only "which slot" a volume occupies, but also **which diffusion direction and b-value** generated that volume.
+#### Motivation
 
-For each DWI shell volume $g$, the encoding vector is:
+The Hybrid RGS formulation identifies volumes by their position in the sampled $K$-channel stack. In RGS mode, however, that position is intentionally randomized: channel $c$ may contain a different physical gradient direction at each training sample. This raises a natural question: **should the network be informed about which diffusion direction and b-value generated each volume?**
+
+The motivation follows the same intuition as positional encodings in NLP or vision models: the network could benefit from a learnable representation of each sample's position in q-space / gradient space. Two channels can have similar anatomy but different diffusion attenuation because their gradient directions differ. In anatomically complex regions (e.g., crossing fibers), explicit gradient direction awareness might help the network selectively modulate features aligned with that direction.
+
+For each DWI shell volume $g$, a 4-dimensional encoding vector captures the gradient metadata:
 
 $$o^{(g)} = \bigl[\hat{b}^{(g)}_x,\hat{b}^{(g)}_y,\hat{b}^{(g)}_z,\ b^{(g)}_{\mathrm{norm}}\bigr] \in \mathbb{R}^4,$$
 
-where $(\hat{b}_x,\hat{b}_y,\hat{b}_z)$ are the three unit direction cosines from the gradient table and $b_{\mathrm{norm}} = b / \max(b)$ is the normalized b-value within the active DWI shell. b0 volumes are discarded before the Hybrid RGS stack is formed, so the orientation metadata is sliced with the same `num_b0s:take_volumes` range as the image data.
+where $(\hat{b}_x,\hat{b}_y,\hat{b}_z)$ are the three unit direction cosines from the gradient table and $b_{\mathrm{norm}} = b / \max(b)$ is the normalized b-value within the active DWI shell. This metadata is deterministic acquisition information (not noisy observations), so incorporating it does **not** weaken the J-invariance construction. For fixed mask $M$, the network still does not receive $\tilde{Y}_{t,J}$ at the occluded target sites; it receives only the angular identity of the target and context volumes.
 
-#### General idea
+#### Naive additive approach (explored and discarded)
 
-The encoding follows the same intuition as positional encodings in NLP or vision models: the network receives a learnable representation of a sample's position in a domain that is not purely spatial. Here that domain is q-space / gradient space. Two channels can have similar anatomy but different diffusion attenuation because their gradient directions differ; the orientation encoding provides this physical identity explicitly.
+An initial implementation attempted an **additive input encoding** approach, analogous to positional embeddings added to token embeddings in transformers:
 
-The current design uses an additive input encoding:
-
-1. Start from `[cos_x, cos_y, cos_z, b_norm]`.
-2. Project the 4-vector with a linear layer: $\mathbb{R}^4 \rightarrow \mathbb{R}^{1024}$.
+1. Start from the 4-vector `[cos_x, cos_y, cos_z, b_norm]` for each input channel.
+2. Project with a linear layer: $\mathbb{R}^4 \rightarrow \mathbb{R}^{1024}$.
 3. Apply ReLU.
 4. Reshape the 1024 values into a learned $32 \times 32$ pattern.
-5. Interpolate that pattern bilinearly to the axial plane size $(X_p,Y_p)$ for patches or $(X,Y)$ for full-volume inference.
-6. Broadcast the interpolated 2D pattern along the $Z$ axis.
-7. Add the resulting tensor to the corresponding image channel before the first backbone operation.
+5. Interpolate that pattern bilinearly to the axial plane size $(D, H)$ of the patch or volume.
+6. Broadcast the interpolated 2D pattern along the $W$ axis (third spatial dimension).
+7. Add the resulting tensor to the corresponding image channel **before the first backbone operation**.
 
-In tensor notation, for image input $X \in \mathbb{R}^{B \times K \times D \times H \times W}$ and orientation metadata $O \in \mathbb{R}^{B \times K \times 4}$, the encoder produces
+In tensor notation, for image input $X \in \mathbb{R}^{B \times K \times D \times H \times W}$ and orientation metadata $O \in \mathbb{R}^{B \times K \times 4}$, the encoder would produce
 
 $$E_\phi(O) \in \mathbb{R}^{B \times K \times D \times H \times W},$$
 
-and the backbone receives
+and the backbone would receive
 
 $$X_{\mathrm{enc}} = X + E_\phi(O).$$
 
-The base grid is independent of the final image size. Therefore the same learned encoder can be used with progressive training patches (`16^3`, `24^3`, `32^3`), DRCNet full-volume reconstruction, and Restormer tiled reconstruction.
+This design applied the learned encoding to **all $K$ input channels**, not just the target channel.
 
-#### During training
+**Limitations that led to abandonment:**
 
-When `model.use_orientation_encoding: true`, `run.py` loads the gradient table and passes the non-b0 `bvecs` and `bvals` to `TrainingDataSet`. For each training sample:
+1. **Artificial spatial patterns from invariant metadata:** The gradient direction is a global property of each volume (independent of voxel position), yet the approach generates spatially varying patterns from it. This introduces artificial spatial structure that has no physical basis—diffusion weighting is uniform across the field of view for a given gradient.
 
-1. The dataset samples the usual RGS ordered tuple $(g_1,\ldots,g_K)$.
-2. It extracts the matching image patches into the $K$-channel stack.
-3. It builds `orientation_info` with shape $(K,4)$ in the same order:
-   $$[o^{(g_1)},\ldots,o^{(g_K)}].$$
-4. The DataLoader batches this metadata into $(B,K,4)$.
-5. The model computes $E_\phi(O)$ and adds it to the masked image input before the first convolution in DRCNet or before the patch embedding in Restormer.
-6. The masked MSE objective is unchanged: loss is still computed only on occluded voxels of `target_channel`.
+2. **Spatial asymmetry:** The implementation interpolates only to the $(D,H)$ plane and broadcasts along the $W$ axis, creating an arbitrary asymmetry: the learned pattern varies in two dimensions but is constant in the third. This asymmetry is not justified by the problem structure.
 
-This does **not** weaken the J-invariance construction. The orientation vector is deterministic acquisition metadata, not the noisy intensity value at the held-out voxel. For fixed mask $M$, the network still does not receive $\tilde{Y}_{t,J}$ at the occluded target sites; it receives only the angular identity of the target and context volumes.
+3. **Signal dilution:** The additive bias is applied only at the input. After multiple nonlinear layers, the initial conditioning signal becomes increasingly diluted and indirect. The network has no opportunity to modulate intermediate representations based on gradient direction.
 
-#### During reconstruction
+4. **Overconditions context channels:** The encoding is applied to all $K$ channels, including the $K-1$ context volumes. In the RGS formulation, only the **target volume's identity** needs to be distinguished for reconstruction—the context channels provide angular redundancy but their specific identities are less critical.
 
-During reconstruction, the same rule is applied to every forward pass so that the model sees orientation metadata in the same channel order as the image stack.
+5. **No experimental validation:** A manifest entry `drcnet_dbrain_rgs_orientation_encoding_OLD` was run, but model inspection reveals it executed with the encoder inactive (parameter count matches baseline, 116,002 params; the encoder adds ~5,120 params when active). The current codebase no longer wires `use_orientation_encoding` to model construction—only FiLM conditioning (§4.5) is supported.
 
-In **DRCNet RGS reconstruction**, the implementation can process the cropped volume stack directly. For every target volume $k$ and sampled angular context:
+These limitations motivated the development of **FiLM conditioning** (§4.5), which applies **feature-space affine modulation** at intermediate layers, conditions only on the **target channel's gradient**, and avoids generating artificial spatial patterns from spatially invariant metadata.
 
-1. Build the ordered stack `[context indices..., k]`, with $k$ in `target_channel` when `target_channel = K-1`.
-2. Build the matching orientation tensor in exactly that same order.
-3. Apply each spatial Bernoulli mask draw to the target channel.
-4. Forward `model(input_batch, orientation_info=orientation_batch)`.
-5. Accumulate and average over `n_context_samples * n_preds`.
-
-In **Restormer RGS reconstruction**, the angular stack and orientation tensor are the same, but the spatial tensor is processed tile by tile because Restormer uses sliding-window inference for memory control. For every spatial tile, target volume, context sample, and mask batch, the same $(K,4)$ orientation metadata is expanded over the mask batch and passed to the model. Tile outputs are blended with the Gaussian weight map exactly as in the non-encoded path.
-
-In **sequential reconstruction**, each contiguous $K$-window gets the corresponding contiguous orientation window. Restormer passes this orientation window into the tiled helper; DRCNet passes it directly to the full-volume forward batches.
-
-If `use_orientation_encoding` is false, datasets return an empty orientation tensor, reconstruction functions pass `None`, and both backbones reduce to their original behavior.
-
-### 4.5 Reconstruction and inference
+### 4.6 Reconstruction and inference
 
 Inference must match the **channel semantics** learned during training: $K$ inputs, mask on `target_channel`, single-channel output for the volume placed in that slot.
 
@@ -192,11 +176,11 @@ This design estimates the denoised volume by expectations over **random angular 
 
 **Post-processing (metrics pipeline in `run.py`):** Optional `rescale_to_01` (e.g. `per_volume` or `match_gt`), `clip_to_range` to $[0,1]`, optional background median subtraction, and ROI metrics using `metrics_roi_threshold`.
 
-### 4.5 Optional: FiLM Conditioning for Gradient Direction Awareness
+### 4.5 FiLM Conditioning for Gradient Direction Awareness
 
-**Motivation:** While the RGS scheme exploits angular redundancy by randomly sampling K-tuples from the shell, the network receives no explicit signal about **which** gradient direction corresponds to the target volume. In anatomically complex regions (e.g., crossing fibers), knowing the gradient direction could help the network selectively emphasize or suppress features aligned with that direction.
+**Design rationale:** Building on the motivation in §4.4, FiLM (Feature-wise Linear Modulation; Perez et al., 2018) provides gradient direction conditioning **without the limitations of additive input encoding**. Instead of generating artificial spatial patterns from spatially invariant metadata, FiLM applies learnable per-channel affine transformations to **intermediate feature maps** conditioned on the **target gradient only**.
 
-**Implementation:** FiLM (Feature-wise Linear Modulation; Perez et al., 2018) applies learnable per-channel affine transformations conditioned on the target gradient metadata:
+**Implementation:** FiLM modulates features at multiple points in the network:
 
 $$
 \text{FiLM}(F) = \gamma \odot F + \beta
@@ -204,10 +188,22 @@ $$
 
 Where:
 - `F ∈ R^(C×D×H×W)` are intermediate feature maps
-- Condition vector: `c = orientation_info[:, target_channel, :] ∈ R^4` containing `[cos_x, cos_y, cos_z, b_norm]` for the target volume
+- Condition vector: `c = orientation_info[:, target_channel, :] ∈ R^4` containing `[cos_x, cos_y, cos_z, b_norm]` for **only the target volume** (not all $K$ channels)
 - MLP: `c → ReLU(Linear(c, hidden_dim)) → Linear(hidden_dim, 2C)` outputs concatenated `[γ, β] ∈ R^(2C)`
-- Reshape `γ, β` to `(C, 1, 1, 1)` for broadcasting
+- Reshape `γ, β` to `(C, 1, 1, 1)` for spatial broadcasting
 - Identity initialization: weights of final Linear layer zeroed; bias set to `[1, 1, ..., 1, 0, 0, ..., 0]` so γ≈1, β≈0 at initialization
+
+**Key design differences from additive input encoding (§4.4):**
+
+1. **Target-only conditioning:** FiLM uses `orientation_info[:, target_channel, :]`—only the gradient being reconstructed—rather than conditioning all $K$ input channels. This focuses the network's attention on the volume identity that matters for the reconstruction task.
+
+2. **Feature-space modulation:** FiLM applies $\gamma \odot F + \beta$ to **learned feature representations**, not raw input. Features at intermediate layers encode increasingly abstract patterns; modulating these is more effective than adding a fixed bias to the input.
+
+3. **Multiple injection points:** FiLM layers are placed at strategic points in the encoder-decoder hierarchy (see table below), allowing the network to refine its gradient-specific processing at multiple scales. Contrast with additive encoding, which conditions only once at the input.
+
+4. **No artificial spatial patterns:** $\gamma$ and $\beta$ are scalars per channel (broadcast spatially). FiLM modulates existing spatial structure in the features rather than hallucinating patterns from gradient metadata.
+
+5. **Identity initialization:** Starting with $\gamma \approx 1, \beta \approx 0$ means the network begins as a no-op and **learns how much conditioning to apply** during training. Additive encoding imposes its bias from the start.
 
 **Placement in architectures:**
 
@@ -218,13 +214,34 @@ Where:
 
 **Training:** The condition vector `c` is deterministic acquisition metadata (not noisy observations), so FiLM does not break J-invariance. The masked loss still applies only to occluded voxels in the target channel, and gradients from `c` flow only through the FiLM MLPs (not through the input masking).
 
+**Data pipeline (shared with discarded additive approach):** When `use_film_conditioning=true`, `run.py` loads the gradient table (`bvecs`, `bvals`) and passes them to the dataset. For each training sample:
+
+1. The dataset samples the usual RGS ordered tuple $(g_1,\ldots,g_K)$.
+2. It extracts the matching image patches into the $K$-channel stack.
+3. It builds `orientation_info` with shape $(K,4)$ in the same order: $[o^{(g_1)},\ldots,o^{(g_K)}]$.
+4. The DataLoader batches this metadata into $(B,K,4)$.
+5. The model extracts `c = orientation_info[:, target_channel, :]` and applies FiLM modulation at the designated layers.
+6. The masked MSE objective is unchanged.
+
 **Inference (RGS mode):** For each true gradient index `k`, each of the `n_context_samples` random (K-1)-tuples is stacked with volume `k` at `target_channel`. The FiLM condition is `orientation_info[k]` (the bvec/bval of the volume being reconstructed), consistent across all context draws for that `k`. The network applies the same γ, β modulation for all spatial masks (`n_preds`), ensuring the conditioning is tied to the target gradient, not the random mask.
 
-**Parameter overhead:** Minimal. For `hidden_dim=32`:
-- DRCNet: ~4.5K additional params (+3.92% of 116K base)
-- Restormer: ~6.8K additional params (+3.43% of 199K base)
+In **DRCNet RGS reconstruction**, for every target volume $k$ and sampled angular context:
 
-**Evaluation (ablation):** Set `use_film_conditioning=true` vs `false` in config. Compare PSNR-ROI, FA-error, and MD-error on D-Brain (with GT) and visual FA/MD quality on Stanford (no GT). If FiLM improves downstream metrics, it indicates the model benefits from explicit directional cues; if no improvement, the RGS diversity alone may be sufficient.
+1. Build the ordered stack `[context indices..., k]`, with $k$ in `target_channel` when `target_channel = K-1`.
+2. Build the matching orientation tensor in exactly that same order.
+3. Apply each spatial Bernoulli mask draw to the target channel.
+4. Forward `model(input_batch, orientation_info=orientation_batch)`.
+5. Accumulate and average over `n_context_samples * n_preds`.
+
+In **Restormer RGS reconstruction**, the angular stack and orientation tensor are the same, but the spatial tensor is processed tile by tile. For every spatial tile, target volume, context sample, and mask batch, the same $(K,4)$ orientation metadata is expanded over the mask batch and passed to the model. Tile outputs are blended with the Gaussian weight map exactly as in the non-FiLM path.
+
+**Parameter overhead:** Minimal. For `hidden_dim=32`:
+- DRCNet: ~4.5K additional params (+3.92% of 116K base) → registry shows 120,546 params with FiLM
+- Restormer: ~6.8K additional params (+3.43% of 199K base) → registry shows 184,699 params with FiLM
+
+Each `FiLMLayer(cond_dim=4, feature_channels=C, hidden_dim=32)` adds: `4×32 + 32 + 32×2C + 2C = 128 + 32 + 66C` parameters.
+
+**Evaluation (ablation):** Set `use_film_conditioning=true` vs `false` in config. Compare PSNR-ROI, FA-error, and MD-error on D-Brain (with GT) and visual FA/MD quality on Stanford (no GT). Preliminary evidence from the registry suggests FiLM improves PSNR from ~23.9 to ~25.4 on D-Brain RGS with DRCNet. If FiLM consistently improves downstream metrics, it indicates the model benefits from explicit directional cues; if no improvement, the RGS diversity alone may be sufficient.
 
 **Caveat:** If bvecs/bvals are misaligned, noisy, or inconsistently normalized between training and inference, FiLM can introduce systematic conditioning errors. Validate metadata integrity before using FiLM.
 

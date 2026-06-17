@@ -141,6 +141,9 @@ mlruns/
 *.csv
 *.tsv
 *.json
+# Paper table artifacts (tracked for reproducibility)
+!DWMRI/**/paper_tables/
+!DWMRI/**/paper_tables/**
 *.parquet
 *.feather
 *.arrow
