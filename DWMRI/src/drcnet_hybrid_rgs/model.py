@@ -349,9 +349,10 @@ class DenoiserNet(nn.Module):
         self.target_channel = target_channel
         filters_0 = base_filters
         filters_1 = filters_0
-        
+
         if use_film_conditioning:
             from utils.film_layer import FiLMLayer
+
             self.film_bottleneck = FiLMLayer(
                 cond_dim=4, feature_channels=filters_1, hidden_dim=film_hidden_dim
             )
@@ -450,7 +451,7 @@ class DenoiserNet(nn.Module):
 
     def forward(self, inputs, orientation_info=None):
         logging.debug(f"DenoiserNet forward: input shape={inputs.shape}")
-        
+
         # Extract condition vector for FiLM
         cond = None
         if self.use_film_conditioning and orientation_info is not None:
@@ -476,7 +477,7 @@ class DenoiserNet(nn.Module):
 
         up_3 = self.up_block(x)
         logging.debug(f"up_3 shape={up_3.shape}")
-        
+
         # FiLM at decoder
         if cond is not None:
             up_3 = self.film_decoder(up_3, cond)

@@ -66,6 +66,7 @@ torch = { index = "pytorch-cu121", marker = "sys_platform == 'linux'" }
 target-version = "py310"
 line-length = 88
 src = ["src", "experiments"]
+extend-exclude = ["*.ipynb"]
 
 [tool.ruff.lint]
 # Flake8-like + import sorting; add "B", "UP" when you want stricter modernisation.

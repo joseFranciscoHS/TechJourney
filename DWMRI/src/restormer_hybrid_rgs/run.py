@@ -492,7 +492,9 @@ def main(
             LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
             output_activation=getattr(settings.model, "output_activation", "prelu"),
             scale_and_shift=getattr(settings.model, "scale_and_shift", True),
-            use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+            use_film_conditioning=bool(
+                getattr(settings.model, "use_film_conditioning", False)
+            ),
             film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
             target_channel=int(getattr(settings.data, "target_channel", 15)),
         )
@@ -699,7 +701,9 @@ def main(
                 LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
                 scale_and_shift=getattr(settings.model, "scale_and_shift", True),
-                use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                use_film_conditioning=bool(
+                    getattr(settings.model, "use_film_conditioning", False)
+                ),
                 film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
                 target_channel=int(getattr(settings.data, "target_channel", 15)),
             )
@@ -869,7 +873,9 @@ def main(
                     )
                     norm_params = getattr(data_loader, "norm_params_", None)
                     if norm_params is not None:
-                        gt_xyzv = invert_normalization(gt_xyzv, norm_params[:take_volumes])
+                        gt_xyzv = invert_normalization(
+                            gt_xyzv, norm_params[:take_volumes]
+                        )
                         den_dwis = invert_normalization(
                             reconstructed_dwis.astype(np.float64),
                             norm_params[nb0:take_volumes],

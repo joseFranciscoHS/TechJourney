@@ -1,3 +1,4 @@
+.cursor/handoffs/
 .ruff_cache/
 dbrain/
 *.nii.gz

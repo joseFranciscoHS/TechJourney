@@ -96,7 +96,9 @@ def reconstruct_dwis(
     pad_z = (stride - (z_size - patch_size) % stride) % stride
 
     if pad_x > 0 or pad_y > 0 or pad_z > 0:
-        data = torch.nn.functional.pad(data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect")
+        data = torch.nn.functional.pad(
+            data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect"
+        )
         logging.info(f"Padded data to shape: {data.shape}")
 
     padded_x, padded_y, padded_z = data.shape[1], data.shape[2], data.shape[3]
@@ -154,8 +156,14 @@ def reconstruct_dwis(
                                     )
                                     > mask_p
                                 ).float()
-                                patch_b = patch.unsqueeze(0).expand(bsz, -1, -1, -1, -1).clone()
-                                patch_b[:, vol_idx] = patch[vol_idx].unsqueeze(0) * masks
+                                patch_b = (
+                                    patch.unsqueeze(0)
+                                    .expand(bsz, -1, -1, -1, -1)
+                                    .clone()
+                                )
+                                patch_b[:, vol_idx] = (
+                                    patch[vol_idx].unsqueeze(0) * masks
+                                )
                                 patch_b = patch_b.to(device)
                                 orientation_info = _orientation_info_from_order(
                                     full_order, bvecs, bvals, device, bsz
@@ -174,14 +182,16 @@ def reconstruct_dwis(
                                     )
 
                                 part = pred.float().sum(dim=0)
-                                pred_sum_t = part if pred_sum_t is None else pred_sum_t + part
+                                pred_sum_t = (
+                                    part if pred_sum_t is None else pred_sum_t + part
+                                )
                                 del patch_b, pred, part
 
                             pred_np = pred_sum_t.squeeze(0).squeeze(0).cpu().numpy()
                             del pred_sum_t
-                            sum_preds[vol_idx, x_start:x_end, y_start:y_end, z_start:z_end] += (
-                                pred_np * blend_weights
-                            )
+                            sum_preds[
+                                vol_idx, x_start:x_end, y_start:y_end, z_start:z_end
+                            ] += pred_np * blend_weights
 
                         del patch
                         pbar.update(1)
@@ -275,7 +285,9 @@ def reconstruct_dwis_rgs(
     pad_z = (stride - (z_size - patch_size) % stride) % stride
 
     if pad_x > 0 or pad_y > 0 or pad_z > 0:
-        data = torch.nn.functional.pad(data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect")
+        data = torch.nn.functional.pad(
+            data, (0, pad_z, 0, pad_y, 0, pad_x), mode="reflect"
+        )
         logging.info(f"Padded data to shape: {data.shape}")
 
     padded_x, padded_y, padded_z = data.shape[1], data.shape[2], data.shape[3]
@@ -309,8 +321,12 @@ def reconstruct_dwis_rgs(
 
     # TODO: tech debt — data_dev and sum_preds_t assume the full padded shell fits device memory; add explicit fallback path if OOM appears on lower-VRAM GPUs.
     data_dev = data.to(device)
-    blend_weights_t = torch.from_numpy(blend_weights).to(device=device, dtype=torch.float32)
-    weight_map_t = torch.zeros((padded_x, padded_y, padded_z), device=device, dtype=torch.float32)
+    blend_weights_t = torch.from_numpy(blend_weights).to(
+        device=device, dtype=torch.float32
+    )
+    weight_map_t = torch.zeros(
+        (padded_x, padded_y, padded_z), device=device, dtype=torch.float32
+    )
     sum_preds_t = torch.zeros(
         (num_vols, padded_x, padded_y, padded_z), device=device, dtype=torch.float32
     )
@@ -330,7 +346,9 @@ def reconstruct_dwis_rgs(
                 ] += blend_weights_t
 
     with torch.inference_mode():
-        others_by_vol = [[i for i in range(num_vols) if i != vol_k] for vol_k in range(num_vols)]
+        others_by_vol = [
+            [i for i in range(num_vols) if i != vol_k] for vol_k in range(num_vols)
+        ]
         context_orders_by_vol = []
         for vol_k in range(num_vols):
             others = others_by_vol[vol_k]
@@ -340,7 +358,9 @@ def reconstruct_dwis_rgs(
                 order_buf[:-1] = ctx
                 order_buf[-1] = vol_k
                 vol_orders.append(
-                    torch.from_numpy(order_buf.copy()).to(device=device, dtype=torch.long)
+                    torch.from_numpy(order_buf.copy()).to(
+                        device=device, dtype=torch.long
+                    )
                 )
             context_orders_by_vol.append(vol_orders)
 
@@ -351,7 +371,9 @@ def reconstruct_dwis_rgs(
                         x_end = x_start + patch_size
                         y_end = y_start + patch_size
                         z_end = z_start + patch_size
-                        patch_full = data_dev[:, x_start:x_end, y_start:y_end, z_start:z_end]
+                        patch_full = data_dev[
+                            :, x_start:x_end, y_start:y_end, z_start:z_end
+                        ]
                         patch_acc_t = torch.zeros(
                             (num_vols, patch_size, patch_size, patch_size),
                             device=device,
@@ -401,11 +423,13 @@ def reconstruct_dwis_rgs(
                                             patch_b, orientation_info=orientation_info
                                         )
 
-                                    patch_acc_t[vol_k] += pred.float().sum(dim=0).squeeze(0)
+                                    patch_acc_t[vol_k] += (
+                                        pred.float().sum(dim=0).squeeze(0)
+                                    )
 
-                        sum_preds_t[
-                            :, x_start:x_end, y_start:y_end, z_start:z_end
-                        ] += patch_acc_t * blend_weights_t.unsqueeze(0)
+                        sum_preds_t[:, x_start:x_end, y_start:y_end, z_start:z_end] += (
+                            patch_acc_t * blend_weights_t.unsqueeze(0)
+                        )
                         pbar.update(1)
 
     weight_map_t = torch.clamp_min(weight_map_t, 1e-8)
@@ -446,7 +470,9 @@ def reconstruct_dwis_sequential_sliding_k(
     if num_input > num_vols:
         raise ValueError(f"num_input K={num_input} exceeds shell size G={num_vols}")
     if not (0 <= target_channel < num_input):
-        raise ValueError(f"target_channel={target_channel} must be in [0, {num_input - 1}]")
+        raise ValueError(
+            f"target_channel={target_channel} must be in [0, {num_input - 1}]"
+        )
 
     num_windows = num_vols - num_input + 1
     data_cpu_np = data.detach().cpu().numpy()

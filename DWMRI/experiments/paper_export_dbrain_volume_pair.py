@@ -22,10 +22,10 @@ _REPO_SRC = os.path.abspath(os.path.join(_SCRIPT_DIR, "..", "src"))
 if _REPO_SRC not in sys.path:
     sys.path.insert(0, _REPO_SRC)
 
-import numpy as np
+import numpy as np  # noqa: E402
 
-from utils.data import DBrainDataLoader
-from utils.utils import load_config
+from utils.data import DBrainDataLoader  # noqa: E402
+from utils.utils import load_config  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 

@@ -21,6 +21,13 @@ def _device_type(device) -> str:
     return str(device).split(":", maxsplit=1)[0]
 
 
+def _masked_mse(prediction, target, mask):
+    masked_sites = 1 - mask
+    return torch.sum((prediction - target) * (prediction - target) * masked_sites) / (
+        torch.sum(masked_sites)
+    )
+
+
 def fit_model(
     model,
     optimizer: torch.optim.Optimizer,
@@ -32,8 +39,14 @@ def fit_model(
     loss_dir=None,
     use_amp=True,
     supervised_mode=False,
+    objective_mode: str = "hybrid",
     cudnn_fast: bool = True,
 ):
+    objective_mode = str(objective_mode).lower()
+    if objective_mode not in {"hybrid", "angular", "spatial"}:
+        raise ValueError(
+            f"objective_mode must be one of hybrid/angular/spatial, got {objective_mode!r}"
+        )
     configure_cudnn(fast=cudnn_fast)
 
     # Clear GPU cache before training to reduce fragmentation
@@ -48,7 +61,12 @@ def fit_model(
         f"AMP (Automatic Mixed Precision): {'enabled' if amp_enabled else 'disabled'}"
     )
 
-    logging.info((f"Starting training - device: {device}, epochs: {num_epochs}"))
+    logging.info(
+        (
+            f"Starting training - device: {device}, epochs: {num_epochs}, "
+            f"objective_mode={objective_mode}, supervised_mode={supervised_mode}"
+        )
+    )
     logging.info(f"Model device: {next(model.parameters()).device}")
 
     model.to(device)
@@ -142,15 +160,11 @@ def fit_model(
             # forward pass with AMP autocast
             with torch.amp.autocast(device_type=device_type, enabled=amp_enabled):
                 x_recon = model(x, orientation_info=orientation_info)
-                if supervised_mode:
+                if supervised_mode or objective_mode == "angular":
                     loss = torch.mean((x_recon - noisy_target_volume) ** 2)
                 else:
                     # loss: compute only on masked pixels (J-invariant loss)
-                    loss = torch.sum(
-                        (x_recon - noisy_target_volume)
-                        * (x_recon - noisy_target_volume)
-                        * (1 - mask)
-                    ) / torch.sum(1 - mask)
+                    loss = _masked_mse(x_recon, noisy_target_volume, mask)
 
             # backward pass + step (scaled if AMP enabled)
             if amp_enabled:

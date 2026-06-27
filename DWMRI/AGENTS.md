@@ -8,6 +8,9 @@ This folder is the **Diffusion-weighted MRI** reconstruction and denoising works
 - `experiments/` — batch manifests, `driver.py`, pilot/production notes, job generators.
 - `.cursor/rules/` — Cursor rules (e.g. deep-learning domain, J-invariance review).
 - `.cursor/skills/j-invariance-dwmri-reviewer/` — skill for blind-spot / J-invariant denoising review.
+- `.cursor/skills/dwmri-plan-me/` — user-invoked alias to start implementation planning.
+- `.cursor/skills/dwmri-implementation-planning/` — grilling-style planning before new work.
+- `.cursor/skills/dwmri-handoff/` — session handoff for agent continuity.
 
 Human-oriented install and feature overview: [src/README.md](src/README.md).
 

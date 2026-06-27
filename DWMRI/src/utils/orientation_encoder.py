@@ -10,8 +10,7 @@ class OrientationEncoder(nn.Module):
         super().__init__()
         if embed_dim != spatial_size * spatial_size:
             raise ValueError(
-                "embed_dim "
-                f"({embed_dim}) must equal spatial_size^2 ({spatial_size**2})"
+                f"embed_dim ({embed_dim}) must equal spatial_size^2 ({spatial_size**2})"
             )
 
         self.spatial_size = spatial_size

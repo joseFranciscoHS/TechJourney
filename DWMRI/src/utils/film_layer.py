@@ -12,9 +12,7 @@ class FiLMLayer(nn.Module):
     gamma ~ 1.0, beta ~ 0.0.
     """
 
-    def __init__(
-        self, cond_dim: int, feature_channels: int, hidden_dim: int = 32
-    ):
+    def __init__(self, cond_dim: int, feature_channels: int, hidden_dim: int = 32):
         super().__init__()
         self.mlp = nn.Sequential(
             nn.Linear(cond_dim, hidden_dim),
@@ -32,9 +30,7 @@ class FiLMLayer(nn.Module):
             self.mlp[2].bias[:feature_channels].fill_(1.0)
             self.mlp[2].bias[feature_channels:].fill_(0.0)
 
-    def forward(
-        self, features: torch.Tensor, condition: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, features: torch.Tensor, condition: torch.Tensor) -> torch.Tensor:
         """
         Args:
             features: (B, C, ...) feature tensor -- works for any spatial dims
@@ -46,8 +42,8 @@ class FiLMLayer(nn.Module):
         """
         # (B, 2*C)
         gamma_beta = self.mlp(condition)
-        gamma = gamma_beta[:, :self.feature_channels]
-        beta = gamma_beta[:, self.feature_channels:]
+        gamma = gamma_beta[:, : self.feature_channels]
+        beta = gamma_beta[:, self.feature_channels :]
 
         # Reshape for broadcasting: (B, C) -> (B, C, 1, 1, 1) for 5D
         n_spatial = features.dim() - 2

@@ -126,6 +126,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         shell_sampling_mode: str = "sequential",
         num_input_volumes: Optional[int] = None,
         target_channel: int = 9,
+        objective_mode: str = "hybrid",
         sample_rng_seed: Optional[int] = None,
         bvecs: Optional[np.ndarray] = None,
         bvals: Optional[np.ndarray] = None,
@@ -137,10 +138,21 @@ class TrainingDataSet(torch.utils.data.Dataset):
             num_input_volumes: K stacked channels (required for rgs and sequential)
                 must be <= G.
             target_channel: 0-based channel index for mask + loss (typically K-1)
+            objective_mode: "hybrid", "angular", or "spatial". Non-hybrid modes
+                are supported for RGS only and change how the target volume is used.
             sample_rng_seed: Seed for per-sample RGS/sequential draws and Bernoulli spatial masks.
                 If None, uses an unseeded Generator (legacy behavior).
         """
         self.shell_sampling_mode = shell_sampling_mode
+        self.objective_mode = str(objective_mode).lower()
+        if self.objective_mode not in {"hybrid", "angular", "spatial"}:
+            raise ValueError(
+                f"objective_mode must be one of hybrid/angular/spatial, got {objective_mode!r}"
+            )
+        if self.objective_mode != "hybrid" and shell_sampling_mode != "rgs":
+            raise ValueError(
+                f"objective_mode={self.objective_mode!r} is supported only with shell_sampling_mode='rgs'"
+            )
         self.target_channel = int(target_channel)
         if (bvecs is None) != (bvals is None):
             raise ValueError("bvecs and bvals must be provided together")
@@ -158,7 +170,7 @@ class TrainingDataSet(torch.utils.data.Dataset):
         logging.info(
             f"Initializing DataSet: data.shape={data.shape}, patch_size={patch_size}, "
             f"step={step}, mask_p={mask_p}, filter_method={patch_filter_method}, "
-            f"shell_sampling_mode={shell_sampling_mode}"
+            f"shell_sampling_mode={shell_sampling_mode}, objective_mode={self.objective_mode}"
         )
 
         self.n_vols = data.shape[-1]
@@ -189,7 +201,20 @@ class TrainingDataSet(torch.utils.data.Dataset):
                 raise ValueError(
                     f"num_input_volumes={self.num_input_volumes} exceeds shell size G={self.n_vols}"
                 )
-            if not (0 <= self.target_channel < self.num_input_volumes):
+            if (
+                self.objective_mode == "angular"
+                and self.num_input_volumes >= self.n_vols
+            ):
+                raise ValueError(
+                    "angular objective requires num_input_volumes < shell size G so the target volume can be excluded"
+                )
+            if self.objective_mode == "spatial" and self.num_input_volumes != 1:
+                raise ValueError(
+                    f"spatial objective requires num_input_volumes=1, got {self.num_input_volumes}"
+                )
+            if self.objective_mode == "hybrid" and not (
+                0 <= self.target_channel < self.num_input_volumes
+            ):
                 raise ValueError(
                     f"target_channel={self.target_channel} must be in [0, {self.num_input_volumes - 1}]"
                 )
@@ -238,7 +263,31 @@ class TrainingDataSet(torch.utils.data.Dataset):
             self.patch_size_tuple[3],
         )
 
-        if self.shell_sampling_mode == "rgs":
+        if self.shell_sampling_mode == "rgs" and self.objective_mode == "angular":
+            window_idx = index
+            x, y, z = self.valid_coords[window_idx]
+            target_volume_idx = int(self._rng.integers(0, self.n_vols))
+            others = np.array(
+                [i for i in range(self.n_vols) if i != target_volume_idx],
+                dtype=np.int64,
+            )
+            indices = self._rng.choice(
+                others, size=self.num_input_volumes, replace=False
+            )
+            window = self.data_transposed[
+                indices, x : x + px, y : y + py, z : z + pz
+            ].copy()
+            window = torch.from_numpy(window).float()
+        elif self.shell_sampling_mode == "rgs" and self.objective_mode == "spatial":
+            window_idx = index
+            x, y, z = self.valid_coords[window_idx]
+            target_volume_idx = int(self._rng.integers(0, self.n_vols))
+            indices = np.array([target_volume_idx], dtype=np.int64)
+            window = self.data_transposed[
+                indices, x : x + px, y : y + py, z : z + pz
+            ].copy()
+            window = torch.from_numpy(window).float()
+        elif self.shell_sampling_mode == "rgs":
             window_idx = index
             x, y, z = self.valid_coords[window_idx]
             k = self.num_input_volumes
@@ -278,7 +327,19 @@ class TrainingDataSet(torch.utils.data.Dataset):
         mask = torch.tensor(mask, dtype=torch.float32).unsqueeze(0)
 
         x_masked = window.clone()
-        if self.shell_sampling_mode in {"rgs", "sequential"}:
+        if self.objective_mode == "angular":
+            noisy_target_np = self.data_transposed[
+                target_volume_idx : target_volume_idx + 1,
+                x : x + px,
+                y : y + py,
+                z : z + pz,
+            ].copy()
+            noisy_target_volume = torch.from_numpy(noisy_target_np).float()
+            mask = torch.ones_like(noisy_target_volume)
+        elif self.objective_mode == "spatial":
+            x_masked[0] = x_masked[0] * mask.squeeze(0)
+            noisy_target_volume = window[0:1]
+        elif self.shell_sampling_mode in {"rgs", "sequential"}:
             tc = self.target_channel
             volume_masked = x_masked[tc] * mask.squeeze(0)
             x_masked[tc] = volume_masked

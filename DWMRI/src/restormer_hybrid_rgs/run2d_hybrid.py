@@ -339,7 +339,9 @@ def main():
                     )
                     norm_params = getattr(data_loader, "norm_params_", None)
                     if norm_params is not None:
-                        gt_xyzv = invert_normalization(gt_xyzv, norm_params[:take_volumes])
+                        gt_xyzv = invert_normalization(
+                            gt_xyzv, norm_params[:take_volumes]
+                        )
                         den_dwis = invert_normalization(
                             recon_xyzv.astype(np.float64),
                             norm_params[nb0:take_volumes],

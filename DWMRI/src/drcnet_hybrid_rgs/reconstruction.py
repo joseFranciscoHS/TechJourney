@@ -36,6 +36,7 @@ def reconstruct_dwis_rgs(
     pred_chunk_size=None,
     bvecs=None,
     bvals=None,
+    objective_mode="hybrid",
 ):
     """
     RGS–Hybrid inference: for each gradient index ``k``, Monte-Carlo average over
@@ -57,9 +58,14 @@ def reconstruct_dwis_rgs(
     Returns:
         Reconstructed array (Vols, X, Y, Z).
     """
+    objective_mode = str(objective_mode).lower()
+    if objective_mode not in {"hybrid", "angular", "spatial"}:
+        raise ValueError(
+            f"objective_mode must be one of hybrid/angular/spatial, got {objective_mode!r}"
+        )
     logging.info(
-        f"RGS reconstruction: mask_p={mask_p}, n_context={n_context}, n_preds={n_preds}, "
-        f"target_channel={target_channel}, K={num_input}"
+        f"RGS reconstruction: objective_mode={objective_mode}, mask_p={mask_p}, "
+        f"n_context={n_context}, n_preds={n_preds}, target_channel={target_channel}, K={num_input}"
     )
     rng = np.random.default_rng(seed)
 
@@ -70,11 +76,17 @@ def reconstruct_dwis_rgs(
 
     num_vols, x_size, y_size, z_size = data_t.shape
     spatial_dims = (x_size, y_size, z_size)
-    if num_input != target_channel + 1:
+    if objective_mode == "hybrid" and num_input != target_channel + 1:
         logging.warning(
             f"target_channel={target_channel} with K={num_input}: typical parity uses "
             f"target_channel=K-1 (last slot = masked volume)."
         )
+    if objective_mode == "angular" and num_input >= num_vols:
+        raise ValueError(
+            f"angular objective requires K={num_input} to be smaller than shell size G={num_vols}"
+        )
+    if objective_mode == "spatial" and num_input != 1:
+        raise ValueError(f"spatial objective requires K=1, got K={num_input}")
 
     if n_preds < 1:
         raise ValueError(f"n_preds must be >= 1, got {n_preds}")
@@ -104,6 +116,43 @@ def reconstruct_dwis_rgs(
                 (x_size, y_size, z_size), device=device, dtype=torch.float32
             )
             others = [i for i in range(num_vols) if i != vol_k]
+            if objective_mode == "angular":
+                for _ in range(n_context):
+                    order = rng.choice(others, size=num_input, replace=False)
+                    stack = data_dev[order]
+                    inp_b = stack.unsqueeze(0)
+                    orientation_info = _orientation_info_from_order(
+                        order, bvecs, bvals, device, 1
+                    )
+                    out = model(inp_b, orientation_info=orientation_info).squeeze(1)
+                    acc = acc + out.squeeze(0)
+                sum_preds[vol_k] = (acc / float(n_context)).detach().cpu().numpy()
+                continue
+
+            if objective_mode == "spatial":
+                stack = data_dev[vol_k : vol_k + 1]
+                done = 0
+                while done < n_preds:
+                    chunk = min(pred_chunk_size, n_preds - done)
+                    masks = (
+                        torch.rand(
+                            (chunk, x_size, y_size, z_size),
+                            device=device,
+                            generator=mask_generator,
+                        )
+                        > mask_p
+                    ).to(torch.float32)
+                    inp_b = stack.unsqueeze(0).expand(chunk, -1, -1, -1, -1).clone()
+                    inp_b[:, 0] = inp_b[:, 0] * masks
+                    orientation_info = _orientation_info_from_order(
+                        np.array([vol_k], dtype=np.int64), bvecs, bvals, device, chunk
+                    )
+                    out = model(inp_b, orientation_info=orientation_info).squeeze(1)
+                    acc = acc + out.sum(dim=0)
+                    done += chunk
+                sum_preds[vol_k] = (acc / float(n_preds)).detach().cpu().numpy()
+                continue
+
             for _ in range(n_context):
                 ctx = rng.choice(others, size=num_input - 1, replace=False)
                 order = np.concatenate([ctx, np.array([vol_k], dtype=np.int64)])
@@ -150,6 +199,7 @@ def reconstruct_dwis_sequential_sliding_k(
     pred_chunk_size=None,
     bvecs=None,
     bvals=None,
+    objective_mode="hybrid",
 ):
     """
     Sequential-K inference over full shell G using sliding windows.
@@ -158,6 +208,12 @@ def reconstruct_dwis_sequential_sliding_k(
     (typically K-1) is reconstructed. Outputs are written to the global shell
     index corresponding to that slot.
     """
+    objective_mode = str(objective_mode).lower()
+    if objective_mode != "hybrid":
+        raise ValueError(
+            f"Sequential reconstruction supports only objective_mode='hybrid', got {objective_mode!r}"
+        )
+
     if isinstance(data, np.ndarray):
         data_t = torch.from_numpy(data.astype(np.float32))
     else:

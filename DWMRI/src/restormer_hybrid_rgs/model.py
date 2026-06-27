@@ -334,9 +334,10 @@ class Restormer3D(nn.Module):
         self.scale_and_shift = scale_and_shift
         self.use_film_conditioning = use_film_conditioning
         self.target_channel = target_channel
-        
+
         if use_film_conditioning:
             from utils.film_layer import FiLMLayer
+
             self.film_enc2 = FiLMLayer(
                 cond_dim=4, feature_channels=int(dim * 2), hidden_dim=film_hidden_dim
             )
@@ -507,7 +508,7 @@ class Restormer3D(nn.Module):
         inp_enc_level2 = self.down1_2(out_enc_level1)
         out_enc_level2 = self.encoder_level2(inp_enc_level2)
         enc2_size = out_enc_level2.shape[2:]
-        
+
         # FiLM after encoder level 2
         if cond is not None:
             out_enc_level2 = self.film_enc2(out_enc_level2, cond)
@@ -515,7 +516,7 @@ class Restormer3D(nn.Module):
         # Latent (quarter resolution)
         inp_latent = self.down2_latent(out_enc_level2)
         latent = self.latent(inp_latent)
-        
+
         # FiLM at bottleneck
         if cond is not None:
             latent = self.film_latent(latent, cond)
@@ -525,7 +526,7 @@ class Restormer3D(nn.Module):
         inp_dec_level2 = torch.cat([inp_dec_level2, out_enc_level2], dim=1)
         inp_dec_level2 = self.reduce_chan_level2(inp_dec_level2)
         out_dec_level2 = self.decoder_level2(inp_dec_level2)
-        
+
         # FiLM after decoder level 2
         if cond is not None:
             out_dec_level2 = self.film_dec2(out_dec_level2, cond)

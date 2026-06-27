@@ -61,6 +61,8 @@ from utils.training_patch_subset import (
 )
 from utils.utils import load_config, noise_path_segment
 
+_OBJECTIVE_MODES = {"hybrid", "angular", "spatial"}
+
 
 def _is_rgs(settings) -> bool:
     return getattr(settings.data, "shell_sampling_mode", "sequential") == "rgs"
@@ -70,20 +72,68 @@ def _is_sequential(settings) -> bool:
     return getattr(settings.data, "shell_sampling_mode", "sequential") == "sequential"
 
 
+def _objective_mode(settings) -> str:
+    mode = str(getattr(settings.train, "objective_mode", "hybrid")).lower()
+    if mode not in _OBJECTIVE_MODES:
+        raise ValueError(
+            f"train.objective_mode must be one of {sorted(_OBJECTIVE_MODES)}, got {mode!r}"
+        )
+    return mode
+
+
 def _volume_path_segment(settings) -> str:
+    objective = _objective_mode(settings)
     if _is_rgs(settings):
         g = int(
             getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
         )
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
-        return f"rgs_G{g}_K{k}"
+        segment = f"rgs_G{g}_K{k}"
+        return segment if objective == "hybrid" else f"{objective}_{segment}"
     if _is_sequential(settings):
         g = int(
             getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
         )
         k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
-        return f"sequential_G{g}_K{k}"
-    return f"num_volumes_{settings.data.num_volumes}"
+        segment = f"sequential_G{g}_K{k}"
+        return segment if objective == "hybrid" else f"{objective}_{segment}"
+    segment = f"num_volumes_{settings.data.num_volumes}"
+    return segment if objective == "hybrid" else f"{objective}_{segment}"
+
+
+def _validate_objective_settings(settings) -> str:
+    objective = _objective_mode(settings)
+    if objective != "hybrid" and not _is_rgs(settings):
+        raise ValueError(
+            f"train.objective_mode={objective!r} is supported only with data.shell_sampling_mode='rgs'"
+        )
+    if objective != "hybrid" and bool(
+        getattr(settings.model, "use_film_conditioning", False)
+    ):
+        raise ValueError(
+            "Angular/spatial objective modes do not support model.use_film_conditioning=true yet"
+        )
+
+    if _is_rgs(settings) or _is_sequential(settings):
+        k = int(getattr(settings.data, "num_input_volumes", settings.model.in_channel))
+        if k != settings.model.in_channel:
+            raise ValueError(
+                f"num_input_volumes ({k}) must match model.in_channel ({settings.model.in_channel})"
+            )
+        g = int(
+            getattr(settings.data, "shell_gradient_volumes", settings.data.num_volumes)
+        )
+        if objective == "angular" and k >= g:
+            raise ValueError(
+                f"angular objective requires K={k} to be smaller than shell size G={g}"
+            )
+        if objective == "spatial" and k != 1:
+            raise ValueError(f"spatial objective requires K=1, got K={k}")
+        target_channel = int(getattr(settings.data, "target_channel", 9))
+        if objective == "hybrid" and not (0 <= target_channel < k):
+            raise ValueError(f"target_channel={target_channel} must be in [0, {k - 1}]")
+
+    return objective
 
 
 def _patch_volume_dim(settings) -> int:
@@ -104,7 +154,7 @@ def _take_volumes_dwi(settings) -> int:
 
 def _dataset_kwargs(settings):
     mode = getattr(settings.data, "shell_sampling_mode", "sequential")
-    kw = {"shell_sampling_mode": mode}
+    kw = {"shell_sampling_mode": mode, "objective_mode": _objective_mode(settings)}
     if mode in {"rgs", "sequential"}:
         kw["num_input_volumes"] = int(
             getattr(settings.data, "num_input_volumes", settings.model.in_channel)
@@ -252,6 +302,7 @@ def fit_progressive(
             loss_dir=stage_loss_dir,
             use_amp=use_amp,
             supervised_mode=bool(getattr(settings.train, "supervised", False)),
+            objective_mode=_objective_mode(settings),
             cudnn_fast=cudnn_fast,
         )
 
@@ -353,6 +404,7 @@ def main(
         raise ValueError(f"Invalid dataset: {dataset}")
 
     apply_output_root(settings, output_root)
+    objective_mode = _validate_objective_settings(settings)
 
     train_seed = int(getattr(settings.train, "seed", 42))
     cudnn_fast = not bool(getattr(settings.train, "reproducible", False))
@@ -385,7 +437,7 @@ def main(
         }
         wandb_kwargs = {"project": "DWMRI-Denoising", "config": wandb_config}
         wandb_kwargs["name"] = f"{dataset}_{_volume_path_segment(settings)}"
-        wandb_kwargs["tags"] = [dataset, _volume_path_segment(settings)]
+        wandb_kwargs["tags"] = [dataset, _volume_path_segment(settings), objective_mode]
         if use_wandb:
             wandb_run = wandb.init(**wandb_kwargs)
         else:
@@ -401,14 +453,6 @@ def main(
         # omitting the b0s from the data
         take_volumes = _take_volumes_dwi(settings)
         logging.info(f"Taking volumes from {settings.data.num_b0s} to {take_volumes}")
-        if _is_rgs(settings):
-            k = int(
-                getattr(settings.data, "num_input_volumes", settings.model.in_channel)
-            )
-            if k != settings.model.in_channel:
-                raise ValueError(
-                    f"RGS: num_input_volumes ({k}) must match model.in_channel ({settings.model.in_channel})"
-                )
         tx, ty, tz = settings.data.take_x, settings.data.take_y, settings.data.take_z
         original_xyzv_b0 = original_data[:tx, :ty, :tz, :take_volumes]
         noisy_data = noisy_data[:tx, :ty, :tz, settings.data.num_b0s : take_volumes]
@@ -517,7 +561,9 @@ def main(
                     output_activation=getattr(
                         settings.model, "output_activation", "prelu"
                     ),
-                    use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                    use_film_conditioning=bool(
+                        getattr(settings.model, "use_film_conditioning", False)
+                    ),
                     film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
                     target_channel=int(getattr(settings.data, "target_channel", 15)),
                 )
@@ -610,7 +656,9 @@ def main(
                     output_activation=getattr(
                         settings.model, "output_activation", "prelu"
                     ),
-                    use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                    use_film_conditioning=bool(
+                        getattr(settings.model, "use_film_conditioning", False)
+                    ),
                     film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
                     target_channel=int(getattr(settings.data, "target_channel", 15)),
                 )
@@ -692,6 +740,7 @@ def main(
                     loss_dir=loss_dir,
                     use_amp=use_amp,
                     supervised_mode=bool(getattr(settings.train, "supervised", False)),
+                    objective_mode=objective_mode,
                     cudnn_fast=cudnn_fast,
                 )
             train_secs = time.time() - train_t0
@@ -724,7 +773,9 @@ def main(
                 ),
                 device=settings.train.device,
                 output_activation=getattr(settings.model, "output_activation", "prelu"),
-                use_film_conditioning=bool(getattr(settings.model, "use_film_conditioning", False)),
+                use_film_conditioning=bool(
+                    getattr(settings.model, "use_film_conditioning", False)
+                ),
                 film_hidden_dim=int(getattr(settings.model, "film_hidden_dim", 32)),
                 target_channel=int(getattr(settings.data, "target_channel", 15)),
             )
@@ -764,6 +815,7 @@ def main(
                     ),
                     bvecs=orientation_bvecs,
                     bvals=orientation_bvals,
+                    objective_mode=objective_mode,
                 )
             elif _is_sequential(settings):
                 reconstructed_dwis = reconstruct_dwis_sequential_sliding_k(
@@ -786,6 +838,7 @@ def main(
                     ),
                     bvecs=orientation_bvecs,
                     bvals=orientation_bvals,
+                    objective_mode=objective_mode,
                 )
             else:
                 raise ValueError(
@@ -895,7 +948,9 @@ def main(
                     )
                     norm_params = getattr(data_loader, "norm_params_", None)
                     if norm_params is not None:
-                        gt_xyzv = invert_normalization(gt_xyzv, norm_params[:take_volumes])
+                        gt_xyzv = invert_normalization(
+                            gt_xyzv, norm_params[:take_volumes]
+                        )
                         den_dwis = invert_normalization(
                             reconstructed_dwis.astype(np.float64),
                             norm_params[nb0:take_volumes],
@@ -959,6 +1014,7 @@ def main(
                 config={
                     "dataset": dataset,
                     "architecture": "drcnet_hybrid_rgs",
+                    "objective_mode": objective_mode,
                     "sampling_mode": getattr(
                         settings.data, "shell_sampling_mode", "sequential"
                     ),
@@ -1071,6 +1127,7 @@ def main(
             "regime": regime,
             "architecture": "drcnet",
             "dimensionality": "3d",
+            "objective_mode": objective_mode,
             "sampling_mode": getattr(
                 settings.data, "shell_sampling_mode", "sequential"
             ),
@@ -1088,7 +1145,18 @@ def main(
                     )
                 ),
                 "target_channel": int(getattr(settings.data, "target_channel", 9)),
-                "window_policy": "sliding_last_target",
+                "window_policy": "sliding_last_target"
+                if objective_mode == "hybrid"
+                else f"{objective_mode}_target_policy",
+            },
+            "objective_config": {
+                "mode": objective_mode,
+                "uses_angular_context": objective_mode in {"hybrid", "angular"},
+                "uses_spatial_masked_target": objective_mode in {"hybrid", "spatial"},
+                "loss": "full_mse"
+                if bool(getattr(settings.train, "supervised", False))
+                or objective_mode == "angular"
+                else "masked_mse",
             },
             "inference_config": {
                 "n_context_samples": int(

@@ -91,9 +91,7 @@ def _apply_paper_shared_npy_out_dir(cmd, job_id):
     raw = os.environ.get("PAPER_SHARED_NPY")
     if not raw:
         return cmd
-    if not any(
-        "paper_export_dbrain_volume_pair.py" in str(x) for x in cmd
-    ):
+    if not any("paper_export_dbrain_volume_pair.py" in str(x) for x in cmd):
         return cmd
     try:
         idx = cmd.index("--out-dir")

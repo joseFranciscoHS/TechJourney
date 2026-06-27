@@ -514,9 +514,9 @@ def main(
                 den_for_dti = denoised_data.astype(np.float64)
                 norm_params = getattr(data_loader, "norm_params_", None)
                 if norm_params is not None:
-                    gt_for_dti = invert_normalization(gt_for_dti, norm_params[:n_vols]).astype(
-                        np.float64
-                    )
+                    gt_for_dti = invert_normalization(
+                        gt_for_dti, norm_params[:n_vols]
+                    ).astype(np.float64)
                     den_for_dti = invert_normalization(
                         den_for_dti, norm_params[:n_vols]
                     ).astype(np.float64)
