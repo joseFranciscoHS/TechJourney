@@ -20,6 +20,9 @@ Todos los comandos se corren desde la raiz de `DWMRI/`.
   - `export PAPER_SHARED_NPY="$PWD/tmp/paper_final_shared_npy"`
 - [ ] Reanudar solo jobs pendientes del manifiesto completo (salta los ya exitosos en `driver_state.json`)
   - `python experiments/driver.py --manifest experiments/paper_manifest_final.yaml --exp-id paper_final_k16 --output-root "$PAPER_OUT" --registry-path "$PAPER_REGISTRY" --resume --retry-failed --fail-fast`
+- [ ] Collect metrics
+  - `python -m paper_eval.summarize_registry --registry "$PAPER_REGISTRY" --out "$PAPER_OUT/paper_tables/registry_summary.csv"`
+  - `python experiments/collect_paper_artifacts.py --output-root "$PAPER_OUT" --registry "$PAPER_REGISTRY" --out-dir "$PAPER_OUT/paper_tables"`
 
 ---
 

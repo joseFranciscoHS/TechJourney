@@ -133,3 +133,5 @@ paper_final_k16,drcnet_dbrain_rgs_film_conditioning,film_conditioning_drcnet,suc
 paper_final_k16,restormer_dbrain_rgs_film_conditioning,film_conditioning_restormer,success,dbrain,restormer,3d,rgs,16,60,16,12,184699,33.28290403352843,130.28487542470296,11097.13427734375,19859.43830895424
 paper_final_k16,drcnet_stanford_rgs_film_conditioning,film_conditioning_drcnet_stanford,success,stanford,drcnet,3d,rgs,16,150,16,23,120546,25.48615935140186,26.77356780211131,8314.6025390625,27010.084391355515
 paper_final_k16,restormer_stanford_rgs_film_conditioning,film_conditioning_restormer_stanford,success,stanford,restormer,3d,rgs,16,150,16,23,184699,11.912015165487926,85.40712254206339,11096.50927734375,23589.749242544174
+paper_final_k16,drcnet_dbrain_angular_only_k16_ablation,objective_controlled_ablation,success,dbrain,drcnet,3d,rgs,15,60,16,12,115138,15.199501764112048,5.234646836916606,7986.19873046875,5848.1689286231995
+paper_final_k16,drcnet_dbrain_spatial_only_ablation,objective_controlled_ablation,success,dbrain,drcnet,3d,rgs,1,60,16,12,103042,11.236196285486221,4.5115294297536215,7650.03662109375,4375.829030990601
