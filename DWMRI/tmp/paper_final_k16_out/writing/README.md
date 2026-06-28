@@ -91,6 +91,7 @@ draft, a table, etc.>
 | 004 | `3d_vs_2d_ablation` | 3D vs 2D Convolutions (critical architectural ablation) | ready |
 | 005 | `sigma_robustness` | Robustness to Noise Level (sigma sweep across SNR regimes) | ready |
 | 006 | `stanford_generalization` | Generalization to Real Scanner Noise (Stanford HARDI evaluation) | ready |
+| 007 | `objective_controlled_ablation` | Objective-Controlled DRCNet Ablation (angular/spatial/random component isolation) | ready |
 
 ---
 
