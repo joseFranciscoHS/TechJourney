@@ -1,0 +1,7 @@
+exp_id,job_id,recipe,status,dataset,architecture,dimensionality,sampling_mode,k_input,g_shell,n_context_samples,n_preds,n_params,sec_per_epoch,sec_per_volume,peak_gpu_mem_mb,duration_s
+paper_final_k16_rerun,drcnet_dbrain_rgs_final,drcnet_main,success,dbrain,drcnet,3d,rgs,16,60,16,12,116002,,,8010.208984375,1740.205482006073
+paper_final_k16_rerun,drcnet_dbrain_rgs_final,drcnet_main,success,dbrain,drcnet,3d,rgs,16,60,16,12,0,,,0.0,31.11995530128479
+paper_final_k16_rerun,drcnet_dbrain_rgs_final,drcnet_main,success,dbrain,drcnet,3d,rgs,16,60,16,12,116002,14.789510317643483,34.146129779020946,8010.208984375,7430.6815531253815
+paper_final_k16_rerun,restormer_dbrain_rgs_final,restormer_main,success,dbrain,restormer,3d,rgs,16,60,16,12,177883,32.91754938827621,126.75681114196777,11066.98681640625,19517.881291627884
+paper_final_k16_rerun,drcnet_stanford_rgs_final,drcnet_main,success,stanford,drcnet,3d,rgs,16,150,16,23,116002,40.38851841873593,25.203444754282632,8010.208984375,40179.29980754852
+paper_final_k16_rerun,restormer_stanford_rgs_final,restormer_main,success,stanford,restormer,3d,rgs,16,150,16,23,177883,19.315941745705075,83.06205722649892,11065.98681640625,29901.853932857513

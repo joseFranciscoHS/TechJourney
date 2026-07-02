@@ -1,0 +1,11 @@
+{
+  "status": "ok",
+  "output_root": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_rerun_20260628T042410Z",
+  "registry_path": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_rerun_20260628T042410Z/registry.jsonl",
+  "metrics_rows": 4,
+  "runtime_rows": 6,
+  "outputs": {
+    "metrics_csv": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_rerun_20260628T042410Z/paper_tables/paper_metrics_summary.csv",
+    "runtime_csv": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_rerun_20260628T042410Z/paper_tables/paper_runtime_summary.csv"
+  }
+}
