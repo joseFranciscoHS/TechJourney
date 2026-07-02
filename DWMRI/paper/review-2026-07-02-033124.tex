@@ -1,0 +1,165 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+
+\title{Technical Review of ``Architecture-Agnostic Self-Supervised Diffusion MRI Denoising with Hybrid Random Gradient Subsets''}
+\author{Paper-review skill output}
+\date{2026-07-02 03:31:24}
+
+\begin{document}
+\maketitle
+
+\section*{Overall assessment}
+
+The manuscript is substantially improved in scope calibration: it now treats Hybrid RGS primarily as a self-supervised sampling-and-masking framework rather than as a claim of architectural superiority. The strongest remaining issues are not prose-level; they are consistency and implementation-clarity problems that could mislead readers trying to reproduce the method. In particular, the channel-order definition of $z_t$, the Rician noise notation, the 2D-versus-3D FA-MAE interpretation, the sigma-sweep monotonicity language, and the unsupported Stanford qualitative claims should be fixed before submission.
+
+I explicitly checked the main equations, symbol definitions, units, table/text consistency, captions, references, branch-convention relevance, and implementation-facing expressions. There are no inverse-trigonometric or coordinate-transform formulas in this draft, so no atan/branch issue applies. The main notation drift found is in the role/order of the target channel and in the indexing used for per-volume normalization.
+
+\section*{Highest-priority technical and consistency findings}
+
+\subsection*{1. The Hybrid RGS input definition conflicts with the stated target-channel index}
+
+\textbf{Location.} Lines 77--80, 86--88, and 213; equation defining
+\[
+  z_t = \operatorname{concat}(\tilde{y}_t, \{y_c : c \in C_t\}).
+\]
+
+\textbf{Problem.} The prose states that the target is placed at a fixed channel index, usually $K-1$, after sampling $K-1$ context gradients. The displayed definition, however, concatenates the masked target volume first and then an unordered set of context volumes. Later, the sampling ablation says that RGS places the target at channel $15$ for $K=16$. These statements are not implementation-equivalent.
+
+\textbf{Why it matters.} This is the key implementation-facing expression in the paper. A reader cannot reconstruct the actual tensor layout, and a reproduction could put the target in channel 0 instead of channel $K-1$, or could use an arbitrary order for the context set. It also weakens the claimed architecture-agnostic formulation because channel ordering is part of the model interface.
+
+\textbf{Suggested fix.} Define an ordered context tuple, not a set, and make the target position explicit. For example:
+\[
+  C_t=(c_1,\ldots,c_{K-1}),\qquad
+  z_t=\operatorname{concat}(y_{c_1},\ldots,y_{c_{K-1}},\tilde y_t),
+\]
+if the implemented target channel is last. If the target is actually first, revise the prose and the ``channel 15'' statements accordingly. Also specify whether the context tuple is randomly permuted or sorted before concatenation.
+
+\subsection*{2. The Rician noise equation uses ambiguous Gaussian notation}
+
+\textbf{Location.} Lines 128--132:
+\[
+  y = \sqrt{(s + \eta_1)^2 + \eta_2^2},
+  \qquad \eta_1,\eta_2 \sim \mathcal{N}(0,\sigma).
+\]
+
+\textbf{Problem.} In standard mathematical notation, the second parameter of $\mathcal{N}(\mu,\sigma^2)$ is often variance, not standard deviation. The manuscript uses $\sigma\in\{0.05,0.10,0.15,0.20\}$ as a noise level and appears to intend $\sigma$ as the standard deviation.
+
+\textbf{Why it matters.} If a reader interprets $\mathcal{N}(0,\sigma)$ as variance, the actual standard deviation becomes $\sqrt{\sigma}$, changing the synthetic-noise regime substantially. This directly affects the reproducibility of all D-Brain results.
+
+\textbf{Suggested fix.} Write either
+\[
+  \eta_1,\eta_2 \sim \mathcal{N}(0,\sigma^2)
+\]
+or explicitly state that the paper uses the convention $\mathcal{N}(0,\sigma)$ with $\sigma$ denoting the standard deviation. The former is less ambiguous.
+
+\subsection*{3. The sigma-sweep narrative overstates monotonic degradation}
+
+\textbf{Location.} Lines 299--303 and manuscript Table \code{tab:sigma_sweep} in the manuscript.
+
+\textbf{Problem.} The text says that the table and figure show ``the expected monotonic degradation in PSNR-ROI as the Rician noise level increases.'' The table is not monotonic for every method after the baseline backfill: Patch2Self is $21.31$ dB at $\sigma=0.10$ and $21.48$ dB at $\sigma=0.15$, and Restormer-Hybrid-RGS is $23.43$ dB at $\sigma=0.10$ and $24.63$ dB at $\sigma=0.15$.
+
+\textbf{Why it matters.} The backfilled values are valuable, but the current wording turns small run-to-run or pipeline variation into a contradicted trend claim. Readers will notice this directly from the table.
+
+\textbf{Suggested fix.} Replace the monotonic sentence with a qualified statement such as: ``manuscript Table \code{tab:sigma_sweep} and manuscript Figure \code{fig:sigma_robustness} show an overall decline in PSNR-ROI as the noise level increases, with small non-monotonic variations for Patch2Self and Restormer in the intermediate-noise regime.'' Keep the MP-PCA conclusion unchanged.
+
+\subsection*{4. The 2D-versus-3D ablation misreports the Restormer FA-MAE direction}
+
+\textbf{Location.} Abstract line 30; 3D-vs-2D section lines 268--286; Discussion line 502; Conclusion line 509.
+
+\textbf{Problem.} manuscript Table \code{tab:3d_vs_2d} reports Restormer FA-MAE as $0.2309$ for 2D and $0.2238$ for 3D. Because lower is better, the 3D Restormer is better on FA-MAE. The prose says that ``FA-MAE and MD-MAE are also slightly better for the 2D Restormer,'' and the table bolds the 2D FA-MAE value. The abstract, Discussion, and Conclusion also make blanket statements that lightweight 2D backbones outperform the current 3D variants in scalar metrics.
+
+\textbf{Why it matters.} This is a direct contradiction between a central architectural claim and the table values. It also affects the high-level framing because the manuscript uses this ablation to argue that the RGS objective dominates architecture.
+
+\textbf{Suggested fix.} Correct the table bolding so that Restormer 3D is bold for FA-MAE, unless the table value is wrong. Revise the prose to say that 2D improves Restormer PSNR-ROI, SSIM-ROI, MD-MAE, parameters, and runtime, but not FA-MAE. Replace blanket abstract/discussion/conclusion claims with a qualified statement such as: ``lightweight 2D variants outperform the current 3D variants on most scalar image-domain metrics and on DRCNet tensor metrics, while Restormer 3D retains a slight FA-MAE advantage.''
+
+\subsection*{5. The Stanford qualitative claims are stronger than the evidence shown}
+
+\textbf{Location.} Lines 453, 461--465, and 495.
+
+\textbf{Problem.} The Stanford section states that denoised volumes show ``clear suppression of granular scanner noise'' and discusses preserved boundaries, residual noise, and FA/MD map behavior. However, the manuscript still contains \texttt{TODO} placeholders requiring visual Stanford FA/MD panels, residual maps, and/or homogeneous-ROI variance summaries.
+
+\textbf{Why it matters.} Without the planned figures or quantitative reference-free summaries, these are unsupported visual claims. The paper correctly says Stanford lacks ground truth, but it still makes observational statements that the manuscript does not show.
+
+\textbf{Suggested fix.} Either add the planned panels and explicitly point to them, or downgrade the Stanford claims to feasibility-only language. For example, replace ``show clear suppression'' with ``were successfully reconstructed for visual inspection; final qualitative claims require the panels described in the TODO.'' Remove all \texttt{TODO} placeholders before submission.
+
+\subsection*{6. The FiLM Stanford statement conflicts with the later Stanford table}
+
+\textbf{Location.} Lines 372--374 and manuscript Table \code{tab:stanford_k_sweep}.
+
+\textbf{Problem.} The FiLM section says that because ``no matching unconditioned Stanford baseline is available,'' Stanford FiLM results are not included in the quantitative ablation table. Later, manuscript Table \code{tab:stanford_k_sweep} reports unconditioned DRCNet and Restormer Stanford runs at $K=16$.
+
+\textbf{Why it matters.} The contradiction makes it unclear whether the missing comparator is the whole unconditioned model, a tensor-summary comparator, or only a matched FiLM-specific run under identical postprocessing.
+
+\textbf{Suggested fix.} If the issue is missing matched tensor summaries, say so precisely: ``No matching unconditioned Stanford tensor-summary run is available under the same FiLM-evaluation protocol.'' If the K-sweep rows are valid comparators for noisy-input PSNR-ROI, then report them or state why they are not comparable.
+
+\subsection*{7. Progressive training is ambiguous about whether weights are restarted}
+
+\textbf{Location.} Lines 380--386.
+
+\textbf{Problem.} The manuscript says that each progressive stage ``constructs a new dataset at the specified patch resolution and trains from scratch.'' In a progressive schedule, readers usually expect weights to carry over between patch sizes. ``From scratch'' could mean that stage 2 discards stage 1 weights and stage 3 discards stage 2 weights, which would not be progressive training in the usual sense.
+
+\textbf{Why it matters.} This affects reproducibility, training cost, and interpretation of the progressive-schedule ablation.
+
+\textbf{Suggested fix.} State explicitly whether weights are initialized once and then fine-tuned across stages, or whether each stage is an independent run. If weights carry over, replace ``trains from scratch'' with ``continues training from the previous stage's checkpoint on a newly constructed patch dataset.''
+
+\subsection*{8. The baseline list includes methods and analyses that are not actually reported}
+
+\textbf{Location.} Lines 146--160.
+
+\textbf{Problem.} The baseline list includes BM4D ``if available,'' and the evaluation-metrics paragraph says tractography summaries ``should be reported'' when feasible. The paper does not report BM4D or tractography results.
+
+\textbf{Why it matters.} In a final manuscript, this reads like a protocol plan rather than a completed experimental report. It can also make the contribution list appear broader than the actual evidence.
+
+\textbf{Suggested fix.} Remove BM4D from the baseline list unless it is reported, or move it to limitations/future work. Change ``should be reported'' to a factual statement about what is reported here, and reserve tractography for future work if not performed.
+
+\section*{Notation and implementation clarity checks}
+
+\begin{itemize}
+  \item \textbf{Symbol definitions checked.} $Y$, $y_g$, $x_g$, $t$, $K$, $C_t$, $m$, $p$, $N_c$, $N_p$, $\Omega_m$, and $\Omega_{\mathrm{ROI}}$ are generally defined before use. The actionable drift is the channel-order conflict for $z_t$ noted above.
+  \item \textbf{Normalization notation.} Line 74 defines per-volume min--max normalization as $Y'_i=(Y_i-\min(Y_i))/(\max(Y_i)-\min(Y_i)+\epsilon)$, but $i$ elsewhere denotes a voxel index. Since the text says each diffusion-weighted volume is normalized independently, consider writing $Y'_g=(Y_g-\min(Y_g))/(\max(Y_g)-\min(Y_g)+\epsilon)$, with min and max over voxels in volume $g$.
+  \item \textbf{Branch/sign conventions.} No inverse-trigonometric, coordinate-transform, or branch-cut formulas appear in the manuscript. No concrete branch-convention issue was identified.
+  \item \textbf{Units.} The manuscript appropriately warns that D-Brain MD/AD/RD errors are in arbitrary phantom units. Keep that caveat near every table that reports MD-MAE, as currently done.
+\end{itemize}
+
+\section*{Meaningful editorial and presentation issues}
+
+\begin{itemize}
+  \item \textbf{Location: lines 453, 465, and 495.} The manuscript contains three visible \texttt{TODO} placeholders. These must be resolved before submission because they identify missing evidence and planned figures.
+  \item \textbf{Location: manuscript Table \code{tab:main_comparison} in the manuscript.} The table bolds both MD-S2S FA-MAE ($0.2298$) and Restormer-Hybrid-RGS FA-MAE ($0.2238$), although Restormer is lower. If bolding means the best self-supervised neural or regression result, only the lower value should be bold.
+  \item \textbf{Location: line 432 caption.} The phrase ``best self-supervised neural or regression result'' is slightly ambiguous because Patch2Self is a regression baseline and MD-S2S is a neural baseline, while MP-PCA is classical. Consider ``best non-classical self-supervised result, excluding MP-PCA and supervised reference rows'' if that is the intended convention.
+  \item \textbf{Location: line 547 bibliography.} The reference title uses ``Dipy,'' but the library is styled as DIPY elsewhere in the manuscript. Use consistent capitalization unless the official title requires otherwise.
+\end{itemize}
+
+\section*{Proofing-sweep notes}
+
+The bundled \code{scripts/proofing_scan.py} was run on the compiled manuscript PDF. Its duplicated-period hits were false positives from LaTeX-rendered ellipses such as $\{1,\ldots,G\}$ and $[1{:}17],\ldots,[G-K{:}G]$. Its semicolon-capitalization hits were also false positives caused by acronyms after semicolons, such as ``voxels; SSIM-ROI''. The actionable proofing items are therefore the visible \texttt{TODO} placeholders, the inconsistent DIPY capitalization, and the table-bolding inconsistencies listed above.
+
+\section*{Items needing external verification}
+
+The following items depend on information outside the manuscript and should be verified against the project logs or source literature before final submission:
+\begin{itemize}
+  \item Confirm that the Stanford HARDI acquisition description uses the correct shell label and $b$-value for the exact data subset fetched by \code{dipy.data.fetch_stanford_hardi}.
+  \item Confirm that \code{kang2021mds2s} is the intended citation for the MD-S2S baseline as implemented here, including whether the method name and ``metadata-driven masking'' description match the cited work.
+  \item Confirm whether the official institutional and funding names should include Spanish accents in the address and acknowledgements.
+\end{itemize}
+
+\section*{Priority order for fixes}
+
+\begin{enumerate}
+  \item Fix the $z_t$ channel-order definition and context ordering, because this is central to reproducibility.
+  \item Correct the Rician noise notation to $\mathcal{N}(0,\sigma^2)$ or define the convention explicitly.
+  \item Correct the 2D-versus-3D FA-MAE claims and table bolding, including the abstract, Discussion, and Conclusion.
+  \item Revise the sigma-sweep monotonicity statement to allow the observed non-monotonic intermediate points.
+  \item Resolve the Stanford TODOs by adding figures/summaries or downgrading claims to feasibility only.
+  \item Remove unreported baseline/analysis promises such as BM4D and tractography unless those results are added.
+\end{enumerate}
+
+\end{document}
