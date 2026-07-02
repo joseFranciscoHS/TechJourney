@@ -178,7 +178,7 @@ stanford:
     noise_type: "rician"
     num_b0s: 10
     noise_sigma: 0.01
-    bvalue: 1000
+    bvalue: 2000  # Per DIPY documentation (Rokem et al., 2015)
     patch_size: 32
     step: 8
     take_x: 80

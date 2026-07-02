@@ -184,7 +184,7 @@ The DRCNet Angular-Only row in Table~\ref{tab:objective_controlled_ablation} use
 
 Spatial masking alone is much stronger. DRCNet Spatial-Only reaches $24.47$ dB PSNR-ROI and the best FA-MAE in this ablation, showing that the blind-spot target-channel objective captures substantial local anatomical structure. It also outperforms DRCNet Sequential Hybrid in PSNR-ROI ($24.47$ versus $23.60$ dB), which suggests that adding angular context through a fixed deterministic window can introduce bias or unstable channel dependencies if the angular neighborhoods are not sufficiently diverse. However, Spatial-Only remains more than $2$ dB below full Hybrid RGS, indicating that angular context is useful when it is coupled with appropriate sampling.
 
-The full DRCNet Hybrid RGS objective achieves the highest image-domain fidelity, with $26.90$ dB PSNR-ROI and $0.5240$ SSIM-ROI. The sequential-versus-random comparison in Table~\ref{tab:sampling_ablations} already suggested the importance of random angular context; this objective-controlled grouping makes the interpretation clearer. With the architecture fixed, the gain over Sequential Hybrid indicates that random subsets act as angular data augmentation, exposing the model to varied diffusion contexts and discouraging overfitting to fixed channel neighborhoods. FA-MAE and MD-MAE vary over a narrower range than PSNR-ROI and SSIM-ROI, so this ablation should not be read as proving large tensor-domain superiority. Instead, the main conclusion is that, using the same DRCNet backbone, Hybrid RGS outperforms angular-only, spatial-only, and sequential hybrid objectives in image reconstruction fidelity, confirming that the improvement stems from the coupled random-gradient-subset and target-masking training scheme rather than from network capacity alone.
+The full DRCNet Hybrid RGS objective achieves the highest image-domain fidelity, with $26.93$ dB PSNR-ROI and $0.5247$ SSIM-ROI. The sequential-versus-random comparison in Table~\ref{tab:sampling_ablations} already suggested the importance of random angular context; this objective-controlled grouping makes the interpretation clearer. With the architecture fixed, the gain over Sequential Hybrid indicates that random subsets act as angular data augmentation, exposing the model to varied diffusion contexts and discouraging overfitting to fixed channel neighborhoods. FA-MAE and MD-MAE vary over a narrower range than PSNR-ROI and SSIM-ROI, so this ablation should not be read as proving large tensor-domain superiority. Instead, the main conclusion is that, using the same DRCNet backbone, Hybrid RGS outperforms angular-only, spatial-only, and sequential hybrid objectives in image reconstruction fidelity, confirming that the improvement stems from the coupled random-gradient-subset and target-masking training scheme rather than from network capacity alone.
 
 \begin{table}[ht]
   \centering
@@ -198,7 +198,7 @@ The full DRCNet Hybrid RGS objective achieves the highest image-domain fidelity,
     DRCNet Angular-Only & \checkmark & -- & \checkmark & 10.87 & 0.3407 & 0.2328 & 3499 & 5.2 \\
     DRCNet Spatial-Only & -- & \checkmark & -- & 24.47 & 0.4778 & \textbf{0.2234} & \textbf{3457} & 4.5 \\
     DRCNet Sequential Hybrid & \checkmark & \checkmark & -- & 23.60 & 0.4751 & 0.2390 & 3555 & \textbf{3.7} \\
-    DRCNet Hybrid RGS & \checkmark & \checkmark & \checkmark & \textbf{26.90} & \textbf{0.5240} & 0.2499 & 3458 & 35.2 \\
+    DRCNet Hybrid RGS & \checkmark & \checkmark & \checkmark & \textbf{26.93} & \textbf{0.5247} & 0.2575 & 3451 & 34.1 \\
     \bottomrule
   \end{tabular}
   }
@@ -211,13 +211,13 @@ Hybrid RGS relies on random gradient subsets rather than deterministic angular w
 
 Both sampling modes are evaluated on D-Brain with Rician noise at $\sigma=0.1$ using $K=16$, the same masking probability, learning rate, patching strategy, and number of epochs. Sequential mode constructs windows $[0{:}16]$, $[1{:}17]$, $\ldots$, $[G-K{:}G]$, with the last channel treated as the prediction target. RGS mode samples $16$ distinct indices without replacement in each batch and places the target at channel $15$. We evaluate both DRCNet and Restormer to test whether the benefit of random angular context is architecture dependent.
 
-The results in Table~\ref{tab:sampling_ablations} show that random sampling consistently improves over deterministic windows. For DRCNet, RGS improves PSNR-ROI from $23.60$ to $26.90$ dB and yields comparable FA-MAE. For Restormer, RGS improves PSNR-ROI from $21.64$ to $23.39$ dB, with a small increase in FA-MAE. The improvement is not interpreted as a surprising failure of sequential windowing: adjacent gradients are still informative and the J-invariant masking objective remains active in both modes. Rather, the consistent gap supports the view that RGS acts as angular data augmentation. By exposing the model to many non-local combinations of diffusion directions, it discourages memorization of local angular neighborhoods and encourages reconstruction from more diverse diffusion contexts.
+The results in Table~\ref{tab:sampling_ablations} show that random sampling consistently improves over deterministic windows. For DRCNet, RGS improves PSNR-ROI from $23.60$ to $26.93$ dB and yields comparable FA-MAE. For Restormer, RGS improves PSNR-ROI from $21.64$ to $23.43$ dB, with a small increase in FA-MAE. The improvement is not interpreted as a surprising failure of sequential windowing: adjacent gradients are still informative and the J-invariant masking objective remains active in both modes. Rather, the consistent gap supports the view that RGS acts as angular data augmentation. By exposing the model to many non-local combinations of diffusion directions, it discourages memorization of local angular neighborhoods and encourages reconstruction from more diverse diffusion contexts.
 
 A second ablation studies the number of input volumes $K$. Too small a value limits angular information and may force the network to rely primarily on spatial interpolation. Too large a value increases memory, parameter count, and runtime while potentially providing redundant diffusion measurements. Establishing a practical $K$ is important because acquisition protocols vary substantially: D-Brain uses $G=60$ diffusion volumes, whereas larger HARDI protocols can exceed $G=100$.
 
 We evaluate $K \in \{5,10,16,24,30\}$ on D-Brain under the same noise setting. Each value of $K$ requires a separate model because the input channel dimension changes. DRCNet is evaluated across the full sweep, and Restormer is evaluated with the same values to check whether the trend persists for the transformer backbone. All runs use the same core Hybrid RGS protocol, including the same number of context samples and stochastic predictions at inference when available.
 
-The quality curves show a plateau rather than monotonic improvement. DRCNet obtains similar PSNR-ROI at $K=5$ and $K=10$ ($26.46$ dB), reaches $26.90$ dB at the recommended $K=16$ configuration, and changes only marginally at larger values ($26.92$ dB for $K=24$ and $26.36$ dB for $K=30$). Restormer shows its strongest PSNR-ROI at $K=10$ ($26.60$ dB), while $K=16$ is lower in the current run ($23.39$ dB) and larger values do not recover a clear advantage. This indicates that the benefit of adding more diffusion volumes saturates quickly and can become architecture dependent.
+The quality curves show a plateau rather than monotonic improvement. DRCNet obtains similar PSNR-ROI at $K=5$ and $K=10$ ($26.46$ dB), reaches $26.93$ dB at the recommended $K=16$ configuration, and changes only marginally at larger values ($26.92$ dB for $K=24$ and $26.36$ dB for $K=30$). Restormer shows its strongest PSNR-ROI at $K=10$ ($26.60$ dB), while $K=16$ is lower in the current run ($23.43$ dB) and larger values do not recover a clear advantage. This indicates that the benefit of adding more diffusion volumes saturates quickly and can become architecture dependent.
 
 The runtime and model-size trends favor moderate $K$. For DRCNet, the parameter count grows from $0.106$M at $K=5$ to $0.128$M at $K=30$, while inference time increases from $32.5$ to $37.2$ s per target volume. Restormer is more expensive overall, ranging from $129.2$ to $131.9$ s per volume across the same sweep. Although the inference-time increase is modest in these runs, larger $K$ also increases memory pressure and training cost. We therefore use $K=16$ as the recommended configuration: it captures most of the available angular benefit, supports both backbones without excessive input dimensionality, and leaves room for larger $K$ only when protocols have many gradients and compute budget is less restrictive.
 
@@ -231,18 +231,18 @@ The runtime and model-size trends favor moderate $K$. For DRCNet, the parameter 
     Architecture & Sampling / $K$ & PSNR-ROI $\uparrow$ & FA-MAE $\downarrow$ & Params (M) & Time/vol. (s) \\
     \midrule
     DRCNet & Sequential, $K=16$ & 23.60 & 0.2390 & 0.116 & 3.7 \\
-    DRCNet & RGS, $K=16$ & \textbf{26.90} & 0.2499 & 0.116 & 35.2 \\
+    DRCNet & RGS, $K=16$ & \textbf{26.93} & 0.2575 & 0.116 & 34.1 \\
     Restormer & Sequential, $K=16$ & 21.64 & 0.2465 & 0.178 & 104.2 \\
-    Restormer & RGS, $K=16$ & \textbf{23.39} & 0.2577 & 0.178 & 129.9 \\
+    Restormer & RGS, $K=16$ & \textbf{23.43} & 0.2238 & 0.178 & 126.8 \\
     \midrule
     DRCNet & RGS, $K=5$ & 26.46 & 0.2319 & 0.106 & 32.5 \\
     DRCNet & RGS, $K=10$ & 26.46 & 0.2378 & 0.111 & 33.8 \\
-    DRCNet & RGS, $K=16$ & \textbf{26.90} & 0.2499 & 0.116 & 35.2 \\
+    DRCNet & RGS, $K=16$ & \textbf{26.93} & 0.2575 & 0.116 & 34.1 \\
     DRCNet & RGS, $K=24$ & 26.92 & 0.2559 & 0.123 & 36.1 \\
     DRCNet & RGS, $K=30$ & 26.36 & 0.2464 & 0.128 & 37.2 \\
     Restormer & RGS, $K=5$ & 25.88 & 0.2489 & 0.174 & 129.2 \\
     Restormer & RGS, $K=10$ & \textbf{26.60} & \textbf{0.2195} & 0.176 & 129.2 \\
-    Restormer & RGS, $K=16$ & 23.39 & 0.2577 & 0.178 & 129.9 \\
+    Restormer & RGS, $K=16$ & 23.43 & 0.2238 & 0.178 & 126.8 \\
     Restormer & RGS, $K=24$ & 25.83 & 0.2198 & 0.180 & 130.2 \\
     Restormer & RGS, $K=30$ & 25.50 & 0.2199 & 0.182 & 131.9 \\
     \bottomrule
@@ -265,11 +265,11 @@ A critical question for Hybrid RGS is whether its gains come primarily from the 
 
 The 3D configuration corresponds to the proposed setup: a $K=16$ RGS input stack, Bernoulli masking on the target channel, and a 3D DRCNet or 3D Restormer backbone trained on volumetric patches from D-Brain with Rician noise at $\sigma=0.1$. The 2D variant preserves the same angular sampling, target-channel masking, loss function, learning rate, and training protocol, but replaces volumetric operations with slice-wise processing. Each axial slice is denoised independently with a $K$-channel input, so the model can exploit angular information across diffusion gradients but has no explicit convolutional or attention connectivity along the through-plane direction. DRCNet is converted to a Conv2D version, and Restormer is evaluated with two-dimensional per-slice feature processing.
 
-Table~\ref{tab:3d_vs_2d} shows that the current controlled ablation does not support a simple claim that 3D processing is uniformly superior. For DRCNet, the 2D variant reaches $27.11$ dB PSNR-ROI and $0.5569$ SSIM-ROI, compared with $26.90$ dB and $0.5240$ for the 3D configuration. The 2D DRCNet also obtains lower FA-MAE ($0.2296$ versus $0.2499$) and slightly lower MD-MAE ($3435$ versus $3458$). The same pattern is stronger for Restormer: the 2D variant reaches $26.44$ dB PSNR-ROI, whereas the 3D configuration reaches $23.39$ dB in the main K=16 run. FA-MAE and MD-MAE are also slightly better for the 2D Restormer. These results suggest that, under the current training and inference settings, the Hybrid RGS objective itself provides a large fraction of the denoising benefit, and the 3D architecture does not automatically improve quantitative image-domain or tensor metrics.
+Table~\ref{tab:3d_vs_2d} shows that the current controlled ablation does not support a simple claim that 3D processing is uniformly superior. For DRCNet, the 2D variant reaches $27.11$ dB PSNR-ROI and $0.5569$ SSIM-ROI, compared with $26.93$ dB and $0.5247$ for the 3D configuration. The 2D DRCNet also obtains lower FA-MAE ($0.2296$ versus $0.2575$) and slightly lower MD-MAE ($3435$ versus $3451$). The same pattern is stronger for Restormer: the 2D variant reaches $26.44$ dB PSNR-ROI, whereas the 3D configuration reaches $23.43$ dB in the main K=16 run. FA-MAE and MD-MAE are also slightly better for the 2D Restormer. These results suggest that, under the current training and inference settings, the Hybrid RGS objective itself provides a large fraction of the denoising benefit, and the 3D architecture does not automatically improve quantitative image-domain or tensor metrics.
 
 This outcome is informative rather than problematic. The 2D variants still use the same Hybrid RGS mechanism, so their strong performance validates the algorithmic contribution: random angular context and blind-spot target masking are sufficient to train effective self-supervised denoisers. The absence of a clear 3D advantage may reflect the anisotropy of the acquisition, the patch size and masking schedule, or the fact that adjacent axial slices add less independent information than additional diffusion directions. It may also indicate that the current metrics, computed volume-wise and through tensor summaries, do not fully capture slice-to-slice consistency. Qualitative inspection of reconstructed volumes, FA maps, and tractography-derived summaries remains necessary to determine whether 3D models reduce through-plane discontinuities that are not penalized strongly by PSNR or voxelwise tensor errors.
 
-The computational comparison further favors 2D for the present implementation. DRCNet-2D uses approximately $0.014$M parameters and requires $4.7$ s per target volume, whereas the 3D DRCNet uses $0.116$M parameters and requires approximately $35.2$ s. Restormer shows an even larger gap: $0.015$M parameters and $3.9$ s for the 2D variant versus $0.178$M parameters and $129.9$ s for the 3D model. Therefore, the current evidence supports a nuanced conclusion: Hybrid RGS is architecture-agnostic and works well even with lightweight 2D backbones, while 3D processing should be justified by qualitative volumetric coherence or downstream tractography benefits rather than by the present scalar metrics alone.
+The computational comparison further favors 2D for the present implementation. DRCNet-2D uses approximately $0.014$M parameters and requires $4.7$ s per target volume, whereas the 3D DRCNet uses $0.116$M parameters and requires approximately $34.1$ s. Restormer shows an even larger gap: $0.015$M parameters and $3.9$ s for the 2D variant versus $0.178$M parameters and $126.8$ s for the 3D model. Therefore, the current evidence supports a nuanced conclusion: Hybrid RGS is architecture-agnostic and works well even with lightweight 2D backbones, while 3D processing should be justified by qualitative volumetric coherence or downstream tractography benefits rather than by the present scalar metrics alone.
 
 \begin{table}[ht]
   \centering
@@ -281,9 +281,9 @@ The computational comparison further favors 2D for the present implementation. D
     Architecture & Dim. & PSNR-ROI $\uparrow$ & SSIM-ROI $\uparrow$ & FA-MAE $\downarrow$ & MD-MAE$^\dagger$ $\downarrow$ & Params (M) & Time/vol. (s) \\
     \midrule
     DRCNet & 2D & \textbf{27.11} & \textbf{0.5569} & \textbf{0.2296} & \textbf{3435} & 0.014 & \textbf{4.7} \\
-    DRCNet & 3D & 26.90 & 0.5240 & 0.2499 & 3458 & 0.116 & 35.2 \\
+    DRCNet & 3D & 26.93 & 0.5247 & 0.2575 & 3451 & 0.116 & 34.1 \\
     Restormer & 2D & \textbf{26.44} & \textbf{0.5504} & \textbf{0.2309} & \textbf{3432} & 0.015 & \textbf{3.9} \\
-    Restormer & 3D & 23.39 & 0.5116 & 0.2577 & 3438 & 0.178 & 129.9 \\
+    Restormer & 3D & 23.43 & 0.5107 & 0.2238 & 3440 & 0.178 & 126.8 \\
     \bottomrule
   \end{tabular}
   }
@@ -312,7 +312,7 @@ At higher noise levels, the learned models remain competitive with MP-PCA in PSN
     $\sigma$ & MP-PCA & Patch2Self & MD-S2S & DRCNet-Hybrid-RGS & Restormer-Hybrid-RGS \\
     \midrule
     0.05 & \textbf{33.33} (0.1009) & 23.74 & 16.77 & 29.76 (0.2579) & 27.19 (0.2170) \\
-    0.10 & 28.44 (0.0898) & 21.31 & 15.28 & 26.90 (0.2499) & 23.39 (0.2577) \\
+    0.10 & 28.44 (0.0898) & 21.31 & 15.28 & 26.93 (0.2575) & 23.43 (0.2238) \\
     0.15 & \textbf{25.54} (0.0978) & -- & -- & 25.11 (0.2202) & 24.63 (0.2452) \\
     0.20 & \textbf{23.55} (0.0863) & -- & -- & 23.52 (0.2211) & 23.02 (0.2597) \\
     \bottomrule
@@ -352,29 +352,29 @@ In DRCNet-hybrid-RGS, FiLM is inserted at two feature stages of the 3D convoluti
     \toprule
     Model & Conditioning & PSNR (dB) $\uparrow$ & PSNR-ROI (dB) $\uparrow$ & FA-MAE $\downarrow$ & MD-MAE$^\dagger$ $\downarrow$ & Params & Time/vol. \\
     \midrule
-    DRCNet & Baseline RGS & 23.93 & 26.88 & 0.2587 & 3449 & 116K & 34.0 s \\
+    DRCNet & Baseline RGS & 23.90 & 26.93 & 0.2575 & 3451 & 116K & 34.1 s \\
     DRCNet & FiLM & 25.40 & 26.24 & 0.2405 & 3452 & 120K & 35.3 s \\
-    DRCNet & $\Delta$ FiLM $-$ baseline & +1.47 & $-0.64$ & $-7.0\%$ & +0.1\% & +3.9\% & +3.8\% \\
+    DRCNet & $\Delta$ FiLM $-$ baseline & +1.51 & $-0.69$ & $-6.6\%$ & +0.0\% & +3.9\% & +3.2\% \\
     \midrule
-    Restormer & Baseline RGS & 22.83 & 23.22 & 0.2378 & 3455 & 178K & 126.2 s \\
+    Restormer & Baseline RGS & 22.98 & 23.43 & 0.2238 & 3440 & 178K & 126.8 s \\
     Restormer & FiLM & 23.60 & 22.69 & 0.2603 & 3423 & 185K & 130.3 s \\
-    Restormer & $\Delta$ FiLM $-$ baseline & +0.77 & $-0.53$ & +9.5\% & $-0.9\%$ & +3.8\% & +3.2\% \\
+    Restormer & $\Delta$ FiLM $-$ baseline & +0.63 & $-0.74$ & +16.4\% & $-0.5\%$ & +3.8\% & +2.8\% \\
     \bottomrule
   \end{tabular}
   }
 \end{table}
 \par\noindent\textit{Note:} $^\dagger$Diffusivity errors are in arbitrary D-Brain phantom units; compare across methods, not as physical mm$^2$/s values.
 
-Under the registry summarized in Table~\ref{tab:film_ablation}, FiLM has mixed effects on D-Brain. For DRCNet, conditioning increases full-volume PSNR from $23.93$ to $25.40$ dB, a gain of $1.47$ dB, but slightly decreases ROI PSNR from $26.88$ to $26.24$ dB ($-0.64$ dB). The full-volume MSE decreases by $28.8\%$, whereas ROI MSE increases by $15.8\%$, indicating that the global image-domain gain is not concentrated in brain tissue. FA-MAE improves by $7.0\%$, but MD-MAE changes little and slightly worsens from $3449$ to $3452$.
+Under the registry summarized in Table~\ref{tab:film_ablation}, FiLM has mixed effects on D-Brain. For DRCNet, conditioning increases full-volume PSNR from $23.90$ to $25.40$ dB, a gain of $1.51$ dB, but slightly decreases ROI PSNR from $26.93$ to $26.24$ dB ($-0.69$ dB). The full-volume MSE decreases by $29.3\%$, whereas ROI MSE increases by $17.2\%$, indicating that the global image-domain gain is not concentrated in brain tissue. FA-MAE improves by $6.6\%$, and MD-MAE changes little from $3451$ to $3452$.
 
-For Restormer, FiLM improves full-volume PSNR by $0.77$ dB but decreases ROI PSNR from $23.22$ to $22.69$ dB ($-0.53$ dB). The full-volume MSE decreases by $16.2\%$, whereas ROI MSE increases by $12.9\%$. MD, AD, and RD errors improve slightly, but FA-MAE worsens by $9.5\%$, again showing that full-volume image-domain gains do not necessarily translate to brain-ROI or tensor-derived improvements. FiLM should therefore be interpreted as an exploratory conditioning mechanism that requires architecture-specific tuning rather than as a recommended default extension.
+For Restormer, FiLM improves full-volume PSNR by $0.63$ dB but decreases ROI PSNR from $23.43$ to $22.69$ dB ($-0.74$ dB). The full-volume MSE decreases by $13.4\%$, whereas ROI MSE increases by $18.4\%$. MD, AD, and RD errors improve slightly, but FA-MAE worsens by $16.4\%$, again showing that full-volume image-domain gains do not necessarily translate to brain-ROI or tensor-derived improvements. FiLM should therefore be interpreted as an exploratory conditioning mechanism that requires architecture-specific tuning rather than as a recommended default extension.
 
 The benefit of FiLM is therefore metric and architecture dependent. DRCNet, which has a simpler convolutional inductive bias, shows a larger full-volume PSNR gain and improved FA-MAE, whereas Restormer shows a smaller full-volume PSNR gain and worsened FA-MAE. Both backbones lose ROI PSNR, suggesting that FiLM placement, identity initialization, regularization, or tensor-aware validation may need to be tuned before conditioning can be claimed to improve anatomically relevant regions. On Stanford HARDI, FiLM-trained models converged successfully under a different protocol with $G=150$ gradients and $b=2000~\mathrm{s/mm^2}$, supporting the feasibility of the conditioning mechanism beyond D-Brain. Because no matching unconditioned Stanford baseline is available, those results are used only for qualitative FA/MD assessment and are not included in the quantitative ablation table.
 
 
 \subsection{Implementation Details}
 \paragraph{Training}\mbox{}\\
-All neural models are trained with Adam using a base learning rate of $4.5 \times 10^{-4}$ and no learning-rate schedule. Automatic mixed precision (AMP) is enabled to reduce memory consumption on the available GPU. Random seeds are fixed to 42 for PyTorch, NumPy, and the dataset-level Hybrid RGS gradient sampler, making patch construction and sampled gradient subsets reproducible. GPU kernels are not forced into deterministic mode for performance, corresponding to \texttt{reproducible: false}; exact bitwise reproducibility across devices is therefore not expected.
+All neural models are trained with Adam using a base learning rate of $4.5 \times 10^{-4}$ and no learning-rate schedule. Automatic mixed precision (AMP) is enabled to reduce memory consumption on the available GPU. D-Brain training uses \texttt{seed=91021} and Stanford training uses \texttt{seed=91022}, with \texttt{reproducible: true} for PyTorch, NumPy, and the dataset-level Hybrid RGS gradient sampler. D-Brain additionally uses \texttt{subset\_fraction=0.6} for random patch subsampling during training. Exact bitwise reproducibility across GPU devices is nevertheless not expected because cuDNN operations may remain nondeterministic.
 
 \paragraph{Progressive schedule}\mbox{}\\
 DRCNet and Restormer use the same three-stage progressive patch protocol, with architecture-specific batch sizes chosen to fit memory. Each stage constructs a new dataset at the specified patch resolution and trains from scratch. D-Brain uses 120 epochs per stage, for 360 epochs total. Stanford HARDI uses 300 epochs per stage, for 900 epochs total.
@@ -406,10 +406,10 @@ Each diffusion-weighted volume is independently min--max normalized to $[0,1]$ b
 Full-volume reconstruction uses Monte Carlo averaging over random context subsets and target masks. D-Brain evaluation uses $N_c=16$ context samples and $N_p=12$ mask draws per context, while Stanford HARDI uses $N_c=16$ and $N_p=23$. Mask predictions are computed in chunks of four to control GPU memory (\path{pred_chunk_size=4}). Restormer additionally uses overlapping tiled inference with Gaussian weighting, patch size 32, and overlap 1.
 
 \paragraph{Registry provenance}\mbox{}\\
-For reproducibility, the primary D-Brain $\sigma=0.10$, $K=16$ self-supervised baseline runs are identified by \texttt{drcnet\_\allowbreak dbrain\_\allowbreak rgs\_\allowbreak final} and \texttt{restormer\_\allowbreak dbrain\_\allowbreak rgs\_\allowbreak final}, recorded in the experiment registry on May 16, 2026. The reported D-Brain metrics use the best-loss checkpoint and the Monte Carlo protocol above ($N_c=16$, $N_p=12$ per target volume). Runs trained specifically for ablation families, such as the $K$ sweep, are reported only within those ablation contexts.
+For reproducibility, the primary $\sigma=0.10$, $K=16$ self-supervised baseline runs are identified by \texttt{drcnet\_\allowbreak dbrain\_\allowbreak rgs\_\allowbreak final}, \texttt{restormer\_\allowbreak dbrain\_\allowbreak rgs\_\allowbreak final}, \texttt{drcnet\_\allowbreak stanford\_\allowbreak rgs\_\allowbreak final}, and \texttt{restormer\_\allowbreak stanford\_\allowbreak rgs\_\allowbreak final}, recorded in experiment registry \texttt{paper\_final\_k16\_rerun} on June 28, 2026 (\path{tmp/paper_final_k16_rerun_20260628T042410Z/registry.jsonl}). The reported D-Brain metrics use the best-loss checkpoint and the Monte Carlo protocol above ($N_c=16$, $N_p=12$ per target volume); Stanford uses $N_c=16$ and $N_p=23$. Runs trained specifically for ablation families, such as the $K$ sweep, are reported only within those ablation contexts.
 
 \paragraph{Hardware and timing}\mbox{}\\
-All experiments are run on a single NVIDIA Tesla T4 GPU with 15~GB of VRAM, CUDA~12.2, and PyTorch~2.x. A complete 360-epoch D-Brain training run requires approximately 8--12 hours depending on the backbone. With the Monte Carlo settings above, inference time per target diffusion volume ranges from approximately 4.7~s for DRCNet-2D to 130~s for Restormer-3D.
+All experiments are run on a single NVIDIA Tesla T4 GPU with 15~GB of VRAM, CUDA~12.2, and PyTorch~2.x. A complete 360-epoch D-Brain training run requires approximately 8--12 hours depending on the backbone. With the Monte Carlo settings above, inference time per target diffusion volume ranges from approximately 4.7~s for DRCNet-2D to 127~s for Restormer-3D.
 
 \paragraph{Checkpoint selection and code}\mbox{}\\
 For evaluation, the final-stage checkpoint with the lowest epoch-averaged training loss is retained as \path{best_loss_checkpoint.pth}. Validation-set early stopping is not used because clean validation targets are unavailable in the self-supervised setting. Training and inference code are provided in \path{src/drcnet_hybrid_rgs/} and \path{src/restormer_hybrid_rgs/}, with all hyperparameters specified in the corresponding YAML configuration files. Results should be numerically stable within normal run-to-run variance, but exact bitwise agreement across GPU types is not guaranteed because cuDNN operations remain nondeterministic.
@@ -421,9 +421,9 @@ Table~\ref{tab:main_comparison} summarizes the primary quantitative evaluation o
 
 MP-PCA remains a strong classical preprocessing baseline. It achieves $28.44$ dB PSNR-ROI and the lowest FA-MAE in this experiment ($0.0898$), which indicates that its local PCA assumptions can preserve tensor anisotropy well under the tested synthetic noise model. However, its MD-MAE remains high ($4650$), suggesting that improved FA preservation does not necessarily imply uniform improvement across all diffusion tensor scalars. Patch2Self provides a self-supervised angular baseline using leave-one-volume-out OLS regression. Its PSNR-ROI is lower ($21.31$ dB), but its MD-MAE ($3438$) is competitive with the neural self-supervised methods, consistent with the strength of angular redundancy in DWI. MD-S2S obtains the lowest FA-MAE among the self-supervised baselines ($0.2298$) but has poor image-domain fidelity, with $15.28$ dB PSNR-ROI, likely because it processes two-dimensional slices independently and does not exploit inter-slice anatomical context.
 
-The proposed Hybrid RGS models combine the angular self-supervision of Patch2Self with the blind-spot spatial masking of Self2Self-style methods. DRCNet-Hybrid-RGS achieves the strongest self-supervised image-domain results in this table: $23.82$ dB PSNR, $0.4395$ SSIM, and $26.90$ dB PSNR-ROI. Relative to Patch2Self, this corresponds to a $5.59$ dB gain in PSNR-ROI and approximately a $72\%$ reduction in ROI MSE using the rounded table values. Relative to MD-S2S, DRCNet-Hybrid-RGS improves PSNR-ROI by $11.62$ dB, supporting the value of coupling random angular context with target-channel masking. Its FA-MAE ($0.2499$) is slightly worse than Patch2Self and MD-S2S, but its MD-MAE ($3458$) remains close to the best self-supervised values.
+The proposed Hybrid RGS models combine the angular self-supervision of Patch2Self with the blind-spot spatial masking of Self2Self-style methods. DRCNet-Hybrid-RGS achieves the strongest self-supervised image-domain results in this table: $23.90$ dB PSNR, $0.4402$ SSIM, and $26.93$ dB PSNR-ROI. Relative to Patch2Self, this corresponds to a $5.62$ dB gain in PSNR-ROI and approximately a $73\%$ reduction in ROI MSE using the rounded table values. Relative to MD-S2S, DRCNet-Hybrid-RGS improves PSNR-ROI by $11.65$ dB, supporting the value of coupling random angular context with target-channel masking. Its FA-MAE ($0.2575$) is slightly worse than Patch2Self and MD-S2S, but its MD-MAE ($3451$) remains close to the best self-supervised values.
 
-Restormer-Hybrid-RGS obtains comparable full-volume PSNR ($23.00$ dB) but weaker ROI PSNR ($23.39$ dB) than DRCNet in the current main run. Its FA-MAE ($0.2577$) is also slightly higher, while its MD-MAE ($3438$) is close to Patch2Self. These results suggest that higher representational capacity does not automatically translate into better denoising under the current self-supervised objective and training schedule. DRCNet is also substantially faster, requiring $35.2$ s per target volume compared with $129.9$ s for Restormer. Thus, the main comparison supports DRCNet-Hybrid-RGS as the more practical instantiation at this stage, while Restormer remains a useful higher-capacity probe for backbone-sensitivity analysis.
+Restormer-Hybrid-RGS obtains comparable full-volume PSNR ($22.98$ dB) but weaker ROI PSNR ($23.43$ dB) than DRCNet in the current main run. Its FA-MAE ($0.2238$) is lower than DRCNet's ($0.2575$), while its MD-MAE ($3440$) is close to Patch2Self. These results suggest that higher representational capacity does not automatically translate into better image-domain denoising under the current self-supervised objective and training schedule, even though Restormer can preserve tensor anisotropy more closely in this run. DRCNet is also substantially faster, requiring $34.1$ s per target volume compared with $126.8$ s for Restormer. Thus, the main comparison supports DRCNet-Hybrid-RGS as the more practical instantiation at this stage, while Restormer remains a useful higher-capacity probe for backbone-sensitivity analysis.
 
 The supervised reference models provide context for the cost of self-supervision. Supervised DRCNet reaches $22.92$ dB PSNR-ROI, while supervised Restormer reaches $22.60$ dB. In the present runs, these supervised models do not exceed the best self-supervised DRCNet result in image-domain metrics. We interpret this cautiously rather than as evidence that supervision is intrinsically inferior: the supervised setting is affected by the same Rician, signal-dependent noise structure, finite training data, and low-SNR regions that challenge the self-supervised models. The more important observation is that the Hybrid RGS training strategy achieves competitive performance without requiring clean targets. This property is essential for clinical and research DWI settings where paired noisy-clean acquisitions are unavailable or prohibitively expensive.
 
@@ -439,8 +439,8 @@ The supervised reference models provide context for the cost of self-supervision
     MP-PCA & 22.59 & 0.4350 & 0.00551 & 28.44 & 0.00143 & 0.0898 & 4650 & -- \\
     Patch2Self (DIPY OLS) & 17.65 & 0.3806 & 0.01719 & 21.31 & 0.00739 & 0.2393 & \textbf{3438} & -- \\
     MD-S2S (Conv2D) & 15.14 & 0.4250 & 0.03061 & 15.28 & 0.02963 & \textbf{0.2298} & 3449 & -- \\
-    DRCNet-Hybrid-RGS & \textbf{23.82} & \textbf{0.4395} & \textbf{0.00415} & \textbf{26.90} & \textbf{0.00204} & 0.2499 & 3458 & \textbf{35.2} \\
-    Restormer-Hybrid-RGS & 23.00 & 0.4297 & 0.00501 & 23.39 & 0.00458 & 0.2577 & 3438 & 129.9 \\
+    DRCNet-Hybrid-RGS & \textbf{23.90} & \textbf{0.4402} & \textbf{0.00408} & \textbf{26.93} & \textbf{0.00203} & 0.2575 & 3451 & \textbf{34.1} \\
+    Restormer-Hybrid-RGS & 22.98 & 0.4288 & 0.00504 & 23.43 & 0.00454 & \textbf{0.2238} & 3440 & 126.8 \\
     \midrule
     \textit{DRCNet supervised} & \textit{21.37} & \textit{0.3686} & \textit{0.00729} & \textit{22.92} & \textit{0.00511} & \textit{0.2387} & \textit{3684} & \textit{34.0} \\
     \textit{Restormer supervised} & \textit{21.57} & \textit{0.3696} & \textit{0.00697} & \textit{22.60} & \textit{0.00549} & \textit{0.2374} & \textit{3713} & \textit{125.3} \\
@@ -479,12 +479,12 @@ FiLM conditioning also transfers to Stanford without architectural changes. The 
     \midrule
     DRCNet & 5 & 34.86 & 0.106 & 23.5 \\
     DRCNet & 10 & 36.99 & 0.111 & 25.3 \\
-    DRCNet & 16 & 38.06 & 0.116 & 25.5 \\
+    DRCNet & 16 & 38.07 & 0.116 & 25.2 \\
     DRCNet & 24 & 39.47 & 0.123 & 26.3 \\
     DRCNet & 30 & 35.18 & 0.128 & 28.0 \\
     Restormer & 5 & 23.79 & 0.174 & 83.7 \\
     Restormer & 10 & 26.60 & 0.176 & 84.4 \\
-    Restormer & 16 & 26.12 & 0.178 & 84.8 \\
+    Restormer & 16 & 26.05 & 0.178 & 83.1 \\
     Restormer & 24 & 25.65 & 0.180 & 84.7 \\
     Restormer & 30 & 27.08 & 0.182 & 85.1 \\
     \bottomrule

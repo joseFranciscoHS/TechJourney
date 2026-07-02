@@ -48,9 +48,13 @@ Write the **Gradient Direction Conditioning via FiLM** subsection for the ablati
    - Implementation details: placement in DRCNet (2 FiLM layers) and Restormer (3 FiLM layers); parameter overhead (~4% in both); preserves J-invariance because the condition is deterministic metadata.
 
 4. **Experimental Results** (2 paragraphs, ~200-250 words)
-   - **D-Brain** quantitative results in a table (see metrics summary). Highlight: +1.47 dB PSNR and -38% MSE-ROI for DRCNet; +0.77 dB PSNR and -33.7% MSE-ROI for Restormer. Note Restormer FA degradation (+7.4%).
-   - **Stanford** generalization: FiLM trains successfully on a different acquisition protocol (G=150, b=1000). No baseline comparison available; qualitative FA/MD assessment.
-   - Architecture dependency: DRCNet (simpler inductive bias) benefits more from explicit conditioning than Restormer (richer self-attention). Hypothesis: transformers' relational reasoning partially fulfills the role of explicit conditioning.
+   - **D-Brain** quantitative results in a table (see metrics summary).
+   - **Full-volume improvement**: +1.47 dB PSNR and -28.8% MSE for DRCNet; +0.77 dB PSNR and -16.2% MSE for Restormer.
+   - **ROI metrics show degradation**: PSNR-ROI decreases by -0.64 dB (DRCNet) and -0.53 dB (Restormer); ROI MSE increases by +15.8% (DRCNet) and +12.9% (Restormer).
+   - **Tensor metrics**: FA-MAE improves in DRCNet (-7.0%) but worsens in Restormer (+9.5%); MD-MAE changes little in DRCNet and improves slightly in Restormer.
+   - **Interpretation**: FiLM may improve global smoothness while degrading fine anatomical detail in ROI, or identity initialization may need tuning.
+   - **Stanford** generalization: FiLM trains successfully on a different acquisition protocol (G=150, b=2000). No baseline comparison available; qualitative FA/MD assessment only. Stanford PSNR is noisy-vs-noisy, not restoration accuracy.
+   - Architecture dependency: Results suggest FiLM requires architecture-specific tuning; DRCNet gains more full-volume PSNR than Restormer.
 
 5. **Table** (LaTeX `booktabs`)
    - Baseline vs FiLM for both architectures on D-Brain.
@@ -69,7 +73,7 @@ Write the **Gradient Direction Conditioning via FiLM** subsection for the ablati
 
 ### What to avoid
 
-- Do not oversell FiLM as a breakthrough; it is a modest, consistent improvement.
+- Do not oversell FiLM as a breakthrough; it shows mixed results (full-volume gain, ROI degradation).
 - Do not hide the Restormer FA degradation — discuss it honestly as architecture-specific behavior.
 - Do not describe the discarded additive approach as a full experiment.
 - Do not include Stanford metrics in the quantitative table (no GT, no baseline for comparison).

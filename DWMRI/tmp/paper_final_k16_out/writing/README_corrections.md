@@ -1,7 +1,7 @@
 # Paper Correction Prompts — Index
 
-**Date**: June 28, 2026  
-**Context**: TODOs and corrections from `experiments/pruebas_faltantes_todos_20260628.md`
+**Date**: July 1, 2026  
+**Context**: TODOs and corrections from `experiments/pruebas_faltantes_todos_20260701.md` (successor to 20260628)
 
 This directory contains detailed prompts for correcting critical issues in the paper before submission.
 
@@ -11,11 +11,12 @@ This directory contains detailed prompts for correcting critical issues in the p
 
 | # | Point | Prompt File | Status | Priority | Effort |
 |---|-------|-------------|--------|----------|--------|
-| **1** | Diffusivity Units | [`015_diffusivity_units_correction.md`](015_diffusivity_units_correction.md) | Ready | 🔴 Critical | 10-15 min |
-| **2** | FiLM Metrics | [`016_film_metrics_correction.md`](016_film_metrics_correction.md) | Ready | 🔴 Critical | 15-30 min |
-| **3** | Registry Conflict | [`017_registry_conflict_documentation.md`](017_registry_conflict_documentation.md) | Documentation | 🟢 Info | 5 min read |
-| **6** | Stanford Evidence | [`018_stanford_qualitative_evidence.md`](018_stanford_qualitative_evidence.md) | Ready | 🟡 Recommended | 1-2 hrs |
-| **7** | Stanford b-value | [`019_stanford_bvalue_correction.md`](019_stanford_bvalue_correction.md) | Ready | 🔴 Critical | 5 min |
+| **1** | Diffusivity Units | [`015_diffusivity_units_correction.md`](015_diffusivity_units_correction.md) | Done (paper) | 🔴 Critical | — |
+| **2** | FiLM Metrics | [`016_film_metrics_correction.md`](016_film_metrics_correction.md) | Done (paper + aux) | 🔴 Critical | — |
+| **3** | Registry Conflict | [`017_registry_conflict_documentation.md`](017_registry_conflict_documentation.md) | Acknowledged | 🟢 Info | — |
+| **6** | Stanford Evidence | [`018_stanford_qualitative_evidence.md`](018_stanford_qualitative_evidence.md) | Deferred | 🟡 High | 1-2 hrs |
+| **7** | Stanford b-value | [`019_stanford_bvalue_correction.md`](019_stanford_bvalue_correction.md) | Done (paper + configs) | 🔴 Critical | — |
+| **8** | K=16 Rerun | [`020_k16_rerun_results_update.md`](020_k16_rerun_results_update.md) | Ready | 🔴 Critical | 30-45 min |
 
 ---
 
@@ -50,11 +51,25 @@ This directory contains detailed prompts for correcting critical issues in the p
 
 ### Point 3: Registry Conflict (DOCUMENTATION ONLY)
 **Problem**: Multiple registry entries for σ=0.1, K=16 due to `inference_time_grid` job overwriting metrics  
-**Solution**: Use `registry.jsonl` lines 12-13 as canonical, ignore `paper_metrics_summary.csv` baseline rows  
-**Status**: Already resolved, no action needed — just awareness for writing  
-**Authoritative values**:
-- DRCNet baseline: PSNR-ROI = **26.882**
-- Restormer baseline: PSNR-ROI = **23.220**
+**Solution**: Superseded by **Point 8** (June 2026 rerun). For historical context see [`017_registry_conflict_documentation.md`](017_registry_conflict_documentation.md).  
+**Status**: Resolved via rerun — use `tmp/paper_final_k16_rerun_20260628T042410Z/registry.jsonl`
+
+---
+
+### Point 8: K=16 Canonical Rerun (CRITICAL)
+**Problem**: Paper cites May-2026 canonical baselines; mixed values (e.g. 23.82 vs 23.93 in main vs FiLM table)  
+**Solution**: Execute [`020_k16_rerun_results_update.md`](020_k16_rerun_results_update.md) against `paper/Sepulveda_dwmri_restormer.tex`  
+**Source**: `tmp/paper_final_k16_rerun_20260628T042410Z/` (4 jobs: `*_rgs_final` D-Brain + Stanford)  
+**Scope**: Main comparison, all K=16 canonical rows in ablation tables, FiLM baseline + Δ rows, registry provenance, implementation seeds  
+**Key new values**:
+| Metric | DRCNet | Restormer |
+|--------|--------|-----------|
+| PSNR-ROI (D-Brain) | **26.93** | **23.43** |
+| FA-MAE (D-Brain) | 0.2575 | **0.2238** (now better than DRCNet) |
+| FiLM Δ ROI | **−0.69 dB** | **−0.74 dB** (recomputed vs new baseline) |
+| Stanford noisy PSNR-ROI K=16 | **38.07** | **26.05** |
+
+**Not rerun**: FiLM conditioned absolute values, baselines, K≠16 ablations
 
 ---
 
@@ -88,9 +103,10 @@ This directory contains detailed prompts for correcting critical issues in the p
 1. ✅ **Point 7** (Stanford b-value) — 2 LaTeX line fixes → 5 min
 2. ✅ **Point 1** (Diffusivity units) — Add table footnotes, remove TODOs → 15 min
 3. ✅ **Point 2** (FiLM metrics) — Update summary + prompt, revise narrative → 20 min
+4. ⬜ **Point 8** (K=16 rerun) — Sync paper with `paper_final_k16_rerun` registry → 30-45 min
 
 ### Phase 2: Documentation (5 min)
-4. ✅ **Point 3** (Registry conflict) — Read for awareness, no edits needed → 5 min
+5. ✅ **Point 3** (Registry conflict) — Superseded by Point 8 rerun
 
 ### Phase 3: Figures (Optional, 1-2 hrs)
 5. ⚠️ **Point 6** (Stanford evidence) — Generate FA/residual figures if time permits → 1.5 hrs
@@ -154,7 +170,7 @@ The most significant discovery: **FiLM conditioning degrades ROI PSNR** while im
 D-Brain MD-MAE values (~3400-8500) are in **arbitrary phantom intensity units**, NOT mm²/s. Stanford HARDI values ARE in mm²/s. Must add disclaimers to avoid misinterpretation.
 
 ### 🔍 Registry Conflicts
-`paper_metrics_summary.csv` contains corrupted baseline values due to `inference_time_grid` job overwriting metrics. Always use `registry.jsonl` directly.
+`paper_metrics_summary.csv` in the **old** output tree may contain corrupted baselines. The June 2026 rerun (`tmp/paper_final_k16_rerun_20260628T042410Z/`) provides clean canonical values. Use prompt **020** to update the paper.
 
 ---
 
@@ -162,8 +178,9 @@ D-Brain MD-MAE values (~3400-8500) are in **arbitrary phantom intensity units**,
 
 For questions about:
 - **Diffusivity units** → See registry `dti_sanity_gt.md_range` (max ≈ 879,827 phantom units)
-- **FiLM values** → See registry lines 12-13 (baseline), 131-134 (FiLM)
-- **Registry conflicts** → See registry line 121 (corrupted inference_time_grid)
+- **FiLM values** → Baseline from rerun registry; FiLM conditioned from old registry lines 131-132
+- **K=16 canonical baselines** → `tmp/paper_final_k16_rerun_20260628T042410Z/registry.jsonl`
+- **Registry conflicts** → Resolved by rerun; see Point 8 / prompt 020
 - **Stanford b-value** → See DIPY documentation (Rokem et al., 2015)
 
 ---
@@ -175,13 +192,15 @@ For questions about:
 - [x] Point 3 documentation created
 - [x] Point 6 prompt created
 - [x] Point 7 prompt created
-- [ ] Point 1 executed
-- [ ] Point 2 executed
-- [ ] Point 3 read/acknowledged
-- [ ] Point 6 decision made (generate or skip)
-- [ ] Point 7 executed
+- [x] Point 8 prompt created
+- [x] Point 1 executed (paper — footnotes, TODOs removed)
+- [x] Point 2 executed (paper + orientation_conditioning_metrics_summary.md + 001_orientation_conditioning.md)
+- [x] Point 3 read/acknowledged
+- [ ] Point 6 decision made / executed (Stanford figures — deferred to `pruebas_faltantes_todos_20260701.md` items #5–#6)
+- [x] Point 7 executed (paper + config.yaml)
+- [ ] Point 8 executed (paper sync with K=16 rerun)
 
 ---
 
-**Last updated**: 2026-06-28  
-**Author**: AI assistant (based on `pruebas_faltantes_todos_20260628.md`)
+**Last updated**: 2026-07-01 (Point 8 prompt added)  
+**Author**: AI assistant (based on `pruebas_faltantes_todos_20260701.md`)

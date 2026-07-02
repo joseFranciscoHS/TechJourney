@@ -92,6 +92,17 @@ draft, a table, etc.>
 | 005 | `sigma_robustness` | Robustness to Noise Level (sigma sweep across SNR regimes) | ready |
 | 006 | `stanford_generalization` | Generalization to Real Scanner Noise (Stanford HARDI evaluation) | ready |
 | 007 | `objective_controlled_ablation` | Objective-Controlled DRCNet Ablation (angular/spatial/random component isolation) | ready |
+| 020 | `k16_rerun_results_update` | Canonical K=16 rerun update (main comparison + ablation K=16 rows + FiLM baseline + Stanford) | ready |
+| 021 | `sigma_baseline_backfill` | Backfill Patch2Self & MD-S2S σ=0.15/0.20 in sigma sweep table + Figure 2 | ready |
+
+### Registry provenance (K=16 canonical baselines)
+
+As of the **June 28, 2026** rerun (`exp_id=paper_final_k16_rerun`), authoritative metrics for jobs `*_rgs_final` come from:
+
+- `tmp/paper_final_k16_rerun_20260628T042410Z/registry.jsonl` (lines 3–6)
+- `tmp/paper_final_k16_rerun_20260628T042410Z/paper_tables/`
+
+This supersedes May-2026 values in `tmp/paper_final_k16_out/registry.jsonl` **only** for those four canonical jobs. FiLM-conditioned runs (`*_film_conditioning`) remain in the old registry until a dedicated rerun. Use prompt **020** to sync the paper.
 
 ---
 
