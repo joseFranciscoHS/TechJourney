@@ -94,6 +94,8 @@ draft, a table, etc.>
 | 007 | `objective_controlled_ablation` | Objective-Controlled DRCNet Ablation (angular/spatial/random component isolation) | ready |
 | 020 | `k16_rerun_results_update` | Canonical K=16 rerun update (main comparison + ablation K=16 rows + FiLM baseline + Stanford) | ready |
 | 021 | `sigma_baseline_backfill` | Backfill Patch2Self & MD-S2S σ=0.15/0.20 in sigma sweep table + Figure 2 | ready |
+| 022 | `restormer_architecture_modifications` | Restormer Architecture Modifications (3D/2D variants, detailed comparison with original) | ready |
+| 023 | `architecture_diagram_tikz` | Architecture Diagram (TikZ three-panel figure: Hybrid RGS pipeline, Restormer3D, 2D variant) | ready |
 
 ### Registry provenance (K=16 canonical baselines)
 

@@ -1,0 +1,153 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\emergencystretch=3em
+
+\title{Technical Review of ``Architecture-Agnostic Self-Supervised Diffusion MRI Denoising with Hybrid Random Gradient Subsets''}
+\author{paper-review skill audit}
+\date{2026-07-07}
+
+\newcommand{\findingtitle}[1]{\paragraph{#1}\mbox{}\\}
+\newcommand{\loc}[1]{\textbf{Location.} #1\\}
+\newcommand{\problem}[1]{\textbf{Problem.} #1\\}
+\newcommand{\why}[1]{\textbf{Why it matters.} #1\\}
+\newcommand{\fix}[1]{\textbf{Suggested fix.} #1\par}
+
+\begin{document}
+\maketitle
+
+\section*{Overall assessment}
+
+The manuscript is unusually transparent about negative and mixed results, especially the competitiveness of MP-PCA, the metric-dependent behavior of FiLM, and the absence of a clean Stanford HARDI reference. The main technical idea is understandable, and the equations are mostly dimensionally consistent. The highest-priority problems are not algebraic sign errors; they are consistency and implementation-clarity issues that affect how readers should interpret the reported claims. In particular, the manuscript currently uses a fixed $K=16$ main comparison even though the $K$ sweep reports a much stronger Restormer result at $K=10$, and this propagates into the architecture and 2D-versus-3D conclusions.
+
+I explicitly checked the main equations, symbol definitions, dimensional consistency, implementation-facing formulas, branch/sign conventions, tables, captions, references, and TODO markers. The manuscript contains no inverse-trigonometric or coordinate-transform formulas, so no arctangent branch or quadrant defect was found. The important notation-drift issues are instead the meanings of $K$, channel index $K-1$, $m$ and ``masked voxels'', and the Stanford ``reference'' terminology.
+
+\section*{Most important technical findings}
+
+\findingtitle{1. The $K=16$ operating point is not supported uniformly across backbones}
+\loc{Abstract; Section 4.2 and manuscript table \texttt{tab:sampling\_ablations}; Section 4.6 and manuscript table \texttt{tab:3d\_vs\_2d}; Section 5; Conclusion.}
+\problem{The text presents $K=16$ as a favorable quality--cost tradeoff and uses it for the main Restormer comparison. However, the reported $K$ sweep gives Restormer-Hybrid-RGS PSNR-ROI $=26.60$ and FA-MAE $=0.2195$ at $K=10$, versus PSNR-ROI $=23.43$ and FA-MAE $=0.2238$ at $K=16$. Thus, the fixed $K=16$ Restormer main row is not representative of the best reported Restormer configuration. It also affects the statement that Res-CNN-2D outperforms Restormer3D: Res-CNN-2D has PSNR-ROI $=26.44$, while the Restormer $K=10$ ablation row has PSNR-ROI $=26.60$.}
+\why{This changes the interpretation of the architecture results. With the fixed $K=16$ row, Restormer appears weak in ROI PSNR and the 2D baseline appears stronger. With the reported $K=10$ row, Restormer is competitive or better on PSNR-ROI and FA-MAE. Therefore, broad abstract/conclusion claims about 2D baselines outperforming volumetric 3D variants and about $K=16$ being the recommended tradeoff are overgeneralized.}
+\fix{Either rerun the main comparison and 2D-versus-3D table using each backbone's selected $K$, or explicitly label all architecture comparisons as fixed-config comparisons at $K=16$. If $K=16$ is retained for operational reasons, state that it is DRCNet-favorable and not Restormer-optimal in the current registry. Revise the abstract and conclusion to say that $K=16$ is a practical fixed operating point for DRCNet and for cross-model comparability, not a uniformly optimal choice.}
+
+\findingtitle{2. The model input equations are inconsistent about whether $C_t$ and $m$ are actual network inputs}
+\loc{Hybrid RGS Formulation, equations (1)--(4); Inference, equation (5); Figure~2 caption.}
+\problem{Equation (3) writes $\hat{y}_t=f_\theta(z_t,C_t,m)$, implying that the context indices and mask are explicit arguments to the network. Equation (5) later uses only $f_\theta(z_t^{(a,b)})$, and the architecture descriptions suggest that the network receives the $K$-channel tensor, with optional target-gradient FiLM metadata, but not an explicit mask channel or context-index list. The text also says the target is at channel index $K-1$, which is zero-based indexing, while the mathematical context tuple is written as $(c_1,\ldots,c_{K-1})$, which is one-based notation.}
+\why{This is implementation-facing ambiguity. If $m$ is not an input, the model only sees zero-filled locations, and zero is also a valid normalized intensity in background and low-signal tissue. If $m$ is an input, the architecture and equations should include a mask channel or mask argument. The channel-index convention also creates an avoidable off-by-one ambiguity for readers trying to reproduce the method.}
+\fix{Rewrite the prediction equation to match the implementation. For example, use $\hat{y}_t=f_\theta(z_t)$ for the unconditioned model and $\hat{y}_t=f_\theta(z_t,q_t)$ when FiLM uses target metadata $q_t=[\cos_x,\cos_y,\cos_z,b_{\mathrm{norm}}]$. Then state explicitly: ``Channels are zero-indexed in implementation; after $K-1$ context channels, the target channel is placed at index $K-1$ (the $K$th channel in one-based mathematical indexing).'' If the mask is explicitly provided, add the mask channel or mask argument consistently to the architecture, equations, and inference formula.}
+
+\findingtitle{3. The J-invariance claim should be tied to the training loss, not to the final denoiser}
+\loc{Connection to J-Invariance; Figure~2 caption; Inference paragraph after equation (5).}
+\problem{The text correctly notes after equation (5) that the inference ensemble averages complete spatial predictions and is not the strictest voxel-wise J-invariant estimator. However, nearby wording says the loss is ``enforcing blind-spot J-invariance'' and that strict voxel-wise J-invariance is guaranteed for masked supervised sites. This is true only for the training loss under the stated implementation assumptions, not for every voxel in the final averaged reconstruction.}
+\why{The distinction matters because at inference each voxel is unmasked in many ensemble members, so the prediction at that voxel can depend on the observed noisy target value in those members. The final denoiser is therefore a stochastic masked ensemble calibrated by a blind-spot loss, not a strictly J-invariant estimator at every output coordinate.}
+\fix{Keep the existing caveat after equation (5), but propagate it into the caption and J-invariance subsection. Suggested wording: ``The masked training loss enforces a blind-spot objective at supervised masked sites. The final inference output is a Monte Carlo masked ensemble and should not be described as strictly voxel-wise J-invariant at every output site.''}
+
+\findingtitle{4. Several planned ablations are listed but not reported}
+\loc{Ablation Studies list, especially the bullets on masking probability $p$, inference contexts $N_c$, and progressive training.}
+\problem{The Methods list promises sensitivity to $p\in\{0.1,0.2,0.3,0.5,0.7\}$, sensitivity to $N_c\in\{1,3,5,12,24,48\}$, and progressive training versus fixed-patch training. The Results sections do not report these ablations.}
+\why{This creates a methods-results mismatch and weakens claims that $p=0.3$, $N_c=16$, $N_p=12$, and the progressive schedule are empirically justified. Readers cannot tell whether these values were tuned, assumed, or inherited from code defaults.}
+\fix{Add the missing tables/figures, move the unreported ablations to supplementary material and cite them, or remove the bullets from the main ablation plan. If the values are defaults rather than experimentally validated choices, state that directly.}
+
+\findingtitle{5. Stanford HARDI claims remain incomplete because the manuscript still contains TODOs and lacks the promised qualitative evidence}
+\loc{Main Comparison after manuscript table \texttt{tab:main\_comparison}; Generalization to Real Scanner Noise; TODOs near the Stanford section.}
+\problem{The text says that the Stanford experiment emphasizes qualitative FA/MD assessment, residual maps, homogeneous-ROI variance summaries, and visual plausibility, but the manuscript still contains TODOs requesting those panels. The current Stanford table reports noisy-input PSNR-ROI, which the manuscript correctly says is only an input-closeness metric.}
+\why{Without the promised visual panels or reference-free stability summaries, the Stanford section supports feasibility and scalability only. It does not support claims about qualitative denoising quality, FA/MD plausibility, or real-scanner restoration accuracy. The TODO markers also make the submission appear unfinished.}
+\fix{Before submission, either add the Stanford visual panels and reference-free summaries, or shorten the Stanford section to a feasibility-only experiment. Remove all \texttt{\textbackslash TODO} blocks. In the abstract and conclusion, keep the Stanford claim to ``trained and applied successfully on real scanner data without ground truth'' unless qualitative evidence is added.}
+
+\findingtitle{6. ROI metric terminology is ambiguous and collides with the training mask notation}
+\loc{Datasets and Protocols / metric definition paragraph, especially the sentence ``MSE-ROI and PSNR-ROI use only masked voxels''.}
+\problem{The manuscript uses $m$ and $\Omega_m$ for the stochastic training mask, then later says ROI metrics use ``masked voxels''. In that metric sentence, ``masked voxels'' appears to mean voxels inside the ROI brain mask, not the stochastic Bernoulli-masked training locations. The PSNR equation also defines the peak as $\max(X)$ for the clean full array, but the text does not say whether PSNR-ROI uses the same global peak, an ROI peak, or per-volume peaks after normalization.}
+\why{This ambiguity affects reproducibility and interpretation of PSNR-ROI values. It also risks confusing the training mask with the evaluation mask, which are conceptually different.}
+\fix{Replace ``masked voxels'' with ``ROI voxels'' in the metric paragraph. Define the ROI mask with a distinct symbol, e.g., $\Omega_{\mathrm{ROI}}$, and state whether it is computed from clean, noisy, or denoised data. Specify the dynamic range used for PSNR-ROI, preferably using the same $\max(X)-\min(X)$ or normalized peak convention as full-volume PSNR.}
+
+\findingtitle{7. Tensor-metric reference and unit language is inconsistent for Stanford}
+\loc{Tensor metric paragraph; note after the main comparison table; Stanford HARDI section.}
+\problem{The tensor paragraph says FA, MD, AD, and RD maps are computed for the clean D-Brain ground truth ``or Stanford reference acquisition'', while the Stanford section repeatedly says no clean ground truth exists. The note after the main table also mentions AD-MAE and RD-MAE and says Stanford HARDI diffusivity errors are in physical units, but the table contains only MD-MAE and only D-Brain rows. Later, Stanford FiLM rows are described as errors against ``internal reference estimates'', not ground truth.}
+\why{This makes it unclear whether Stanford tensor numbers are errors, input-closeness scores, internal-reference deviations, or qualitative summaries. It also leaves stale AD/RD language in a table that reports only MD-MAE.}
+\fix{Separate D-Brain and Stanford tensor evaluation definitions. For D-Brain, define true ROI MAE against the clean phantom. For Stanford, avoid ``MAE'' unless a reference map is explicitly defined; use terms such as ``deviation from acquired-input tensor fit'' or ``internal-reference difference'' if that is what was computed. Remove AD-MAE/RD-MAE and Stanford unit language from the main-table note unless those columns are actually present.}
+
+\findingtitle{8. The 2D baseline training protocol is under-specified}
+\loc{Lightweight 2D Baselines section; Backbone Capacity and Spatial Dimensionality; Progressive training schedule table.}
+\problem{The text says the 2D baselines use the same progressive patch schedule and training protocol as the 3D models, while the implementation table defines cubic 3D patches ($32^3$, $24^3$, $16^3$). It is not clear whether 2D models are trained on full axial slices, 2D crops, axial slices extracted from 3D patches, or another sampling unit.}
+\why{The 2D-versus-3D ablation is central to the paper's architecture-agnostic conclusion. Patch sampling, batch size, and exposure to neighboring slices materially affect runtime, memory, and denoising performance.}
+\fix{Add a short 2D-specific training paragraph or extend the schedule table with 2D rows. State the 2D crop size, stride, batch size, slice sampling rule, whether adjacent slices are ever included, and how the number of optimization steps is matched to the 3D runs.}
+
+\findingtitle{9. The supervised-reference comparison is too under-specified to support much interpretation}
+\loc{Main Comparison, supervised rows and paragraph.}
+\problem{The supervised DRCNet and Restormer rows underperform the self-supervised DRCNet row, but the manuscript gives little detail about supervised training data, train/test separation, loss, target preparation, checkpoint selection, and whether the supervised architectures were comparably tuned.}
+\why{A supervised model underperforming a self-supervised model is plausible under limited data or mismatched training, but it is not a general statement about the value of clean targets. Without details, readers may misread these rows as a rigorous supervised upper-bound comparison.}
+\fix{Label these rows as ``supervised reference runs'' rather than upper bounds, and add enough training detail to make them interpretable. If they are not tuned baselines, say that they are included only to contextualize the current implementation, not to compare supervision versus self-supervision in general.}
+
+\section*{Notation and terminology drift check}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.18\linewidth}p{0.31\linewidth}p{0.37\linewidth}}
+\toprule
+Symbol/term & First definition & Later drift or ambiguity \\
+\midrule
+$K$ & Total number of input channels: $K-1$ context gradients plus one masked target. & Later described as ``number of gradients per sampled input group'' and implemented with target at channel index $K-1$. Clarify zero-based channel indexing and whether $K$ includes the target in every sentence. \\
+$C_t$ & A context set excluding target $t$, then an ordered tuple $(c_1,\ldots,c_{K-1})$. & The text alternates between set and ordered tuple. This is acceptable if ordering is implementation-defined, but should be stated because channels are shuffled. \\
+$m$, $\Omega_m$ & Bernoulli training mask and masked training sites. & ``Masked voxels'' later appears to mean ROI voxels. Use ``ROI voxels'' for evaluation masks. \\
+Stanford reference & Stanford has no clean ground truth. & Later ``Stanford reference acquisition'' and ``internal reference estimates'' appear. Define these terms or avoid error language. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Meaningful editorial and production findings}
+
+\findingtitle{A. The manuscript still contains visible TODO blocks}
+\loc{Three TODOs remain after the main D-Brain table and in the Stanford HARDI section.}
+\problem{The TODOs request final qualitative panels, residual maps, and Stanford FA/MD figures.}
+\why{They make the paper visibly incomplete and correspond to evidence that the text claims or anticipates.}
+\fix{Resolve the TODOs by adding the panels/summaries or deleting the corresponding claims. Remove the \texttt{\textbackslash TODO} macro if it is no longer used.}
+
+\findingtitle{B. The main-table note is stale}
+\loc{Note after manuscript table \texttt{tab:main\_comparison}.}
+\problem{The note mentions MD-MAE, AD-MAE, and RD-MAE plus Stanford HARDI units, but the table only reports MD-MAE and contains no Stanford rows.}
+\why{This is a reference-list/table hygiene issue that can confuse readers about what quantities are actually reported.}
+\fix{Change the note to refer only to MD-MAE for the D-Brain rows, or add the missing AD/RD columns and Stanford rows if those are intended.}
+
+\findingtitle{C. Figure production needs attention}
+\loc{LaTeX build log reports: ``Float too large for page by 202.4785pt on input line 210.''}
+\problem{The DRCNet architecture figure overflows the page in the compiled PDF.}
+\why{Oversized floats can obscure content, create bad pagination, or fail journal production checks.}
+\fix{Reduce the TikZ figure scale, split the architecture and 2D-baseline panels into separate figures, or move the detailed architecture diagram to supplementary material.}
+
+\findingtitle{D. Citation and label hygiene should be cleaned}
+\loc{Bibliography and labels.}
+\problem{The citation key \texttt{dwimri} is defined in the bibliography but not cited. Several labels are defined but not referenced in the text, including the architecture figures and implementation schedule table.}
+\why{Unused references and unreferenced figures/tables make the manuscript look less polished and may trigger editorial queries.}
+\fix{Cite \texttt{dwimri} in the introductory DTI/biomarker sentence or remove it. Add text references to the architecture figures and schedule table if they remain in the main manuscript, or move them to supplementary material.}
+
+\section*{Proofing-sweep notes}
+
+I ran the bundled \texttt{proofing\_scan.py} on both the compiled PDF and the \texttt{.tex} source. The automatic hits were mostly ellipses rendered as ``. . .'' and semicolons followed by acronyms or proper nouns, so they are not punctuation defects. No duplicated comma, duplicated period, malformed quote-comma pattern, product-capitalization issue, or \texttt{arctan(x/y)} branch pattern was found. Actionable proofing items are the manually confirmed TODO blocks, stale table note, oversized float warning, and unused citation/label cleanup listed above.
+
+\section*{Items needing external verification}
+
+The following claims may be correct, but the manuscript itself does not establish them and they should be verified against the cited papers, dataset metadata, or registry/code before submission:
+
+\begin{itemize}
+  \item D-Brain acquisition details: six $b=0~\mathrm{s/mm^2}$ volumes, $G=60$ diffusion-weighted volumes at $b=2500~\mathrm{s/mm^2}$, $1.4~\mathrm{mm}$ isotropic resolution, and uniformly distributed directions.
+  \item Stanford HARDI details from \texttt{dipy.data.fetch\_stanford\_hardi}: ten $b=0~\mathrm{s/mm^2}$ volumes, $G=150$ diffusion-weighted directions, scanner model, and exact $b$-value shell definition.
+  \item DRCNet architecture claims inherited from manuscript citation key \texttt{gurrola2024drcnet}, especially the approximately $60\%$ computation reduction and the statement that four unfolded RCDB iterations were the best accuracy-cost tradeoff.
+  \item The official current names/accenting of the authors' institution and scholarship agency, if the journal expects Spanish names with diacritics or updated institutional naming.
+\end{itemize}
+
+\section*{Highest-priority fixes before submission}
+
+\begin{enumerate}
+  \item Decide whether comparisons are fixed at $K=16$ or per-backbone tuned; then revise the main table, 2D-versus-3D conclusion, abstract, and conclusion accordingly.
+  \item Make the Hybrid RGS equations match the actual inputs: $z_t$ only, or $z_t$ plus explicit mask/context/metadata if those are genuinely provided.
+  \item Remove the TODO blocks by adding the missing qualitative Stanford/D-Brain panels or restricting those sections to feasibility-only claims.
+  \item Clarify ROI PSNR, tensor references, Stanford internal-reference terminology, and D-Brain arbitrary units.
+  \item Fix the oversized architecture figure and clean unused references, stale notes, and unreferenced labels.
+\end{enumerate}
+
+\end{document}
