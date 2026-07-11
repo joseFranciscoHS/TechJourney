@@ -350,7 +350,8 @@ class Restormer2D(nn.Module):
         logging.info("Restormer2D total parameters: %d", total_params)
         logging.info("Restormer2D trainable parameters: %d", trainable_params)
 
-    def forward(self, inp_img: torch.Tensor) -> torch.Tensor:
+    def forward(self, inp_img: torch.Tensor, orientation_info=None) -> torch.Tensor:
+        del orientation_info  # shared fit/reconstruct API; unused for Restormer-2D
         """
         Args:
             inp_img: (B, K, H, W) — K gradient slices with masked target at index K-1.

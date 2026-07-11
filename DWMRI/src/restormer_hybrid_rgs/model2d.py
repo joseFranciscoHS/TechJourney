@@ -47,7 +47,8 @@ class ResCNN2D(nn.Module):
         self.blocks = nn.Sequential(*[_Block2D(dim=dim) for _ in range(num_blocks)])
         self.out = nn.Conv2d(dim, out_channels, kernel_size=3, padding=1, bias=bias)
 
-    def forward(self, x):
+    def forward(self, x, orientation_info=None):
+        del orientation_info  # shared fit/reconstruct API; unused for Res-CNN-2D
         x = self.embed(x)
         x = self.blocks(x)
         return self.out(x)
