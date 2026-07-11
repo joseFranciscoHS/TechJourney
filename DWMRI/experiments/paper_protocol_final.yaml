@@ -101,6 +101,7 @@ matrix:
     required_jobs:
       - "drcnet_dbrain_2d_rgs_k16_ablation"
       - "restormer_dbrain_2d_rgs_k16_ablation"
+      - "restormer_dbrain_restormer2d_rgs_k16_ablation"
     constraints:
       seed: 91021
       shell_sampling_mode: "rgs"

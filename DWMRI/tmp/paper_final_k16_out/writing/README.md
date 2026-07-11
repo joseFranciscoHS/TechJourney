@@ -96,6 +96,7 @@ draft, a table, etc.>
 | 021 | `sigma_baseline_backfill` | Backfill Patch2Self & MD-S2S σ=0.15/0.20 in sigma sweep table + Figure 2 | ready |
 | 022 | `restormer_architecture_modifications` | Restormer Architecture Modifications (3D/2D variants, detailed comparison with original) | ready |
 | 023 | `architecture_diagram_tikz` | Architecture Diagram (TikZ three-panel figure: Hybrid RGS pipeline, Restormer3D, 2D variant) | ready |
+| 024 | `restormer2d_hybrid_rgs` | Restormer-2D Hybrid RGS (capacity-matched 2D transformer ablation: methods paragraph + 3D-vs-2D table update) | ready |
 
 ### Registry provenance (K=16 canonical baselines)
 

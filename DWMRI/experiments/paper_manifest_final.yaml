@@ -891,6 +891,50 @@ jobs:
       - dbrain.reconstruct.clip_to_range=true
       - --set
       - dbrain.reconstruct.compute_dti=true
+- id: restormer_dbrain_restormer2d_rgs_k16_ablation
+  recipe: conv2d_vs_conv3d
+  cwd: null
+  command:
+      - python
+      - -m
+      - restormer_hybrid_rgs.run2d_hybrid
+      - --dataset
+      - dbrain
+      - --regime
+      - self_supervised
+      - --no-wandb
+      - --set
+      - dbrain.model.backbone=restormer_2d
+      - --set
+      - dbrain.train.seed=91021
+      - --set
+      - dbrain.train.reproducible=true
+      - --set
+      - dbrain.train.subset_fraction=0.6
+      - --set
+      - dbrain.data.shell_sampling_mode=rgs
+      - --set
+      - dbrain.data.num_input_volumes=16
+      - --set
+      - dbrain.data.shell_gradient_volumes=60
+      - --set
+      - dbrain.data.target_channel=15
+      - --set
+      - dbrain.reconstruct.mask_p=0.3
+      - --set
+      - dbrain.reconstruct.n_preds=5
+      - --set
+      - dbrain.reconstruct.n_context_samples=16
+      - --set
+      - dbrain.reconstruct.metrics_roi_threshold=0.02
+      - --set
+      - dbrain.reconstruct.rescale_to_01=true
+      - --set
+      - dbrain.reconstruct.rescale_mode=per_volume
+      - --set
+      - dbrain.reconstruct.clip_to_range=true
+      - --set
+      - dbrain.reconstruct.compute_dti=true
 - id: drcnet_dbrain_k5_ablation
   recipe: k_sweep
   cwd: null

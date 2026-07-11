@@ -1,3 +1,12 @@
+"""
+Lightweight residual 2D CNN for the Hybrid RGS capacity ablation (Res-CNN-2D).
+
+This is NOT a Restormer port. For the true 2D Restormer with MDTA/GDFN blocks,
+see :class:`restormer_arch_2d.Restormer2D`.
+
+The paper refers to this model as "Res-CNN-2D" in Table tab:3d_vs_2d.
+"""
+
 import torch.nn as nn
 
 
@@ -14,9 +23,11 @@ class _Block2D(nn.Module):
         return x + self.net(x)
 
 
-class Restormer2D(nn.Module):
+class ResCNN2D(nn.Module):
     """
-    Reduced 2D Restormer for iso-budget pilot runs.
+    Lightweight residual CNN for the Hybrid RGS 2D capacity ablation (Res-CNN-2D).
+
+    Not a Restormer port — see :class:`restormer_arch_2d.Restormer2D` for MDTA/GDFN.
     Input: (B, K, H, W), Output: (B, 1, H, W)
     """
 
@@ -26,10 +37,10 @@ class Restormer2D(nn.Module):
         out_channels=1,
         dim=24,
         num_blocks=2,
-        heads=2,
-        ffn_expansion_factor=2.0,
+        heads=2,  # unused; kept for call-site parity with Restormer2D kwargs
+        ffn_expansion_factor=2.0,  # unused
         bias=False,
-        LayerNorm_type="WithBias",
+        LayerNorm_type="WithBias",  # unused
     ):
         super().__init__()
         self.embed = nn.Conv2d(inp_channels, dim, kernel_size=3, padding=1, bias=bias)

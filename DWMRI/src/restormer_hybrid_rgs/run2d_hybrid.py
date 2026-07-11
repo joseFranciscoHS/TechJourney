@@ -23,7 +23,8 @@ from drcnet_hybrid_rgs.reconstruction2d import (
 )
 from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
 from restormer_hybrid_rgs.fit import fit_model
-from restormer_hybrid_rgs.model2d import Restormer2D
+from restormer_hybrid_rgs.model2d import ResCNN2D
+from restormer_hybrid_rgs.restormer_arch_2d import Restormer2D
 from utils import setup_logging
 from utils.data import DBrainDataLoader, invert_normalization
 from utils.eval_protocol import (
@@ -211,22 +212,56 @@ def main():
     )
 
     device = settings.train.device
+    backbone = str(getattr(settings.model, "backbone", "res_cnn_2d")).lower()
+    dim = getattr(settings.model, "dim", 16)
+    ffn = getattr(settings.model, "ffn_expansion_factor", 1.5)
+    bias = getattr(settings.model, "bias", False)
+    ln_type = getattr(settings.model, "LayerNorm_type", "WithBias")
     num_blocks_cfg = getattr(settings.model, "num_blocks", [1, 2, 2])
-    if isinstance(num_blocks_cfg, (list, tuple)):
-        num_blocks_2d = int(sum(int(v) for v in num_blocks_cfg))
+    heads_cfg = getattr(settings.model, "heads", [1, 2, 2])
+
+    if backbone in {"res_cnn_2d", "rescnn2d", "cnn"}:
+        n_blocks = (
+            int(sum(int(v) for v in num_blocks_cfg))
+            if isinstance(num_blocks_cfg, (list, tuple))
+            else int(num_blocks_cfg)
+        )
+        model = ResCNN2D(
+            inp_channels=k,
+            out_channels=1,
+            dim=dim,
+            num_blocks=max(n_blocks, 1),
+            bias=bias,
+        ).to(device)
+    elif backbone in {"restormer_2d", "restormer2d"}:
+        nb = (
+            list(num_blocks_cfg)
+            if isinstance(num_blocks_cfg, (list, tuple))
+            else [1, 2, 2]
+        )
+        hd = list(heads_cfg) if isinstance(heads_cfg, (list, tuple)) else [1, 2, 2]
+        model = Restormer2D(
+            inp_channels=k,
+            out_channels=1,
+            dim=dim,
+            num_blocks=nb,
+            num_refinement_blocks=int(
+                getattr(settings.model, "num_refinement_blocks", 2)
+            ),
+            heads=hd,
+            ffn_expansion_factor=ffn,
+            bias=bias,
+            LayerNorm_type=ln_type,
+            output_activation=getattr(settings.model, "output_activation", "prelu"),
+            scale_and_shift=bool(getattr(settings.model, "scale_and_shift", True)),
+        ).to(device)
     else:
-        num_blocks_2d = int(num_blocks_cfg)
-    model = Restormer2D(
-        inp_channels=k,
-        out_channels=1,
-        dim=getattr(settings.model, "dim", 16),
-        num_blocks=max(num_blocks_2d, 1),
-        heads=getattr(settings.model, "heads", 2),
-        ffn_expansion_factor=getattr(settings.model, "ffn_expansion_factor", 1.5),
-        bias=getattr(settings.model, "bias", False),
-        LayerNorm_type=getattr(settings.model, "LayerNorm_type", "WithBias"),
-    ).to(device)
+        raise ValueError(
+            f"Unknown model.backbone={backbone!r}; supported: res_cnn_2d | restormer_2d"
+        )
+
     n_params = int(sum(p.numel() for p in model.parameters()))
+    logging.info("2D backbone=%s params=%d", backbone, n_params)
 
     wall_t0 = time.time()
     started = now_utc_iso()
@@ -399,6 +434,7 @@ def main():
                     ),
                     "n_preds": int(getattr(settings.reconstruct, "n_preds", 0)),
                     "dimensionality": "2d",
+                    "backbone": backbone,
                 },
                 metrics_policy=metrics_policy_dict(
                     reference_name="clean_gt",
@@ -436,6 +472,7 @@ def main():
             "regime": args.regime,
             "architecture": "restormer",
             "dimensionality": "2d",
+            "backbone": backbone,
             "sampling_mode": mode,
             "sampling_config": {
                 "g_shell": int(

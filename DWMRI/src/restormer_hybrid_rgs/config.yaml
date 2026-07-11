@@ -60,6 +60,7 @@ dbrain:
     metrics_dir: "restormer_hybrid_rgs/metrics/dbrain"
     images_dir: "restormer_hybrid_rgs/images/dbrain"
   model:
+    backbone: res_cnn_2d  # res_cnn_2d | restormer_2d (controls run2d_hybrid only)
     in_channel: 16
     out_channel: 1
     output_activation: "prelu"

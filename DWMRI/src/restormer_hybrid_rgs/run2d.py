@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from restormer_hybrid_rgs.model2d import Restormer2D
+from restormer_hybrid_rgs.model2d import ResCNN2D
 from utils.data import DBrainDataLoader
 from utils.experiment_runtime import append_registry_line, gpu_peak_mem_mb, now_utc_iso
 
@@ -64,7 +64,7 @@ def main():
     noisy = noisy[:128, :128, :96, 6:66]
     ds = Sequential2DDataset(noisy, k=args.k, target_channel=args.target_channel)
     dl = DataLoader(ds, batch_size=args.batch_size, shuffle=True)
-    model = Restormer2D(inp_channels=args.k, out_channels=1).to(device)
+    model = ResCNN2D(inp_channels=args.k, out_channels=1).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=3e-4)
 
     for _ in range(args.epochs):
