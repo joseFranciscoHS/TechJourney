@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\setlist[itemize]{leftmargin=*,topsep=3pt,itemsep=3pt}
+\setlist[enumerate]{leftmargin=*,topsep=3pt,itemsep=4pt}
+
+\title{Technical Review of \texttt{Sepulveda\_dwmri\_restormer.tex}}
+\author{Paper-review skill audit}
+\date{2026-07-08}
+
+\begin{document}
+\maketitle
+
+\section*{Overall assessment}
+
+The manuscript is technically substantive and much more carefully qualified than a typical methods draft: it distinguishes self-supervised and supervised runs, limits the Restormer comparison to the fixed $K=16$ operating point, notes that Stanford HARDI has no ground truth, and reports both image-domain and tensor-derived metrics. The main remaining problems are not broad prose issues; they are implementation-facing ambiguities and evidence gaps that could materially affect reproducibility or interpretation. I explicitly checked the key equations, symbol definitions, tables, appendix-like implementation descriptions, branch/sign conventions, dimensional consistency, and implementation ambiguity. No inverse-trigonometric, coordinate-transform, or branch-convention formulas appear in the manuscript, so no concrete branch/quadrant error was identified.
+
+\section*{Highest-priority fixes}
+
+\begin{enumerate}
+  \item Clarify whether clean-reference information enters training patch selection; if not, replace the notation that currently says $\max(x_{\mathrm{patch}})\leq0.02$ with an acquired/noisy-image mask definition.
+  \item Rewrite the RGS and sequential-window sampling algorithms so that target selection, context exclusion, channel shuffling, and target-volume coverage are unambiguous.
+  \item Remove all visible \texttt{\textbackslash TODO} blocks or add the promised image panels before submission; the Stanford section currently supports feasibility only, not visual or quantitative restoration quality.
+  \item Fix notation drift involving $z_t$, $\gamma$, and $\beta$, and correct the statement that PReLU bounds the output range.
+  \item Resolve reproducibility inconsistencies in the training schedule, especially ``no learning-rate schedule'' versus resetting a scheduler.
+\end{enumerate}
+
+\section*{Technical and factual findings}
+
+\subsection*{1. Possible clean-reference leakage in training patch filtering}
+\begin{itemize}
+  \item \textbf{Location:} Data Representation, line 76; Evaluation Metrics, line 417; Augmentation, line 676.
+  \item \textbf{Problem:} The manuscript states that self-supervised training does not require $x_g$, but the Data Representation paragraph says that patches satisfying $\max(x_{\mathrm{patch}})\leq0.02$ are discarded. Earlier, $x_g$ is defined as the clean or higher-quality reference used for evaluation only. If the training dataset is actually filtered using $x_{\mathrm{patch}}$, then clean-reference information is entering the self-supervised training pipeline. If the code filters on the noisy/acquired patch instead, the notation is wrong. A related ambiguity appears in the ROI definition: line 417 writes $\Omega_{\mathrm{ROI}}=\{i:\max_g Y_i(g)>0.02\}$ but says it is computed from the clean reference array.
+  \item \textbf{Why it matters:} Background-patch rejection changes the training distribution. Even if it does not use clean targets in the loss, using the clean phantom to select training patches weakens the claim that training is fully self-supervised and makes the experiment harder to reproduce on real data without ground truth.
+  \item \textbf{Suggested fix:} State explicitly that all training-time patch filtering uses only acquired/noisy data, e.g., replace $x_{\mathrm{patch}}$ by $y_{\mathrm{patch}}$ or by a mask derived from acquired DWI/$b0$ images. Separately define the evaluation-only ROI mask, for example $\Omega_{\mathrm{ROI}}^{\mathrm{eval}}=\{i:\max_g X_i(g)>0.02\}$ for D-Brain, and note that it is never used for training or checkpoint selection.
+\end{itemize}
+
+\subsection*{2. RGS sampling and sequential-window ablation are implementation-ambiguous}
+\begin{itemize}
+  \item \textbf{Location:} Hybrid RGS Formulation, lines 79--83; Sampling Strategy Ablations, lines 488--490; the manuscript's Figure~\texttt{\textbackslash ref\{fig:hybrid\_rgs\_pipeline\}} caption, line 294.
+  \item \textbf{Problem:} The formulation first defines a physical target $t$ and a context set $C_t\subset\{1,\ldots,G\}\setminus\{t\}$ of $K-1$ non-target gradients, with the target placed at channel $K-1$. Later, the ablation says that RGS samples $K$ distinct gradient indices from the full shell, shuffles the stack, and assigns the target to the fixed prediction channel. Those descriptions are not equivalent unless the target is selected first and only the context channels are shuffled. The sequential mode is also ambiguous: windows $[0{:}16]$, $[1{:}17]$, $\ldots$, $[G-K{:}G]$ with the last channel as target would, under Python-style half-open slicing, train only targets $K-1,\ldots,G-1$ and never make the first $K-1$ gradients targets.
+  \item \textbf{Why it matters:} The sequential-versus-random result is a key claim. If the sequential condition has incomplete target coverage, boundary bias, or a different target-selection distribution, then its lower PSNR-ROI may reflect the ablation design rather than the benefit of random angular context.
+  \item \textbf{Suggested fix:} Add short pseudocode for both RGS and sequential modes. For RGS, specify whether $t$ is sampled first and $C_t$ is sampled from $\{1,\ldots,G\}\setminus\{t\}$, and say explicitly that only context channels are shuffled while the masked target remains at channel $K-1$. For sequential mode, define a target-complete rule such as ``for each target $t$, choose the nearest $K-1$ non-target gradients with cyclic wrap-around'' or report exactly which target gradients are included and how missing boundary targets are handled.
+\end{itemize}
+
+\subsection*{3. Output-range statement is wrong for PReLU, and affine notation is overloaded}
+\begin{itemize}
+  \item \textbf{Location:} DRCNet modifications, line 110; Restormer input/output stem, line 223; FiLM equation, lines 613--617; Restormer figure caption, line 386.
+  \item \textbf{Problem:} The DRCNet paragraph correctly says that PReLU is unbounded and Sigmoid is bounded to $[0,1]$, but the Restormer paragraph says that a learned affine transformation followed by ``PReLU or Sigmoid'' bounds the output range. PReLU does not bound the range. The same symbols $\gamma$ and $\beta$ are also used for FiLM scale/shift and for the Restormer output affine transformation, which creates notation drift.
+  \item \textbf{Why it matters:} Output bounding affects metric interpretation after min--max normalization and clipping. Reusing $\gamma$ and $\beta$ for two different mechanisms also makes implementation-facing equations harder to map to code.
+  \item \textbf{Suggested fix:} Rewrite the Restormer sentence as: ``The output head applies a learned affine transformation $\gamma_{\mathrm{out}}u_\theta+\beta_{\mathrm{out}}$, followed by either PReLU (unbounded) or Sigmoid (bounded to $[0,1]$).'' Reserve $\gamma_{\ell}(q_t),\beta_{\ell}(q_t)$ for FiLM layer $\ell$.
+\end{itemize}
+
+\subsection*{4. Required notation/terminology drift check found symbol conflicts}
+\begin{itemize}
+  \item \textbf{Location:} $z_t$ is first defined as the full $K$-channel network input in Eq.~(1), lines 79--82; the DRCNet figure/caption later uses $z_t$ for a GRU-style update gate, lines 183 and 210. $\gamma,\beta$ are used both for FiLM in Eq.~(6) and for the Restormer output affine head.
+  \item \textbf{Problem:} The same symbols carry different verbal descriptors: $z_t$ means ``input stack for target diffusion volume $t$'' in the method equations, but ``update gate'' in the DRCNet architecture caption. $\gamma,\beta$ mean FiLM's target-conditioned channel-wise scale/shift in one section and global output-head scale/shift in another.
+  \item \textbf{Why it matters:} These conflicts are likely to confuse readers implementing the method, especially because the manuscript is explicitly architecture-agnostic and code-facing.
+  \item \textbf{Suggested fix:} Rename the RCDB gate variables to $u_t$ and $r_t$, or to $z^{\mathrm{gate}}$ and $r^{\mathrm{gate}}$, and rename the output affine parameters to $\gamma_{\mathrm{out}},\beta_{\mathrm{out}}$. Add a compact notation table for $K$, $t$, $C_t$, $m$, $z_t$, $q_t$, $N_c$, and $N_p$.
+\end{itemize}
+
+\subsection*{5. Stanford HARDI evidence supports feasibility, not denoising accuracy}
+\begin{itemize}
+  \item \textbf{Location:} Abstract; Generalization to Real Scanner Noise, lines 731--741; Stanford TODOs, lines 737 and 767; Conclusion, line 781.
+  \item \textbf{Problem:} The text often qualifies Stanford properly, but the section still relies on noisy-input PSNR-ROI and internal-reference tensor deviations. Those quantities measure closeness to the acquired image or to a tensor fit from the acquired image; they are not restoration accuracy. The manuscript also still contains TODOs for the visual FA/MD panels and residual or homogeneous-ROI summaries that would support the qualitative claims.
+  \item \textbf{Why it matters:} A method that leaves the image nearly unchanged can score well against the noisy input. Without the promised panels, repeated acquisitions, test--retest data, or a reference-free noise/stability analysis, Stanford can only demonstrate that the pipeline runs on a larger real acquisition.
+  \item \textbf{Suggested fix:} Keep Stanford claims limited to successful training, scalability from $G=60$ to $G=150$, and generation of tensor maps. Remove or clearly subordinate any implication of denoising quality until the visual panels, homogeneous-ROI variance, repeated-acquisition comparison, or test--retest evidence is added. Avoid using ``FA-MAE'' language for Stanford unless every occurrence states that it is deviation from an internal noisy-input reference, not ground-truth error.
+\end{itemize}
+
+\subsection*{6. Training schedule description is internally inconsistent}
+\begin{itemize}
+  \item \textbf{Location:} Training, line 653; Progressive schedule, line 656.
+  \item \textbf{Problem:} The manuscript says all neural models use Adam with no learning-rate schedule, but the progressive-schedule paragraph says that each stage resets the optimizer and scheduler.
+  \item \textbf{Why it matters:} The optimizer/scheduler state can affect the reported ablations, especially because each stage rebuilds the dataset at a new patch size.
+  \item \textbf{Suggested fix:} If no scheduler is used, change line 656 to ``resets the optimizer state'' and remove ``scheduler.'' If a scheduler object exists but has a constant learning rate, state that explicitly.
+\end{itemize}
+
+\subsection*{7. Diffusivity metrics are carefully caveated but should be labeled more visibly}
+\begin{itemize}
+  \item \textbf{Location:} Tensor-derived biomarker definitions, lines 419--425; table notes at lines 485, 568, and 726.
+  \item \textbf{Problem:} The manuscript correctly says that MD errors are in arbitrary D-Brain phantom units after denormalization and should not be read as physical diffusivities. However, the table headers still use ``MD-MAE'' without the unit caveat in the header, while values such as 3438 and 4650 look like physical-scale tensor errors to a diffusion-MRI reader.
+  \item \textbf{Why it matters:} Readers may compare these values to conventional diffusivity units even though the manuscript says not to. This is especially risky because FA is dimensionless while MD, AD, and RD normally have physical units.
+  \item \textbf{Suggested fix:} Change table headers to ``MD-MAE (a.u.)'' or ``MD-MAE$^\dagger$ (phantom units)'' and add the same caveat wherever AD/RD are reported. If possible, report diffusivity errors in $10^{-6}\,\mathrm{mm^2/s}$ after confirming that the denormalization restores a physically meaningful scale.
+\end{itemize}
+
+\section*{Meaningful editorial findings}
+
+\begin{itemize}
+  \item \textbf{Location:} Line 230. \textbf{Problem:} The text points to ``Section 4.6'' for the capacity-dimensionality ablation, but in the current section order that subsection is ``Backbone Capacity and Spatial Dimensionality,'' after Sampling Strategy Ablations. \textbf{Why it matters:} Hard-coded section numbers are fragile and likely wrong after edits. \textbf{Suggested fix:} Add a label to the subsection and write \texttt{Section\textasciitilde\textbackslash ref\{subsec:capacity\_dimensionality\}}.
+  \item \textbf{Location:} Lines 728, 737, and 767. \textbf{Problem:} Visible TODO blocks remain in the manuscript. \textbf{Why it matters:} They make the paper look incomplete and directly identify missing evidence. \textbf{Suggested fix:} Replace them with final figures/analyses or remove the planned-figure claims.
+  \item \textbf{Location:} Line 739. \textbf{Problem:} The sentence ``Thus, $K=16$ remains a practical default for $G=150$'' follows a noisy-input PSNR table where DRCNet's highest score is at $K=24$ and Restormer's highest score is at $K=30$. \textbf{Why it matters:} Because noisy-input PSNR rewards input closeness, it should not be used to recommend $K$. \textbf{Suggested fix:} Rephrase as a cost-based default only: ``Given the lack of ground truth, the Stanford sweep is used for feasibility and runtime; $K=16$ is retained for consistency and cost, while $K=24$/$30$ require validation with reference-free or test--retest criteria.''
+  \item \textbf{Location:} Bibliography. \textbf{Problem:} No duplicated punctuation or malformed quoted titles were found, but software-name capitalization should be checked for title fidelity, especially ``Dipy'' versus ``DIPY'' in \texttt{\textbackslash bibitem\{garyfallidis2014dipy\}}. \textbf{Why it matters:} Reference-list capitalization errors are easy to miss in final submission. \textbf{Suggested fix:} Verify each title against the source record and preserve required capitalization with braces if using BibTeX later.
+\end{itemize}
+
+\section*{Proofing-sweep items}
+
+The mandatory micro-proofing scan was run on both the compiled PDF and the source text. The PDF hits for duplicated periods were mathematical ellipses such as $\ldots$, and the semicolon-capitalization hits were acceptable cases involving proper nouns, abbreviations, or table-caption fragments. After spot-checking, the high-confidence proofing items worth fixing are:
+
+\begin{itemize}
+  \item \textbf{Line 728:} unresolved \texttt{\textbackslash TODO} about qualitative comparison panels; add the panels or remove the placeholder.
+  \item \textbf{Line 737:} unresolved \texttt{\textbackslash TODO} about Stanford FA/MD panels and residual/homogeneous-ROI summaries; add the evidence or reduce Stanford claims.
+  \item \textbf{Line 767:} unresolved \texttt{\textbackslash TODO} about a Stanford HARDI FA-map comparison; add the final figure or remove the planned figure text.
+  \item \textbf{Line 12:} the custom \texttt{\textbackslash TODO} macro should be removed from the final manuscript once the placeholders are resolved.
+  \item \textbf{Line 223:} replace ``PReLU or Sigmoid activation to bound the output range'' with wording that says only Sigmoid bounds the output.
+\end{itemize}
+
+\section*{Items needing external verification}
+
+\begin{itemize}
+  \item Dataset metadata in line 76 should be checked against the D-Brain Figshare record and the Stanford HARDI/DIPY metadata: scanner model, voxel size, number of $b=0$ volumes, number of diffusion-weighted directions, and $b$-values.
+  \item Bibliographic details for \texttt{\textbackslash cite\{gurrola2024drcnet\}} and \texttt{\textbackslash cite\{kang2021mds2s\}} should be verified against the published records, especially titles, venues, and whether ``MD-S2S'' is the exact method name used in the cited work.
+  \item Claims about MP-PCA assumptions being ``well matched'' to the synthetic corruption are plausible from the manuscript's experiments, but any broader claim about real scanner noise or clinical superiority should be verified against external literature or new experiments.
+\end{itemize}
+
+\section*{Summary}
+
+The strongest parts of the manuscript are the careful $K$-sweep qualification, the explicit distinction between image-domain and tensor-domain metrics, and the candid treatment of FiLM as exploratory. The paper will be much stronger if the authors resolve the self-supervision/data-selection ambiguity, make the sampling algorithms target-complete and reproducible, remove the TODOs, and restrict Stanford claims to what the current evidence actually supports.
+
+\end{document}
