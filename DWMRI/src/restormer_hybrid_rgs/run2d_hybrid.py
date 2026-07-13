@@ -68,6 +68,16 @@ def _volume_path_segment(settings) -> str:
     return f"{mode}_G{g}_K{k}"
 
 
+def _backbone_path_segment(settings) -> str:
+    """Return a stable filesystem token for the active backbone, normalising aliases."""
+    bb = str(getattr(settings.model, "backbone", "res_cnn_2d")).lower()
+    if bb in {"res_cnn_2d", "rescnn2d", "cnn"}:
+        return "res_cnn_2d"
+    if bb in {"restormer_2d", "restormer2d"}:
+        return "restormer_2d"
+    return bb
+
+
 def _take_volumes_dwi(settings) -> int:
     mode = getattr(settings.data, "shell_sampling_mode", "sequential")
     if mode in {"rgs", "sequential"}:
@@ -174,7 +184,12 @@ def main():
     bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
     vol_seg = _volume_path_segment(settings)
     _sub_seg = training_subset_checkpoint_segment(settings.train)
-    _path_mid = [bvalue_segment, f"2d_{vol_seg}"] + ([_sub_seg] if _sub_seg else [])
+    _bb_seg = f"_bb_{_backbone_path_segment(settings)}"
+    _path_mid = (
+        [bvalue_segment, f"2d_{vol_seg}"]
+        + ([_sub_seg] if _sub_seg else [])
+        + [_bb_seg]
+    )
     checkpoint_dir = os.path.join(
         settings.train.checkpoint_dir,
         *_path_mid,
@@ -187,8 +202,7 @@ def main():
     )
     loss_dir = os.path.join(
         _loss_train_root,
-        bvalue_segment,
-        f"2d_{vol_seg}",
+        *_path_mid,
         noise_segment,
         f"learning_rate_{settings.train.learning_rate}",
     )
@@ -307,6 +321,8 @@ def main():
 
             noisy_v = np.transpose(noisy_data.astype(np.float32), (3, 0, 1, 2))
             infer_t0 = time.time()
+            _pred_chunk = getattr(settings.reconstruct, "pred_chunk_size", None)
+            _slice_chunk = getattr(settings.reconstruct, "slice_chunk_size", None)
             if _is_rgs(settings):
                 recon_vxyz = reconstruct_dwis_rgs_2d(
                     model,
@@ -320,6 +336,8 @@ def main():
                     target_channel=tc,
                     num_input=k,
                     seed=train_seed,
+                    pred_chunk_size=_pred_chunk,
+                    slice_chunk_size=_slice_chunk,
                 )
             else:
                 recon_vxyz = reconstruct_dwis_sequential_sliding_k_2d(
@@ -330,6 +348,9 @@ def main():
                     n_preds=int(settings.reconstruct.n_preds),
                     num_input=k,
                     target_channel=tc,
+                    seed=train_seed,
+                    pred_chunk_size=_pred_chunk,
+                    slice_chunk_size=_slice_chunk,
                 )
             recon_xyzv = np.transpose(recon_vxyz, (1, 2, 3, 0))
             sec_per_volume = float(time.time() - infer_t0) / float(recon_xyzv.shape[-1])

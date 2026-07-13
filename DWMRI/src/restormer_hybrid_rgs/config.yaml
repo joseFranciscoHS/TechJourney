@@ -47,6 +47,7 @@ dbrain:
     mask_p: 0.3
     n_preds: 12
     pred_chunk_size: null
+    slice_chunk_size: null
     n_context_samples: 16
     patch_size: 32
     overlap: 1

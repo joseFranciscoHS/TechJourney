@@ -56,6 +56,7 @@ python -m restormer_hybrid_rgs.run2d_hybrid --dataset dbrain --regime self_super
 # ---------------------------------------------------------------------------
 python -m restormer_hybrid_rgs.run2d_hybrid --dataset dbrain --regime self_supervised --no-wandb \
   --set dbrain.model.backbone=restormer_2d \
+  --set dbrain.reconstruct.slice_chunk_size=8 \
   --set dbrain.train.seed=91021 \
   --set dbrain.train.reproducible=true \
   --set dbrain.train.subset_fraction=0.6 \
