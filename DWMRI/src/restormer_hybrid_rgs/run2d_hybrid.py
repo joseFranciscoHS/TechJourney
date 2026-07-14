@@ -368,6 +368,7 @@ def main():
                 ),
             )
 
+            os.makedirs(metrics_dir, exist_ok=True)
             metrics = compute_metrics(original_data, recon_xyzv)
             save_metrics(metrics, metrics_dir, filename="metrics.json")
             roi_thr = getattr(settings.reconstruct, "metrics_roi_threshold", 0.02)
