@@ -1,0 +1,8 @@
+exp_id,job_id,recipe,status,dataset,architecture,dimensionality,sampling_mode,k_input,g_shell,n_context_samples,n_preds,n_params,sec_per_epoch,sec_per_volume,peak_gpu_mem_mb,duration_s
+paper_final_k16_restormer2d,restormer_dbrain_2d_rgs_k16_ablation,conv2d_vs_conv3d,failed,dbrain,restormer,2d,rgs,16,60,16,5,14916,,,4.56591796875,2.984360694885254
+paper_final_k16_restormer2d,restormer_dbrain_2d_rgs_k16_ablation,conv2d_vs_conv3d,success,dbrain,restormer,2d,rgs,16,60,16,5,14916,4.071067692836126,3.8942605296770734,2922.56640625,1868.6148643493652
+paper_final_k16_restormer2d,restormer_dbrain_restormer2d_rgs_k16_ablation,conv2d_vs_conv3d,failed,dbrain,restormer,2d,rgs,16,60,16,5,148867,12.71345597770479,,11672.5537109375,4582.371288776398
+paper_final_k16_restormer2d,restormer_dbrain_2d_rgs_k16_ablation,conv2d_vs_conv3d,success,dbrain,restormer,2d,rgs,16,60,16,5,14916,,,36.86328125,52.38708758354187
+paper_final_k16_restormer2d,restormer_dbrain_2d_rgs_k16_ablation,conv2d_vs_conv3d,failed,dbrain,restormer,2d,rgs,16,60,16,5,14916,4.098585155937407,3.8142679850260417,2922.56640625,1720.299404144287
+paper_final_k16_restormer2d,restormer_dbrain_2d_rgs_k16_ablation,conv2d_vs_conv3d,success,dbrain,restormer,2d,rgs,16,60,16,5,14916,0.00430174536175198,3.7723097681999205,2922.51123046875,389.31958270072937
+paper_final_k16_restormer2d,restormer_dbrain_restormer2d_rgs_k16_ablation,conv2d_vs_conv3d,success,dbrain,restormer,2d,rgs,16,60,16,5,148867,12.716738726033105,26.594652609030405,1415.9287109375,6339.911591053009
