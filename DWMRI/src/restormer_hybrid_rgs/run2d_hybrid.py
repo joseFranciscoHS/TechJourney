@@ -43,7 +43,12 @@ from utils.experiment_runtime import (
     losses_dir_from_train_checkpoint_dir,
     now_utc_iso,
 )
-from utils.metrics import compute_metrics, save_metrics
+from utils.metrics import (
+    compute_metrics,
+    fully_compare_volumes,
+    save_metrics,
+    visualize_single_volume,
+)
 from utils.repro_seed import (
     configure_cudnn,
     log_runtime_env,
@@ -122,11 +127,13 @@ def main():
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-reconstruct", action="store_true")
     parser.add_argument(
-        "--no-images", action="store_true", help="Unused parity placeholder"
+        "--no-images", action="store_true", help="Skip comparison image generation"
     )
     parser.add_argument("--no-wandb", action="store_true", help="Unused placeholder")
     parser.add_argument("--checkpoint", default=None)
     args = parser.parse_args()
+
+    generate_images = not args.no_images
 
     log_file = setup_logging(logging.INFO)
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -214,6 +221,12 @@ def main():
         f"learning_rate_{settings.train.learning_rate}",
     )
     os.makedirs(metrics_dir, exist_ok=True)
+    images_dir = os.path.join(
+        settings.reconstruct.images_dir,
+        *_path_mid,
+        noise_segment,
+        f"learning_rate_{settings.train.learning_rate}",
+    )
 
     train_set, _n_tot, _n_used = apply_training_patch_subset_from_train_block(
         train_set, settings.train
@@ -472,6 +485,45 @@ def main():
                     roi_threshold=roi_thr,
                 ),
             )
+
+            if generate_images:
+                logging.info("Generating images...")
+                os.makedirs(images_dir, exist_ok=True)
+                logging.info("Saving images to: %s", images_dir)
+                n_viz = (
+                    int(
+                        getattr(
+                            settings.data,
+                            "shell_gradient_volumes",
+                            settings.data.num_volumes,
+                        )
+                    )
+                    if _is_rgs(settings)
+                    else settings.data.num_volumes
+                )
+                orig_t = np.transpose(original_data, (2, 3, 0, 1))
+                noisy_t = np.transpose(noisy_data, (2, 3, 0, 1))
+                den_t = np.transpose(recon_xyzv, (2, 3, 0, 1))
+                for i in range(n_viz):
+                    fully_compare_volumes(
+                        original_volume=orig_t,
+                        noisy_volume=noisy_t,
+                        denoised_volume=den_t,
+                        file_name=os.path.join(
+                            images_dir, f"comparison_volume_{i}.png"
+                        ),
+                        volume_idx=i,
+                    )
+                visualize_single_volume(
+                    den_t,
+                    file_name=os.path.join(images_dir, "single.png"),
+                    volume_idx=0,
+                )
+                visualize_single_volume(
+                    noisy_t,
+                    file_name=os.path.join(images_dir, "noisy.png"),
+                    volume_idx=0,
+                )
 
     except Exception as exc:
         run_status = "failed"
