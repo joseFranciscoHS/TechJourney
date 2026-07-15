@@ -254,16 +254,20 @@ Fourth, the input/output stem is redesigned for the Hybrid RGS task. The origina
 
 Fifth, an optional gradient-direction conditioning mechanism via Feature-wise Linear Modulation (FiLM) \cite{perez2018film} is evaluated as an architectural extension. FiLM layers are inserted at three intermediate stages: after encoder level 2, at the latent bottleneck, and after decoder level 2. Each layer predicts channel-wise scale $\gamma$ and shift $\beta$ from the target gradient's four-dimensional acquisition vector $[\cos_x, \cos_y, \cos_z, b_{\mathrm{norm}}]$ via a small multilayer perceptron with identity initialization ($\gamma\approx1$, $\beta\approx0$). This conditioning provides weak directional inductive bias without violating the J-invariance of the blind-spot loss. Table~\ref{tab:film_ablation} reports its effect on D-Brain and Stanford HARDI: FiLM improves full-volume PSNR but slightly degrades ROI PSNR in the current experiments, indicating that it is an exploratory extension rather than a uniformly beneficial component.
 
-The resulting Restormer-hybrid-RGS architecture contains approximately 0.178M parameters (Table~\ref{tab:3d_vs_2d}) and processes 3D patches through the same progressive training schedule as DRCNet-hybrid-RGS. Figure~\ref{fig:restormer_architecture} illustrates the Restormer3D architecture and its lightweight 2D baseline counterpart. Because 3D transformer attention is computationally intensive, this model is treated primarily as a scalability and backbone-sensitivity probe to test whether the Hybrid RGS objective transfers to higher-capacity architectures.
+The resulting Restormer-hybrid-RGS architecture contains approximately 0.178M parameters (Table~\ref{tab:3d_vs_2d}) and processes 3D patches through the same progressive training schedule as DRCNet-hybrid-RGS. Figure~\ref{fig:restormer3d_arch} illustrates the Restormer3D architecture, and Figure~\ref{fig:backbone_comparison} contrasts it with the capacity-matched Restormer-2D port and the lightweight Res-CNN-2D baseline. Because 3D transformer attention is computationally intensive, this model is treated primarily as a scalability and backbone-sensitivity probe to test whether the Hybrid RGS objective transfers to higher-capacity architectures.
 
-\subsubsection{Lightweight 2D Baselines for the Capacity-Dimensionality Ablation}
-The capacity-dimensionality ablation (Section~\ref{subsec:capacity_dimensionality}, Table~\ref{tab:3d_vs_2d}) evaluates whether volumetric processing is necessary for the Hybrid RGS objective or whether lightweight 2D slice-wise backbones suffice. To isolate the contribution of backbone capacity and spatial dimensionality from the self-supervised training framework, we implement two independent generic 2D CNN baselines that process axial slices independently while preserving the same angular gradient sampling and target-channel masking strategy. These models are not dimensionality-reduced ports of the 3D backbones; they are minimal convolutional baselines designed to test whether the RGS self-supervision alone provides effective denoising with reduced architectural complexity.
+\subsubsection{Two-Dimensional Backbones for the Capacity-Dimensionality Ablation}
+\todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
+The capacity-dimensionality ablation (Section~\ref{subsec:capacity_dimensionality}, Table~\ref{tab:3d_vs_2d}) evaluates whether volumetric processing is necessary for the Hybrid RGS objective or whether 2D slice-wise backbones suffice. To isolate the contribution of backbone capacity, architectural family, and spatial dimensionality from the self-supervised training framework, we implement three independent 2D backbones that process axial slices independently while preserving the same angular gradient sampling and target-channel masking strategy: two minimal generic CNN baselines (Plain-CNN-2D, Res-CNN-2D) and one capacity-matched, same-family 2D port of the Restormer architecture (Restormer-2D). Plain-CNN-2D and Res-CNN-2D are not dimensionality-reduced ports of the 3D backbones; they are minimal convolutional baselines designed to test whether the RGS self-supervision alone provides effective denoising with reduced architectural complexity. Restormer-2D, by contrast, is a faithful 2D counterpart of Restormer-hybrid-RGS, enabling a controlled within-family test of spatial dimensionality that is not confounded by architectural family or capacity.
 
 Plain-CNN-2D is a lightweight feed-forward CNN: a $\mathtt{Conv2d}$ layer projects the $K$-channel slice-wise input (context gradients plus Bernoulli-masked target at channel $K-1$) to \texttt{base\_filters} feature maps, followed by one additional $\mathtt{Conv2d}$-\texttt{PReLU} layer and a final $\mathtt{Conv2d}$ output projection to a single channel. This design has no gating, no recurrence, no factorized convolutions, and no skip connections, in contrast both to the 3D DRCNet-hybrid-RGS backbone described above and to the original DRCNet-2D variant of \cite{gurrola2024drcnet}, which preserves the full RCDB recurrence with 2D-factorized convolutions ($3\times1$ and $1\times3$) and additionally conditions each slice on its four spatial neighbors ($j\!-\!2,\ldots,j\!+\!2$). Plain-CNN-2D is therefore a minimal convolutional baseline for the ablation (Table~\ref{tab:3d_vs_2d}), not a like-for-like 2D port of the gated recurrent design, and is distinct from the RCDB-based DRCNet-2D of Gurrola et al.
 
 Res-CNN-2D is implemented similarly as a lightweight residual convolutional network. The architecture consists of a \texttt{Conv2d} embedding layer, followed by $N$ residual blocks (each comprising two $3\times3$ \texttt{Conv2d} layers with GELU activation and a skip connection), and a final \texttt{Conv2d} output projection. This design omits attention mechanisms, hierarchical encoder-decoder structure, and gated feed-forward blocks entirely. The motivation for this simplified baseline is computational: a direct 2D port of the MDTA transformer would be parameter-heavy for slice-wise processing, and the ablation aims to test whether the RGS self-supervision alone is sufficient with minimal architectural capacity. The resulting Res-CNN-2D model has approximately 0.015M parameters, a factor of $12\times$ smaller than the 3D Restormer (Table~\ref{tab:3d_vs_2d}), providing a clear contrast in model complexity while preserving the same training objective.
 
-Both 2D baselines use identical Hybrid RGS training: random gradient subset sampling, Bernoulli target masking with probability $p=0.3$, masked loss computed only on occluded sites, and the same optimization hyperparameters (Adam, learning rate $4.5\times10^{-4}$, AMP). The progressive patch schedule follows the same three-stage size sequence ($32$, $24$, $16$) and strides ($8$, $6$, $4$) as the 3D models, but crops are in-plane $H\times W$ patches (axial slices) rather than cubic 3D volumes; the through-plane dimension is not processed---each axial slice is denoised independently with a $K$-channel input and no through-plane neighbor conditioning (unlike the original DRCNet-2D of \cite{gurrola2024drcnet}, which conditions each slice on four adjacent slices). Batch sizes are matched per stage to equalize memory usage. This ensures that any performance difference observed in the ablation reflects a combination of spatial backbone dimensionality and architectural capacity rather than differences in self-supervised learning strategy or training protocol.
+\todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
+Restormer-2D is a capacity-matched 2D port of the original Restormer \cite{restormer}, mirroring the 3-level, two-downsampling hierarchy of Restormer-hybrid-RGS ($\mathtt{dim}=12$, $\mathtt{num\_blocks}=[1,2,2]$, $\mathtt{heads}=[1,2,2]$, $\mathtt{ffn\_expansion\_factor}=1.5$, two refinement blocks). Unlike Plain-CNN-2D and Res-CNN-2D, its Multi-DConv Head Transposed Self-Attention (MDTA) and Gated-DConv Feed-Forward Network (GDFN) blocks, as well as its \texttt{Conv2d}+\texttt{PixelUnshuffle}/\texttt{PixelShuffle} resampling, are structurally identical to Zamir et al.'s original 2D architecture. The only Hybrid RGS adaptations are at the I/O boundary: $\mathtt{inp\_channels}=K$ (context gradients plus Bernoulli-masked target) and $\mathtt{out\_channels}=1$; removal of the global input residual, which is undefined once channel counts no longer match; and a learned $\gamma_{\mathrm{out}}\cdot\hat{y}+\beta_{\mathrm{out}}$ affine with \texttt{PReLU} output activation, matching Restormer-hybrid-RGS. Restormer-2D therefore differs from Restormer-hybrid-RGS only in dimensionality: it processes each axial slice independently with no through-plane context and retains the parameter-light \texttt{PixelShuffle} resampling, whereas the 3D backbone uses volumetric MDTA/GDFN over \texttt{Conv3d} features and learnable strided \texttt{Conv3d}/\texttt{ConvTranspose3d} resampling in place of \texttt{PixelShuffle} (unavailable natively in 3D). The resulting model has approximately 0.149M parameters, slightly fewer than the 0.178M of Restormer-hybrid-RGS despite the matched hierarchy, because the learnable 3D resampling layers are less parameter-efficient than 2D pixel-shuffle. This design isolates spatial dimensionality as the sole experimental factor within the Restormer family (Table~\ref{tab:3d_vs_2d}).
+
+All three 2D backbones use identical Hybrid RGS training: random gradient subset sampling, Bernoulli target masking with probability $p=0.3$, masked loss computed only on occluded sites, and the same optimization hyperparameters (Adam, learning rate $4.5\times10^{-4}$, AMP). The progressive patch schedule follows the same three-stage size sequence ($32$, $24$, $16$) and strides ($8$, $6$, $4$) as the 3D models, but crops are in-plane $H\times W$ patches (axial slices) rather than cubic 3D volumes; the through-plane dimension is not processed---each axial slice is denoised independently with a $K$-channel input and no through-plane neighbor conditioning (unlike the original DRCNet-2D of \cite{gurrola2024drcnet}, which conditions each slice on four adjacent slices). Batch sizes are matched per stage to equalize memory usage. This ensures that any performance difference observed in the ablation reflects a combination of spatial backbone dimensionality and architectural capacity/family rather than differences in self-supervised learning strategy or training protocol.
 
 \begin{figure}[ht]
   \centering
@@ -328,7 +332,7 @@ Both 2D baselines use identical Hybrid RGS training: random gradient subset samp
 \begin{figure}[p]
   \centering
   \footnotesize
-  \resizebox{0.72\linewidth}{!}{%
+  \resizebox{0.42\linewidth}{!}{%
     \begin{tikzpicture}[
         node distance=0.5cm and 0.8cm,
         block/.style={rectangle, draw, minimum width=1.6cm, minimum height=0.6cm, align=center, fill=blue!10},
@@ -338,11 +342,8 @@ Both 2D baselines use identical Hybrid RGS training: random gradient subset samp
         >=Stealth
       ]
 
-      % Panel (a) - Restormer3D architecture
-      \node[font=\small\bfseries] at (-4, 3.5) {(a) Restormer3D Architecture};
-
       % Input
-      \node[block] (input) at (-4, 2.5) {Input\\$K$ ch};
+      \node[block] (input) at (0, 2.5) {Input\\$K$ ch};
       \node[block, below=of input] (embed) {Patch\\Embed};
 
       % Encoder
@@ -390,31 +391,62 @@ Both 2D baselines use identical Hybrid RGS training: random gradient subset samp
       % FiLM annotation
       \node[above=0.1cm of film2, font=\tiny, align=center] {$[\cos_x, \cos_y,$\\$\cos_z, b_{\text{norm}}]$};
 
-      % Panel (b) - Volumetric backbone vs lightweight 2D baseline
-      \node[font=\small\bfseries] at (2.5, 3.5) {(b) Volumetric backbone vs lightweight 2D baseline};
+    \end{tikzpicture}%
+  }% end resizebox
+  \caption{Restormer3D internal architecture for Hybrid RGS. A 3-level encoder-decoder with transformer blocks at each stage. The encoder progressively downsamples spatial dimensions ($\times2$ per level) while doubling channel count ($\text{dim}\rightarrow2\!\cdot\!\text{dim}\rightarrow4\!\cdot\!\text{dim}$, with $\text{dim}=12$). Each level contains $N$ transformer blocks combining Multi-DConv Head Transposed Self-Attention (MDTA, $h$ heads) and Gated-DConv Feed-Forward Networks (GDFN). The decoder mirrors the encoder with skip connections (dashed gray arrows) and channel-reduction convolutions after concatenation. Refinement blocks and a learned affine output head ($\gamma_{\mathrm{out}}\!\cdot\!x\!+\!\beta_{\mathrm{out}}$) produce the single-channel denoised volume. Optional FiLM conditioning (yellow boxes) modulates features at three stages using the target gradient's acquisition metadata $[\cos_x, \cos_y, \cos_z, b_{\text{norm}}]$; see Table~\ref{tab:film_ablation} for evaluation. The 2D counterpart, Restormer-2D, shares this same topology (Figure~\ref{fig:backbone_comparison}) but with 2D \texttt{Conv2d}/MDTA/GDFN operations and \texttt{PixelUnshuffle}/\texttt{PixelShuffle} resampling in place of \texttt{Conv3d}/volumetric MDTA and strided \texttt{Conv3d}/\texttt{ConvTranspose3d}.}
+  \label{fig:restormer3d_arch}
+\end{figure}
 
-      \node[block, minimum width=2.5cm, minimum height=1.5cm] (rest3d) at (1.5, 1.8) {
-        \textbf{Restormer3D}\\
-        \tiny 3-level U-Net\\
-        MDTA + GDFN\\
+\begin{figure}[ht]
+  \centering
+  \footnotesize
+  \todo[author=FHS, color=cyan, inline]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
+  \resizebox{\linewidth}{!}{%
+    \begin{tikzpicture}[
+        node distance=0.5cm and 0.8cm,
+        block/.style={rectangle, draw, minimum width=1.6cm, minimum height=0.6cm, align=center, fill=blue!10},
+        >=Stealth
+      ]
+
+      \node[font=\small\bfseries] at (3.4, 2.7) {Volumetric backbone vs.\ capacity-matched 2D port vs.\ lightweight 2D baseline};
+
+      \node[block, minimum width=2.9cm, minimum height=2.1cm, text width=2.5cm, font=\tiny] (rest3d) at (0, 0) {
+        \normalsize\textbf{Restormer3D}\\[2pt]
+        \tiny Volumetric, 3-level\\
+        MDTA+GDFN (\texttt{Conv3d})\\
+        Strided \texttt{Conv3d} resampling\\
         Attention, FiLM\\
         0.178M params
       };
 
-      \node[block, minimum width=2.5cm, minimum height=1.5cm] (rest2d) at (4.5, 1.8) {
-        \textbf{Res-CNN-2D}\\
-        \tiny Residual CNN\\
+      \node[block, minimum width=2.9cm, minimum height=2.1cm, text width=2.5cm, font=\tiny] (rest2d) at (3.4, 0) {
+        \normalsize\textbf{Restormer-2D}\\[2pt]
+        \tiny Slice-wise, 3-level\\
+        MDTA+GDFN (\texttt{Conv2d})\\
+        \texttt{PixelUnshuffle}/\texttt{Shuffle}\\
+        \textbf{True 2D MDTA port}\\
+        0.149M params
+      };
+
+      \node[block, minimum width=2.9cm, minimum height=2.1cm, text width=2.5cm, font=\tiny] (rescnn2d) at (6.8, 0) {
+        \normalsize\textbf{Res-CNN-2D}\\[2pt]
+        \tiny Slice-wise residual CNN\\
         Conv-GELU-Conv\\
         \textbf{No attention}\\
+        Not an MDTA port\\
         0.015M (12$\times$ less)
       };
 
-      \node[below=0.3cm of rest2d, font=\tiny, align=center, text width=2.5cm] {Both use Hybrid RGS:\\Generic residual CNN\\(not MDTA port)};
+      \node[below=0.35cm of rest3d, font=\tiny, align=center, text width=2.9cm] {Same-family 3D backbone};
+      \node[below=0.35cm of rest2d, font=\tiny, align=center, text width=2.9cm] {Same-family 2D port\\(only I/O stem differs)};
+      \node[below=0.35cm of rescnn2d, font=\tiny, align=center, text width=2.9cm] {Generic residual CNN\\(different family)};
+
+      \node[below=1.7cm of rest2d, font=\tiny, align=center, text width=9.5cm] {All three backbones are trained with identical Hybrid RGS sampling, masking, and loss (Table~\ref{tab:3d_vs_2d}).};
 
     \end{tikzpicture}%
   }% end resizebox
-  \caption{Restormer architecture for Hybrid RGS. \textbf{(a) Restormer3D internal architecture:} A 3-level encoder-decoder with transformer blocks at each stage. The encoder progressively downsamples spatial dimensions ($\times2$ per level) while doubling channel count ($\text{dim}\rightarrow2\!\cdot\!\text{dim}\rightarrow4\!\cdot\!\text{dim}$, with $\text{dim}=12$). Each level contains $N$ transformer blocks combining Multi-DConv Head Transposed Self-Attention (MDTA, $h$ heads) and Gated-DConv Feed-Forward Networks (GDFN). The decoder mirrors the encoder with skip connections (dashed gray arrows) and channel-reduction convolutions after concatenation. Refinement blocks and a learned affine output head ($\gamma_{\mathrm{out}}\!\cdot\!x\!+\!\beta_{\mathrm{out}}$) produce the single-channel denoised volume. Optional FiLM conditioning (yellow boxes) modulates features at three stages using the target gradient's acquisition metadata $[\cos_x, \cos_y, \cos_z, b_{\text{norm}}]$; see Table~\ref{tab:film_ablation} for evaluation. \textbf{(b) Volumetric backbone versus lightweight 2D baseline:} Restormer3D is a full 3D transformer with hierarchical attention (0.178M parameters). Res-CNN-2D is an independent generic residual CNN with no attention, no hierarchical structure, and 12$\times$ fewer parameters (0.015M), used to test whether the Hybrid RGS objective alone suffices without transformer capacity (Table~\ref{tab:3d_vs_2d}).}
-  \label{fig:restormer_architecture}
+  \caption{Backbone comparison for the capacity-dimensionality ablation. Restormer3D and Restormer-2D are same-family volumetric/slice-wise ports of Zamir et al.'s Restormer \cite{restormer}, differing only in the dimensionality of their MDTA/GDFN operations, their resampling (\texttt{Conv3d}/\texttt{ConvTranspose3d} vs \texttt{PixelUnshuffle}/\texttt{PixelShuffle}), and the presence of FiLM conditioning (3D only); this pair isolates spatial dimensionality as a controlled experimental factor within the Restormer family. Res-CNN-2D is an independent generic residual CNN with no attention or hierarchical structure, included as a lower-capacity baseline rather than an architectural port. See Table~\ref{tab:3d_vs_2d} for the corresponding quantitative ablation.}
+  \label{fig:backbone_comparison}
 \end{figure}
 
 \subsection{Inference}
@@ -576,17 +608,22 @@ Figure~\ref{fig:k_sweep} visualizes the same tradeoff as a quality-versus-input-
 \label{subsec:capacity_dimensionality}
 A critical question for Hybrid RGS is whether its gains come primarily from the self-supervised sampling-and-masking scheme or from the use of volumetric neural backbones. Many prior self-supervised denoising methods process medical images slice by slice with two-dimensional convolutions, including Noise2Void-style adaptations and MD-S2S-like masking strategies. In contrast, the proposed models are designed to operate on 3D patches so that they can exploit inter-slice anatomical continuity. This ablation isolates the architectural contribution by keeping the Hybrid RGS training objective fixed while varying both spatial dimensionality and backbone capacity. The resulting comparison is important for interpretation: if lightweight 2D baselines remain competitive, then the principal contribution is the RGS self-supervision scheme; if the 3D volumetric backbones improve substantially, then higher capacity and volumetric context are essential parts of the method. It is important to note that this comparison confounds dimensionality with architectural family and capacity, so the results reflect the combined effect of these factors rather than a pure test of 2D versus 3D convolutions.
 
-The 3D configuration corresponds to the proposed setup: a $K=16$ RGS input stack, Bernoulli masking on the target channel, and a 3D DRCNet or 3D Restormer backbone trained on volumetric patches from D-Brain with Rician noise at $\sigma=0.1$. The 2D baseline configuration preserves the same angular sampling, target-channel masking, loss function, learning rate, and training protocol, but replaces volumetric operations with slice-wise processing using lightweight generic CNN architectures. Each axial slice is denoised independently with a $K$-channel input, so the model can exploit angular information across diffusion gradients but has no explicit convolutional or attention connectivity along the through-plane direction. Plain-CNN-2D is a minimal feed-forward convolutional network, and Res-CNN-2D is a lightweight residual CNN variant (see Section 3.4), neither of which are architectural ports of the 3D backbones.
+\todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
+The 3D configuration corresponds to the proposed setup: a $K=16$ RGS input stack, Bernoulli masking on the target channel, and a 3D DRCNet or 3D Restormer backbone trained on volumetric patches from D-Brain with Rician noise at $\sigma=0.1$. The 2D configuration preserves the same angular sampling, target-channel masking, loss function, learning rate, and training protocol, but replaces volumetric operations with slice-wise processing. Each axial slice is denoised independently with a $K$-channel input, so the model can exploit angular information across diffusion gradients but has no explicit convolutional or attention connectivity along the through-plane direction. Within the DRCNet family, Plain-CNN-2D is a minimal feed-forward convolutional network that is not an architectural port of DRCNet3D (see Section 3.4). Within the Restormer family, we report two 2D variants: Res-CNN-2D, a lightweight residual CNN that is likewise not an architectural port, and Restormer-2D, a capacity-matched, same-family 2D port of Restormer-hybrid-RGS (Section 3.4) that isolates spatial dimensionality as the sole experimental factor, independent of architecture family or capacity.
 
 Table~\ref{tab:3d_vs_2d} shows that the current controlled ablation does not support a simple claim that 3D processing is uniformly superior. All comparisons in this table use the fixed $K=16$ operating point. For the DRCNet backbone family, Plain-CNN-2D reaches $27.11$~dB PSNR-ROI and $0.5569$ SSIM-ROI, compared with $26.93$~dB and $0.5247$ for DRCNet3D. Plain-CNN-2D also obtains lower FA-MAE ($0.2296$ versus $0.2575$) and slightly lower MD-MAE ($3435$ versus $3451$). For the Restormer backbone family, Res-CNN-2D reaches $26.44$~dB PSNR-ROI, whereas Restormer3D reaches $23.43$~dB at $K=16$. Res-CNN-2D improves PSNR-ROI, SSIM-ROI, and MD-MAE, while Restormer3D retains a slight FA-MAE advantage ($0.2238$ versus $0.2309$). It is important to note that this comparison is not representative of Restormer's best configuration: the $K$ sweep (Table~\ref{tab:sampling_ablations}) shows Restormer at $K=10$ reaching PSNR-ROI $=26.60$~dB, which exceeds Res-CNN-2D ($26.44$~dB). The conclusion that lightweight 2D baselines outperform volumetric Restormer therefore holds specifically at $K=16$ and should not be generalized. These results suggest that, under the current training and inference settings at the fixed operating point, the Hybrid RGS objective itself provides a large fraction of the denoising benefit, and the larger 3D architectures do not automatically improve most quantitative image-domain or tensor metrics.
 
-This outcome is informative rather than problematic. The 2D baselines still use the same Hybrid RGS mechanism, so their strong performance validates the algorithmic contribution: random angular context and blind-spot target masking are sufficient to train effective self-supervised denoisers even with minimal architectural capacity. The absence of a clear 3D advantage may reflect the anisotropy of the acquisition, the patch size and masking schedule, or the fact that adjacent axial slices add less independent information than additional diffusion directions. It may also indicate that the current metrics, computed volume-wise and through tensor summaries, do not fully capture slice-to-slice consistency. Because the 2D baselines differ substantially in capacity and architecture family from their 3D counterparts, this comparison should be interpreted as a combined test of backbone capacity and spatial dimensionality rather than a pure dimensionality ablation. Qualitative inspection of reconstructed volumes, FA maps, and tractography-derived summaries remains necessary to determine whether the higher-capacity 3D models reduce through-plane discontinuities that are not penalized strongly by PSNR or voxelwise tensor errors.
+\todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
+The capacity-matched Restormer-2D arm sharpens this picture within the Restormer family specifically, because it removes the architecture-family and capacity confound present in the Res-CNN-2D comparison. At matched hierarchy and capacity (0.149M versus 0.178M parameters), Restormer-2D outperforms Restormer3D on every reported metric: PSNR-ROI ($25.25$ versus $23.43$~dB), SSIM-ROI ($0.5840$ versus $0.5107$), FA-MAE ($0.2232$ versus $0.2238$), and MD-MAE ($3447$ versus $3440$, comparable within noise), while requiring roughly $5\times$ less time per volume ($26.7$ versus $126.8$~s). This is a controlled, within-family result: the same MDTA/GDFN blocks, at matched capacity, perform better restricted to 2D slice-wise processing than when extended to volumetric 3D attention under Hybrid RGS at this operating point. At the same time, the minimal Res-CNN-2D baseline still exceeds Restormer-2D on PSNR-ROI ($26.44$ versus $25.25$~dB) despite having roughly $10\times$ fewer parameters, indicating that additional transformer capacity within the 2D setting does not automatically translate into higher PSNR-ROI either. Restormer-2D nonetheless attains the best SSIM-ROI and FA-MAE of all four backbones in this table, suggesting that its attention mechanism confers a structural- and tensor-fidelity advantage not fully captured by PSNR alone.
 
-The computational comparison further favors the 2D baselines for the present implementation. Plain-CNN-2D uses approximately $0.014$M parameters and requires $4.7$ s per target volume, whereas DRCNet3D uses $0.116$M parameters and requires approximately $34.1$ s. Res-CNN-2D shows an even larger gap: $0.015$M parameters and $3.9$ s for the 2D baseline versus $0.178$M parameters and $126.8$ s for Restormer3D. Therefore, the current evidence supports a nuanced conclusion: Hybrid RGS is architecture-agnostic and works well even with lightweight 2D backbones, while higher-capacity 3D processing should be justified by qualitative volumetric coherence or downstream tractography benefits rather than by the present scalar metrics alone.
+This outcome is informative rather than problematic. The 2D backbones still use the same Hybrid RGS mechanism, so their strong performance validates the algorithmic contribution: random angular context and blind-spot target masking are sufficient to train effective self-supervised denoisers even with minimal or matched architectural capacity. The absence of a clear 3D advantage may reflect the anisotropy of the acquisition, the patch size and masking schedule, or the fact that adjacent axial slices add less independent information than additional diffusion directions. It may also indicate that the current metrics, computed volume-wise and through tensor summaries, do not fully capture slice-to-slice consistency. \todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones} Plain-CNN-2D and Res-CNN-2D differ substantially in capacity and architecture family from their 3D counterparts, so that specific comparison is a combined test of backbone capacity and spatial dimensionality rather than a pure dimensionality ablation; Restormer-2D versus Restormer3D, however, is architecture- and capacity-matched, and its result (2D outperforming 3D on PSNR-ROI, SSIM-ROI, and FA-MAE) is a more direct signal that volumetric processing is not automatically beneficial under Hybrid RGS at this operating point. Qualitative inspection of reconstructed volumes, FA maps, and tractography-derived summaries remains necessary to determine whether the higher-capacity 3D models reduce through-plane discontinuities that are not penalized strongly by PSNR or voxelwise tensor errors.
+
+The computational comparison further favors the 2D backbones for the present implementation. Plain-CNN-2D uses approximately $0.014$M parameters and requires $4.7$ s per target volume, whereas DRCNet3D uses $0.116$M parameters and requires approximately $34.1$ s. Res-CNN-2D shows an even larger gap: $0.015$M parameters and $3.9$ s for the 2D baseline versus $0.178$M parameters and $126.8$ s for Restormer3D. \todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones} The capacity-matched Restormer-2D requires $26.7$ s per target volume at $0.149$M parameters, versus $126.8$ s at $0.178$M parameters for Restormer3D: even when capacity is held fixed, restricting attention to 2D slices yields an approximately $5\times$ wall-clock speedup, consistent with the added cost of volumetric MDTA/GDFN and learnable 3D resampling. Therefore, the current evidence supports a nuanced conclusion: Hybrid RGS is architecture-agnostic and works well even with lightweight or capacity-matched 2D backbones, while higher-capacity 3D processing should be justified by qualitative volumetric coherence or downstream tractography benefits rather than by the present scalar metrics alone.
 
 \begin{table}[ht]
   \centering
-  \caption{Backbone capacity and spatial dimensionality ablation on D-Brain with Rician noise $\sigma=0.1$ and $K=16$. All backbones use the same Hybrid RGS sampling and masked self-supervised loss. The comparison confounds dimensionality with architectural family and capacity: the 2D baselines are lightweight generic CNNs, not architectural ports of the 3D backbones.}
+  \todo[author=FHS, color=cyan, inline]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
+  \caption{Backbone capacity and spatial dimensionality ablation on D-Brain with Rician noise $\sigma=0.1$ and $K=16$. All backbones use the same Hybrid RGS sampling and masked self-supervised loss. Plain-CNN-2D and Res-CNN-2D are lightweight generic CNNs, not architectural ports of the 3D backbones, so their comparison confounds dimensionality with architectural family and capacity. Restormer-2D is a capacity-matched, same-family 2D port of Restormer-hybrid-RGS, isolating spatial dimensionality as the sole factor within that family. Bold marks the best value per metric within each backbone family (DRCNet: 2 rows; Restormer: 3 rows).}
   \label{tab:3d_vs_2d}
   \resizebox{\linewidth}{!}{%
     \begin{tabular}{llcccccc}
@@ -595,8 +632,9 @@ The computational comparison further favors the 2D baselines for the present imp
       \midrule
       DRCNet3D & Volumetric & 26.93 & 0.5247 & 0.2575 & 3451 & 0.116 & 34.1 \\
       Plain-CNN-2D & Slice-wise & \textbf{27.11} & \textbf{0.5569} & \textbf{0.2296} & \textbf{3435} & 0.014 & \textbf{4.7} \\
-      Restormer3D & Volumetric & 23.43 & 0.5107 & \textbf{0.2238} & 3440 & 0.178 & 126.8 \\
-      Res-CNN-2D & Slice-wise & \textbf{26.44} & \textbf{0.5504} & 0.2309 & \textbf{3432} & 0.015 & \textbf{3.9} \\
+      Restormer3D & Volumetric & 23.43 & 0.5107 & 0.2238 & 3440 & 0.178 & 126.8 \\
+      Restormer-2D & Slice-wise & 25.25 & \textbf{0.5840} & \textbf{0.2232} & 3447 & 0.149 & 26.7 \\
+      Res-CNN-2D & Slice-wise & \textbf{26.44} & 0.5504 & 0.2309 & \textbf{3432} & 0.015 & \textbf{3.9} \\
       \bottomrule
     \end{tabular}
   }
