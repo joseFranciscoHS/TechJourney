@@ -8,8 +8,7 @@
 \usepackage{hyperref}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,fit,backgrounds,shapes.geometric}
-
-\newcommand{\TODO}[1]{\par\noindent\textbf{TODO:} #1\par}
+\usepackage{todonotes}
 
 \journal{Medical Image Analysis}
 
@@ -19,16 +18,18 @@
 
   \title{Architecture-Agnostic Self-Supervised Diffusion MRI Denoising with Hybrid Random Gradient Subsets}
 
-  \author[inst1]{Francisco Hernandez Sepulveda}
+  \author[inst1]{Francisco Hernandez-Sepulveda}
   \ead{jose.sepulveda@cimat.mx}
 
-  \author[inst1]{Mariano Rivera Meraz\corref{cor1}}
+  \author[inst1]{Mariano Rivera\corref{cor1}}
   \ead{mrivera@cimat.mx}
   \cortext[cor1]{Corresponding author.}
 
   \address[inst1]{Centro de Investigacion en Matematicas, Guanajuato, Mexico}
 
   \begin{abstract}
+    \todo[author=MR,color=orange, inline]{Revisar este abstract por Mariano}
+
     Diffusion-weighted magnetic resonance imaging (DW-MRI) provides clinically and scientifically relevant measurements of brain tissue microstructure, but its reliability is limited by low signal-to-noise ratio, acquisition-dependent noise, and the high cost of repeated measurements. Self-supervised denoising is attractive in this setting because clean reference images are rarely available. This manuscript evaluates Hybrid Random Gradient Subset (Hybrid RGS), an architecture-agnostic self-supervised DW-MRI denoising framework that combines non-target angular context across diffusion gradients with voxel-wise masking within the target volume. The framework is instantiated with convolutional DRCNet, Restormer-style, and lightweight two-dimensional neural backbones to test whether the same sampling-and-masking objective transfers across model families rather than to claim superiority for a single architecture. On D-Brain with synthetic Rician noise, Hybrid RGS improves substantially over Patch2Self and MD-S2S in image-domain ROI metrics, while MP-PCA remains a strong baseline for FA preservation under the controlled synthetic noise model. Ablations show that random gradient sampling improves over deterministic sequential windows and that $K=16$ is used as a fixed cross-model operating point that is favorable to DRCNet; Restormer's strongest result in the $K$ sweep occurs at $K=10$ (PSNR-ROI $=26.60$~dB), so the fixed $K=16$ row is not Restormer-optimal and the $K$ recommendation should not be treated as uniformly optimal across backbones. FiLM conditioning is evaluated as a lightweight metadata-conditioning extension; it improves full-volume PSNR but slightly degrades ROI PSNR in the current registry, so it is treated as exploratory rather than uniformly beneficial. A controlled capacity-and-dimensionality study at the fixed $K=16$ operating point indicates that lightweight 2D baselines (Plain-CNN-2D, Res-CNN-2D) can outperform the current volumetric 3D variants on most scalar image-domain metrics and on DRCNet tensor metrics, while Restormer3D retains a slight FA-MAE advantage; this comparison holds at $K=16$ and should not be extrapolated to Restormer's best-sweep configuration at $K=10$, supporting the interpretation that the Hybrid RGS objective is the dominant contributor in these experiments. Evaluation on Stanford HARDI demonstrates feasibility on real scanner data without ground truth and shows that the framework scales to larger gradient shells.
   \end{abstract}
 
@@ -39,6 +40,10 @@
 \end{frontmatter}
 
 \section{Introduction}
+
+\todo[author=MR, color=orange]{revsar todo el texto por MR}
+\todo[author=MR, color=green]{ya voy a empezar}
+
 Diffusion-weighted MRI is widely used to characterize brain tissue microstructure through the measurement of water diffusion \cite{dwimri}. By acquiring multiple diffusion-weighted volumes across gradient directions and $b$-values, DW-MRI enables downstream estimation of apparent diffusion coefficient (ADC), fractional anisotropy (FA), mean diffusivity (MD), axial diffusivity (AD), radial diffusivity (RD), and tractography-derived biomarkers. Despite this importance, DW-MRI is particularly vulnerable to low signal-to-noise ratio, Rician or noncentral-chi noise, eddy-current artifacts, susceptibility distortions, and patient motion. Noise reduction is therefore a critical preprocessing step, especially for high angular resolution protocols and quantitative studies.
 
 Classical denoising methods, such as local low-rank and MP-PCA approaches, exploit redundancy in spatial neighborhoods and diffusion volumes. More recent self-supervised methods exploit the fact that clean ground truth is often unavailable but repeated structure exists across voxels, slices, and diffusion gradients. Patch2Self introduced a volume-wise J-invariant strategy in which each diffusion-weighted volume is predicted from the remaining volumes. Self2Self-style methods instead mask pixels or voxels and train a network to infer the hidden values from their context. These ideas are complementary: DW-MRI contains both angular redundancy across diffusion gradients and spatial redundancy within each 3D brain volume.
@@ -756,7 +761,7 @@ The supervised reference runs provide context for the cost of self-supervision a
 \end{table}
 \par\noindent\textit{Note:} $^\dagger$MD-MAE for D-Brain rows is reported in arbitrary units derived from the phantom intensity scale and should be interpreted as a relative comparison across methods, not as a physical diffusivity in mm$^2$/s.
 
-\TODO{Replace this planned qualitative comparison with final image panels or remove the figure before submission. The final figure should include noisy input, MP-PCA, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, reference image when available, and error maps.}
+\todo[author=FHS,color=yellow, inline]{Replace this planned qualitative comparison with final image panels or remove the figure before submission. The final figure should include noisy input, MP-PCA, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, reference image when available, and error maps.}
 
 \subsection{Generalization to Real Scanner Noise}
 The D-Brain experiments provide controlled quantitative evaluation because synthetic Rician noise is added to data with an available reference. However, this setting cannot fully represent real scanner noise, which may include thermal noise, Gibbs ringing, eddy-current residuals, motion, coil-dependent spatial variation, and deviations from an ideal Rician model in low-SNR regions. We therefore evaluate Hybrid RGS on Stanford HARDI as a complementary real-data experiment. Stanford HARDI uses a different acquisition protocol from D-Brain, with $b=2000~\mathrm{s/mm^2}$ and $G=150$ diffusion directions, compared with $b=2500~\mathrm{s/mm^2}$ and $G=60$ in the primary synthetic experiments. Because only a single acquisition is available, no clean ground truth exists; this section therefore emphasizes qualitative assessment, downstream FA/MD map plausibility, and scalability rather than PSNR/SSIM against a reference.
@@ -765,7 +770,7 @@ The Stanford experiment trains the same self-supervised models directly on the n
 
 The Hybrid RGS models were successfully trained and applied to Stanford HARDI volumes. The method can be trained directly on real scanner data using the same self-supervised objective, and denoised outputs can be used to compute downstream tensor-derived maps. Visual assessment of denoised volumes and FA/MD maps requires the panels described in the TODO below; without those panels, Stanford results support feasibility and scalability rather than specific visual quality claims. In the current registry, FiLM-conditioned Stanford runs also compute tensor-summary errors against internal reference estimates, yielding internal-reference FA deviations of $0.0356$ for DRCNet-FiLM and $0.0756$ for Restormer-FiLM (deviation from the tensor fit of the acquired noisy signal, not ground-truth error); these numbers indicate that the pipeline can produce stable diffusion-derived summaries on real scanner data.
 
-\TODO{Add visual Stanford FA/MD panels, residual maps, and/or homogeneous-ROI variance summaries. Without those panels, keep Stanford claims limited to feasibility and scalability.}
+\todo[author=FHS,color=yellow, inline]{Add visual Stanford FA/MD panels, residual maps, and/or homogeneous-ROI variance summaries. Without those panels, keep Stanford claims limited to feasibility and scalability.}
 
 Table~\ref{tab:stanford_k_sweep} summarizes the Stanford $K$ sweep using noisy-input PSNR-ROI, where the acquired noisy image is used as the comparison image. These values should not be compared with D-Brain PSNR and should not be interpreted as restoration accuracy; they measure closeness to the acquired signal. A method that changes the image very little can score well under this metric. For DRCNet, the noisy-input score increases from $34.86$ dB at $K=5$ to $39.47$ dB at $K=24$, then drops at $K=30$, suggesting that very large input stacks are not necessarily beneficial. Restormer increases from $23.79$ dB at $K=5$ to $27.08$ dB at $K=30$, but remains more computationally expensive. Inference time scales moderately with $K$ for DRCNet, from $23.5$ to $28.0$ s per volume, and remains around $84$--$85$ s for Restormer. Because noisy-input PSNR rewards input closeness rather than restoration accuracy, it should not be used to select $K$. Given the absence of ground truth, the Stanford sweep serves as a feasibility and runtime probe only. $K=16$ is retained as the cross-model operating point for consistency and cost, while $K=24$ or $K=30$ require validation with reference-free or test--retest criteria before recommendation.
 
@@ -795,7 +800,7 @@ FiLM conditioning also transfers to Stanford without architectural changes. The 
   }
 \end{table}
 
-\TODO{Replace the planned Stanford HARDI FA-map comparison with final image panels or remove the figure before submission. The final figure should show a representative axial slice crossing major white-matter tracts for noisy input, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, and Restormer-Hybrid-RGS.}
+\todo[author=FHS,color=yellow, inline]{Replace the planned Stanford HARDI FA-map comparison with final image panels or remove the figure before submission. The final figure should show a representative axial slice crossing major white-matter tracts for noisy input, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, and Restormer-Hybrid-RGS.}
 
 Overall, the Stanford experiment supports the feasibility of Hybrid RGS beyond synthetic D-Brain corruption. The method can be trained directly on real scanner data, scales from $G=60$ to $G=150$ without architectural changes, and produces outputs suitable for qualitative FA/MD assessment. The main limitation is the absence of ground truth, which prevents claims of quantitative restoration accuracy. Future work should evaluate the same protocol on repeated acquisitions or test--retest datasets where one scan can serve as an approximate reference.
 

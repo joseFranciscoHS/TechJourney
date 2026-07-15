@@ -16,12 +16,22 @@
 \gdef\HyperFirstAtBeginDocument#1{#1}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
-\emailauthor{jose.sepulveda@cimat.mx}{Francisco Hernandez Sepulveda}
-\emailauthor{mrivera@cimat.mx}{Mariano Rivera Meraz\corref {cor1}}
+\emailauthor{jose.sepulveda@cimat.mx}{Francisco Hernandez-Sepulveda}
+\emailauthor{mrivera@cimat.mx}{Mariano Rivera\corref {cor1}}
 \Newlabel{cor1}{1}
 \Newlabel{inst1}{a}
+\@writefile{tdo}{\contentsline {todo}{Revisar este abstract por Mariano}{1}{section*.1}\protected@file@percent }
+\pgfsyspdfmark {pgfid1}{20055326}{32132667}
 \citation{dwimri}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
+\@writefile{tdo}{\contentsline {todo}{revsar todo el texto por MR}{2}{section*.2}\protected@file@percent }
+\pgfsyspdfmark {pgfid2}{7292190}{24532861}
+\pgfsyspdfmark {pgfid5}{34931998}{24547606}
+\pgfsyspdfmark {pgfid6}{36357406}{24278909}
+\@writefile{tdo}{\contentsline {todo}{ya voy a empezar}{2}{section*.3}\protected@file@percent }
+\pgfsyspdfmark {pgfid7}{7292190}{24532861}
+\pgfsyspdfmark {pgfid10}{34931998}{17347446}
+\pgfsyspdfmark {pgfid11}{36357406}{17078749}
 \citation{veraart2016mppca}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{3}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}DW-MRI Denoising}{3}{subsection.2.1}\protected@file@percent }
@@ -93,26 +103,32 @@
 \@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Gradient direction conditioning ablation on D-Brain. Under the authoritative registry, FiLM improves full-volume PSNR for both backbones but slightly degrades PSNR-ROI, indicating metric-dependent behavior rather than a uniform denoising benefit.}}{30}{table.6}\protected@file@percent }
 \newlabel{tab:film_ablation}{{6}{30}{Gradient direction conditioning ablation on D-Brain. Under the authoritative registry, FiLM improves full-volume PSNR for both backbones but slightly degrades PSNR-ROI, indicating metric-dependent behavior rather than a uniform denoising benefit}{table.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.10}Implementation Details}{31}{subsection.4.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Training}{31}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Training}{31}{section*.4}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Progressive training schedule used for Hybrid RGS models. Patch sizes are cubic 3D patches.}}{32}{table.7}\protected@file@percent }
 \newlabel{tab:implementation_schedule}{{7}{32}{Progressive training schedule used for Hybrid RGS models. Patch sizes are cubic 3D patches}{table.7}{}}
-\@writefile{toc}{\contentsline {paragraph}{Progressive schedule}{32}{section*.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Augmentation}{32}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Normalization}{32}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Inference}{32}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Progressive schedule}{32}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Augmentation}{32}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Normalization}{32}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Inference}{32}{section*.8}\protected@file@percent }
 \citation{veraart2016mppca}
 \citation{fadnavis2020patch2self}
 \citation{kang2021mds2s}
-\@writefile{toc}{\contentsline {paragraph}{Registry provenance}{33}{section*.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Hardware and timing}{33}{section*.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Checkpoint selection and code}{33}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Registry provenance}{33}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hardware and timing}{33}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Checkpoint selection and code}{33}{section*.11}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {5}Experimental Results}{33}{section.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Main Comparison}{33}{subsection.5.1}\protected@file@percent }
+\@writefile{tdo}{\contentsline {todo}{Replace this planned qualitative comparison with final image panels or remove the figure before submission. The final figure should include noisy input, MP-PCA, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, reference image when available, and error maps.}{35}{section*.12}\protected@file@percent }
+\pgfsyspdfmark {pgfid15}{20055326}{11254716}
 \@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Main quantitative comparison on D-Brain with Rician noise $\sigma =0.1$. All Hybrid RGS methods use the fixed $K=16$ cross-model operating point. ROI metrics are computed over brain tissue only ($\Omega _{\mathrm  {ROI}}^{\mathrm  {eval}}$). Time/vol.\ is inference time per target diffusion volume when available. Bold values indicate the best self-supervised neural or regression result in each metric column; italicized rows are supervised reference runs using the same architecture and training protocol but with clean phantom targets (not rigorously tuned upper bounds).}}{36}{table.8}\protected@file@percent }
 \newlabel{tab:main_comparison}{{8}{36}{Main quantitative comparison on D-Brain with Rician noise $\sigma =0.1$. All Hybrid RGS methods use the fixed $K=16$ cross-model operating point. ROI metrics are computed over brain tissue only ($\Omega _{\mathrm {ROI}}^{\mathrm {eval}}$). Time/vol.\ is inference time per target diffusion volume when available. Bold values indicate the best self-supervised neural or regression result in each metric column; italicized rows are supervised reference runs using the same architecture and training protocol but with clean phantom targets (not rigorously tuned upper bounds)}{table.8}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Generalization to Real Scanner Noise}{36}{subsection.5.2}\protected@file@percent }
+\@writefile{tdo}{\contentsline {todo}{Add visual Stanford FA/MD panels, residual maps, and/or homogeneous-ROI variance summaries. Without those panels, keep Stanford claims limited to feasibility and scalability.}{37}{section*.13}\protected@file@percent }
+\pgfsyspdfmark {pgfid16}{20055326}{29959782}
 \@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Stanford HARDI $K$ sweep. PSNR-ROI is computed against the acquired noisy image and should be interpreted only as an input-closeness or signal-preservation measure rather than ground-truth restoration accuracy. Time/vol. is inference time per target diffusion volume.}}{38}{table.9}\protected@file@percent }
 \newlabel{tab:stanford_k_sweep}{{9}{38}{Stanford HARDI $K$ sweep. PSNR-ROI is computed against the acquired noisy image and should be interpreted only as an input-closeness or signal-preservation measure rather than ground-truth restoration accuracy. Time/vol. is inference time per target diffusion volume}{table.9}{}}
+\@writefile{tdo}{\contentsline {todo}{Replace the planned Stanford HARDI FA-map comparison with final image panels or remove the figure before submission. The final figure should show a representative axial slice crossing major white-matter tracts for noisy input, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, and Restormer-Hybrid-RGS.}{38}{section*.14}\protected@file@percent }
+\pgfsyspdfmark {pgfid17}{20055326}{22271241}
 \@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{38}{section.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{40}{section.7}\protected@file@percent }
 \bibstyle{elsarticle-num}
