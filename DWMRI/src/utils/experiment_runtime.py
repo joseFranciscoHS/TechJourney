@@ -6,6 +6,7 @@ import time
 from typing import Any, Dict, Iterable, Optional
 
 import torch
+from munch import munchify
 
 
 def parse_override_value(raw: str) -> Any:
@@ -36,6 +37,10 @@ def apply_overrides(settings, overrides: Iterable[str]) -> None:
             raise ValueError(f"Invalid override '{item}', expected key=value")
         key, raw_value = item.split("=", 1)
         value = parse_override_value(raw_value)
+        if isinstance(value, (list, dict)):
+            # Preserve attribute-style access (e.g. stage.patch_size) for
+            # nested list-of-dict overrides such as progressive.stages.
+            value = munchify(value)
         node = settings
         parts = key.split(".")
         for p in parts[:-1]:
