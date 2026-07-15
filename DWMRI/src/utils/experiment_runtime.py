@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import socket
@@ -8,6 +9,14 @@ import torch
 
 
 def parse_override_value(raw: str) -> Any:
+    stripped = raw.strip()
+    # List/dict literals (e.g. num_blocks=[2,4,10], heads=[1,2,4]) are parsed first
+    # via ast.literal_eval, which only evaluates literals (no code execution).
+    if stripped[:1] in "[{":
+        try:
+            return ast.literal_eval(stripped)
+        except (ValueError, SyntaxError):
+            return raw
     low = raw.lower()
     if low in {"true", "false"}:
         return low == "true"
