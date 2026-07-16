@@ -80,6 +80,7 @@ if [[ "$CALIBRATE" == "1" ]]; then
     --set dbrain.train.progressive.enabled=false \
     --set dbrain.train.num_epochs=2 \
     --set dbrain.train.subset_fraction=0.05 \
+    --set dbrain.train.batch_size=24 \
     --set dbrain.reconstruct.n_preds=1 \
     --exp-id "$EXP_ID" \
     --job-id restormer_dbrain_3d_large2M_k16_calib \
@@ -110,11 +111,16 @@ fi
 
 # ---------------------------------------------------------------------------
 # Arm B: large ~2M Restormer-3D (depth + FFN growth)
-# OOM fallback (not needed on 48 GB; only if ported to a 24 GB card): lower the
-# per-stage batch_size values in the progressive block of
-# src/restormer_hybrid_rgs/config.yaml (dbrain.train.progressive.stages).
+# The default progressive batch sizes in config.yaml (64/128/256) OOM on this
+# arm's wider full-resolution decoder/refinement stack even on a 44.5 GB card
+# (measured: ~43.2 GB allocated at patch=32, batch=64). Halve-ish the
+# per-stage batch_size for this arm only; LR is unaffected since this is a
+# single-GPU run (auto_scale_lr only rescales for multi-GPU).
 # ---------------------------------------------------------------------------
+LARGE_PROGRESSIVE_STAGES='[{"patch_size":32,"batch_size":24,"epochs":120,"step":8},{"patch_size":24,"batch_size":64,"epochs":120,"step":6},{"patch_size":16,"batch_size":128,"epochs":120,"step":4}]'
+
 python -m restormer_hybrid_rgs.run "${SHARED_ARGS[@]}" "${LARGE_MODEL_ARGS[@]}" \
+  --set "dbrain.train.progressive.stages=$LARGE_PROGRESSIVE_STAGES" \
   --exp-id "$EXP_ID" \
   --job-id restormer_dbrain_3d_large2M_k16 \
   --recipe capacity_scaling_3d \
