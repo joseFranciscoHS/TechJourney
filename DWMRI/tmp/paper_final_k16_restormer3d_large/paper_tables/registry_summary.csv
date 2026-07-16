@@ -1,0 +1,2 @@
+dataset,architecture,status,n_context_samples,n_preds,sec_per_volume,sec_per_epoch,n_params,peak_gpu_mem_mb,psnr,psnr_roi,fa_mae,md_mae
+dbrain,restormer,success,16,12,362.428383676211,78.50266607337528,2103031,20517.361328125,27.894573517559593,25.94124949446497,0.2596420292860779,3422.105964814537

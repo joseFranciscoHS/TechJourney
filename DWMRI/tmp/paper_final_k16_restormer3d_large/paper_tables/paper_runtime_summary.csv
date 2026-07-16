@@ -1,0 +1,2 @@
+exp_id,job_id,recipe,status,dataset,architecture,dimensionality,sampling_mode,k_input,g_shell,n_context_samples,n_preds,n_params,sec_per_epoch,sec_per_volume,peak_gpu_mem_mb,duration_s
+paper_final_k16_restormer3d_large,restormer_dbrain_3d_large2M_k16,capacity_scaling_3d,success,dbrain,restormer,3d,rgs,16,60,16,12,2103031,78.50266607337528,362.428383676211,20517.361328125,50038.493492126465

@@ -117,7 +117,7 @@ fi
 # per-stage batch_size for this arm only; LR is unaffected since this is a
 # single-GPU run (auto_scale_lr only rescales for multi-GPU).
 # ---------------------------------------------------------------------------
-LARGE_PROGRESSIVE_STAGES='[{"patch_size":32,"batch_size":24,"epochs":120,"step":8},{"patch_size":24,"batch_size":64,"epochs":120,"step":6},{"patch_size":16,"batch_size":128,"epochs":120,"step":4}]'
+LARGE_PROGRESSIVE_STAGES='[{"patch_size":32,"batch_size":24,"epochs":120,"step":8},{"patch_size":24,"batch_size":24,"epochs":120,"step":6},{"patch_size":16,"batch_size":64,"epochs":120,"step":4}]'
 
 python -m restormer_hybrid_rgs.run "${SHARED_ARGS[@]}" "${LARGE_MODEL_ARGS[@]}" \
   --set "dbrain.train.progressive.stages=$LARGE_PROGRESSIVE_STAGES" \

@@ -1,0 +1,2 @@
+metrics_relpath,method,dataset,dimensionality,sampling_mode,k_input,n_context_samples,n_preds,psnr,ssim,mse,psnr_roi,ssim_roi,mse_roi,fa_mae,md_mae,ad_mae,rd_mae
+restormer_hybrid_rgs/metrics/dbrain/b2500/rgs_G60_K16/noise_rician_sigma_0.1/learning_rate_0.00045/metrics.json,restormer_hybrid_rgs,dbrain,,rgs,16,16,12,27.894573517559593,0.5166732668876648,0.0016238379757851362,25.94124949446497,0.5975220203399658,0.002546097609699025,0.2596420292860779,3422.105964814537,8287.23080614615,1031.203939210465
