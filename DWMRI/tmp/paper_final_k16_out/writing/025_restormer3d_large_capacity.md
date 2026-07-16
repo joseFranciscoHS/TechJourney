@@ -20,14 +20,14 @@ This prompt asks you to:
 
 Both models are the **same** `Restormer3D` class (3-level U-Net topology, volumetric MDTA/GDFN blocks, strided `Conv3d` / `ConvTranspose3d` resampling). Only capacity hyperparameters differ. All training/inference/eval settings are identical (K=16 RGS, G=60, `target_channel=15`, `mask_p=0.3`, progressive patches 32/24/16, subset 0.6, seed 91021, per-volume rescale + clip, `metrics_roi_threshold=0.02`, DTI on).
 
-| Hyperparameter | Baseline Restormer-3D | Large Restormer-3D |
-|----------------|-----------------------|--------------------|
-| `dim` | 12 | **24** |
-| `num_blocks` | `[1,2,2]` | **`[2,4,10]`** |
-| `heads` | `[1,2,2]` | **`[1,2,4]`** |
-| `ffn_expansion_factor` | 1.5 | **2.66** |
-| `num_refinement_blocks` | 2 | **4** |
-| Parameters | 177,883 (~0.18M) | **~2.0M** (fill exact from run) |
+| Hyperparameter          | Baseline Restormer-3D | Large Restormer-3D              |
+| ----------------------- | --------------------- | ------------------------------- |
+| `dim`                   | 12                    | **24**                          |
+| `num_blocks`            | `[1,2,2]`             | **`[2,4,10]`**                  |
+| `heads`                 | `[1,2,2]`             | **`[1,2,4]`**                   |
+| `ffn_expansion_factor`  | 1.5                   | **2.66**                        |
+| `num_refinement_blocks` | 2                     | **4**                           |
+| Parameters              | 177,883 (~0.18M)      | **~2.0M** (fill exact from run) |
 
 Rationale: channel widths per level are `dim / 2*dim / 4*dim` = `24 / 48 / 96`, so `heads=[1,2,4]` divides each level cleanly. The bulk of the added parameters sits in the 10-block latent stack at 96 channels (1/4 spatial resolution), which grows capacity while keeping peak activation memory moderate.
 
@@ -37,14 +37,14 @@ Rationale: channel widths per level are `dim / 2*dim / 4*dim` = `24 / 48 / 96`, 
 
 Paths are relative to `DWMRI/`.
 
-| File | Purpose |
-|------|---------|
-| `paper/Sepulveda_dwmri_restormer.tex` | Current manuscript to patch |
-| `src/restormer_hybrid_rgs/model.py` | `Restormer3D` (same class, both capacities) |
-| `src/restormer_hybrid_rgs/config.yaml` | Baseline config (`dim=12`, `num_blocks=[1,2,2]`, etc.) |
-| `experiments/rerun_k16_restormer3d_large.sh` | Run provenance (baseline + large arms) |
-| `tmp/paper_final_k16_restormer3d_large/registry.jsonl` | **Results registry** (available after rerun) |
-| `tmp/paper_final_k16_restormer3d_large/paper_tables/registry_summary.csv` | Flat metrics (available after rerun) |
+| File                                                                      | Purpose                                                |
+| ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `paper/Sepulveda_dwmri_restormer.tex`                                     | Current manuscript to patch                            |
+| `src/restormer_hybrid_rgs/model.py`                                       | `Restormer3D` (same class, both capacities)            |
+| `src/restormer_hybrid_rgs/config.yaml`                                    | Baseline config (`dim=12`, `num_blocks=[1,2,2]`, etc.) |
+| `experiments/rerun_k16_restormer3d_large.sh`                              | Run provenance (baseline + large arms)                 |
+| `tmp/paper_final_k16_restormer3d_large/registry.jsonl`                    | **Results registry** (available after rerun)           |
+| `tmp/paper_final_k16_restormer3d_large/paper_tables/registry_summary.csv` | Flat metrics (available after rerun)                   |
 
 ---
 
@@ -58,7 +58,7 @@ In the architecture/experimental-setup section, add a short paragraph that:
 
 - States that Restormer-3D is evaluated at two capacities under the identical Hybrid RGS protocol: the baseline (~0.18M) and a larger variant (~2M).
 - Gives the large config (`dim=24`, `num_blocks=[2,4,10]`, `heads=[1,2,4]`, `ffn_expansion_factor=2.66`, `num_refinement_blocks=4`).
-- Emphasizes this is a pure capacity scaling of the *same* architecture (no change to blocks, resampling, or I/O), added preferentially at the latent level.
+- Emphasizes this is a pure capacity scaling of the _same_ architecture (no change to blocks, resampling, or I/O), added preferentially at the latent level.
 - States the approximate parameter count from the run.
 
 Target: ~90–120 words, academic/concise, IEEE-style. Use `\cite{restormer}` for Zamir et al.
@@ -77,10 +77,10 @@ Note that the two Restormer-3D capacities share seed, subset fraction, sampling,
 
 Add a capacity block (or extend the existing Restormer table) with one row per arm:
 
-| Model | Params (M) | PSNR-ROI (dB) | SSIM-ROI | FA-MAE | MD-MAE |
-|-------|-----------|--------------|----------|--------|--------|
-| Restormer-3D (baseline) | [FILL] | [FILL] | [FILL] | [FILL] | [FILL] |
-| **Restormer-3D (large ~2M)** | [FILL] | [FILL] | [FILL] | [FILL] | [FILL] |
+| Model                        | Params (M) | PSNR-ROI (dB) | SSIM-ROI | FA-MAE | MD-MAE |
+| ---------------------------- | ---------- | ------------- | -------- | ------ | ------ |
+| Restormer-3D (baseline)      | [FILL]     | [FILL]        | [FILL]   | [FILL] | [FILL] |
+| **Restormer-3D (large ~2M)** | [FILL]     | [FILL]        | [FILL]   | [FILL] | [FILL] |
 
 **PLACEHOLDER — fill after running `rerun_k16_restormer3d_large.sh`:**
 
