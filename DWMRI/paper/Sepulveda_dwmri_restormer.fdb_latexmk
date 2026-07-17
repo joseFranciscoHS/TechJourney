@@ -1,6 +1,6 @@
 # Fdb version 3
-["pdflatex"] 1784087445 "/Users/francisco/Documents/TechJourney/TechJourney/DWMRI/paper/Sepulveda_dwmri_restormer.tex" "Sepulveda_dwmri_restormer.pdf" "Sepulveda_dwmri_restormer" 1784087447
-  "/Users/francisco/Documents/TechJourney/TechJourney/DWMRI/paper/Sepulveda_dwmri_restormer.tex" 1784087441 125314 471f98797949df747f57e43d7e4abae0 ""
+["pdflatex"] 1784250152 "/Users/francisco/Documents/TechJourney/TechJourney/DWMRI/paper/Sepulveda_dwmri_restormer.tex" "Sepulveda_dwmri_restormer.pdf" "Sepulveda_dwmri_restormer" 1784250154
+  "/Users/francisco/Documents/TechJourney/TechJourney/DWMRI/paper/Sepulveda_dwmri_restormer.tex" 1784250152 125320 a533407e94e1f0cf7c94f6b62fed6641 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2022/texmf-dist/fonts/tfm/jknappen/ec/tcrm1200.tfm" 1136768653 1536 74b7293ec3713bb7fdca8dd1bd1f469c ""
@@ -207,10 +207,10 @@
   "/usr/local/texlive/2022/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1647878959 4410336 7d30a02e9fa9a16d7d1f8d037ba69641 ""
   "/usr/local/texlive/2022/texmf-var/web2c/pdftex/pdflatex.fmt" 1675308977 2826439 5e5a7156ab611994ae4c65849ce494fb ""
   "/usr/local/texlive/2022/texmf.cnf" 1647878952 577 209b46be99c9075fd74d4c0369380e8c ""
-  "Sepulveda_dwmri_restormer.aux" 1784087447 30549 1964f4e6dab8de6f4513ef8ae37ddeb0 "pdflatex"
-  "Sepulveda_dwmri_restormer.out" 1784087447 5430 26dc494f4676592b63083111a6a90705 "pdflatex"
+  "Sepulveda_dwmri_restormer.aux" 1784250154 30549 1964f4e6dab8de6f4513ef8ae37ddeb0 "pdflatex"
+  "Sepulveda_dwmri_restormer.out" 1784250154 5430 26dc494f4676592b63083111a6a90705 "pdflatex"
   "Sepulveda_dwmri_restormer.spl" 0 -1 0 "pdflatex"
-  "Sepulveda_dwmri_restormer.tex" 1784087441 125314 471f98797949df747f57e43d7e4abae0 ""
+  "Sepulveda_dwmri_restormer.tex" 1784250152 125320 a533407e94e1f0cf7c94f6b62fed6641 ""
   "figures/k_sweep_psnr_roi.png" 1783388556 195398 4bc793a4f115b879effe2aa38af88fe1 ""
   "figures/sigma_robustness_psnr_roi.png" 1783388573 220497 a84af4622c76d77ce4abf8e7b61adf68 ""
   (generated)
