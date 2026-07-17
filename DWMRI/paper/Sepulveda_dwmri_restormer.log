@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.1)  16 JUL 2026 19:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.1)  16 JUL 2026 19:25
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -633,19 +633,19 @@ Overfull \hbox (2.61108pt too wide) has occurred while \output is active
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 40.
+(hyperref)                removing `\<def>-command' on input line 41.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\cnotenum' on input line 40.
+(hyperref)                removing `\cnotenum' on input line 41.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 40.
+(hyperref)                removing `\<def>-command' on input line 41.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@corref' on input line 40.
+(hyperref)                removing `\@corref' on input line 41.
 
 [1
 
@@ -655,224 +655,320 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 LaTeX Warning: Marginpar on page 2 moved.
 
 [2]
-Overfull \hbox (0.31818pt too wide) in paragraph at lines 55--56
+Overfull \hbox (0.31818pt too wide) in paragraph at lines 56--57
 \OT1/cmr/m/n/12 wise gra-di-ent ex-clu-sion with voxel-wise mask-ing for self-supervised DW-
  []
 
 [3] [4] [5]
-Overfull \hbox (48.11589pt too wide) in paragraph at lines 89--107
+Overfull \hbox (48.11589pt too wide) in paragraph at lines 90--108
  [][] 
  []
 
 
-Overfull \hbox (20.84111pt too wide) in paragraph at lines 109--110
+Overfull \hbox (20.84111pt too wide) in paragraph at lines 110--111
 []\OT1/cmr/m/n/12 Let $\OML/cmm/m/it/12 t$ \OT1/cmr/m/n/12 de-note the phys-i-cal tar-get dif-fu-sion vol-ume. Through-out the manuscript,
  []
 
-[6] [7] [8]
-Overfull \hbox (9.6264pt too wide) in paragraph at lines 245--246
+[6] [7] [8] [9]
+Overfull \hbox (9.6264pt too wide) in paragraph at lines 246--247
 \OT1/cmr/m/n/12 straints for vol-u-met-ric trans-former at-ten-tion, while mod-i-fy-ing the in-put/output
  []
 
-[9] [10]
-Overfull \hbox (44.80394pt too wide) in paragraph at lines 247--248
+
+Overfull \hbox (44.80394pt too wide) in paragraph at lines 248--249
 \OT1/cmr/m/n/12 layer nor-mal-iza-tion re-shap-ing from $(\OML/cmm/m/it/12 B; C; H; W\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/12 ! \OT1/cmr/m/n/12 (\OML/cmm/m/it/12 B; HW; C\OT1/cmr/m/n/12 )$ to $(\OML/cmm/m/it/12 B; C; D; H; W\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/12 !
  []
 
 
-Overfull \hbox (3.29453pt too wide) in paragraph at lines 249--250
+Overfull \hbox (3.29453pt too wide) in paragraph at lines 250--251
 []\OT1/cmr/m/n/12 Second, the hi-er-ar-chy depth is re-duced from the orig-i-nal four-level encoder-
  []
 
-
-Overfull \hbox (42.95288pt too wide) in paragraph at lines 253--254
+[10] [11]
+Overfull \hbox (42.95288pt too wide) in paragraph at lines 254--255
 \OT1/cmr/m/n/12 The orig-i-nal Restormer pro-cesses RGB im-ages with $[] = [] =
  []
 
 
-Overfull \hbox (14.64284pt too wide) in paragraph at lines 253--254
+Overfull \hbox (14.64284pt too wide) in paragraph at lines 254--255
 \OT1/cmr/m/n/12 nec-tion at the out-put. In con-trast, Restormer-hybrid-RGS uses $[] =
  []
 
-[11]
-Overfull \hbox (0.30162pt too wide) in paragraph at lines 257--258
+
+Overfull \hbox (0.30162pt too wide) in paragraph at lines 258--259
 []\OT1/cmr/m/n/12 The re-sult-ing Restormer-hybrid-RGS ar-chi-tec-ture con-tains ap-prox-i-mately
  []
 
-
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 260--260
-\OT1/cmr/m/n/12 Restormer 
- []
-
-
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 260--260
-\OT1/cmr/m/n/12 Restormer 
- []
-
 [12]
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 267--267
+Overfull \hbox (22.28416pt too wide) in paragraph at lines 260--260
+\OT1/cmr/m/n/12 Restormer- 
+ []
+
+
+Overfull \hbox (13.24536pt too wide) in paragraph at lines 260--260
+\OT1/cmr/m/n/12 backbone 
+ []
+
+
+Overfull \hbox (9.51913pt too wide) in paragraph at lines 260--260
+\OT1/cmr/m/n/12 ($\OMS/cmsy/m/n/12 ^^X$\OT1/cmr/m/n/12 2.1M) 
+ []
+
+
+Overfull \hbox (22.28416pt too wide) in paragraph at lines 260--260
+\OT1/cmr/m/n/12 Restormer- 
+ []
+
+
+Overfull \hbox (13.24536pt too wide) in paragraph at lines 260--260
+\OT1/cmr/m/n/12 backbone 
+ []
+
+
+Overfull \hbox (9.51913pt too wide) in paragraph at lines 260--260
+\OT1/cmr/m/n/12 ($\OMS/cmsy/m/n/12 ^^X$\OT1/cmr/m/n/12 2.1M) 
+ []
+
+
+Overfull \hbox (38.46239pt too wide) in paragraph at lines 261--262
+\OT1/cmr/m/n/12 [1\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 2\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 2]$), $[] = 2\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 66$ (ver-sus 1.5), and $[] =
+ []
+
+
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 264--264
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 267--267
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 264--264
+\OT1/cmr/m/n/12 Restormer 
+ []
+
+[13]
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 271--271
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (2.79088pt too wide) in paragraph at lines 268--269
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 271--271
+\OT1/cmr/m/n/12 Restormer 
+ []
+
+
+Overfull \hbox (2.79088pt too wide) in paragraph at lines 272--273
 \OT1/cmr/m/n/12 ($[] = 12$, $[] = [1\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 2\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 2]$, $[] = [1\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 2\OML/cmm/m/it/12 ; \OT1/cmr/m/n/12 2]$, $[] =
  []
 
 
-Overfull \hbox (88.87648pt too wide) in paragraph at lines 268--269
+Overfull \hbox (88.87648pt too wide) in paragraph at lines 272--273
 \OT1/cmr/m/n/12 Feed-Forward Net-work (GDFN) blocks, as well as its \OT1/cmtt/m/n/12 Conv2d\OT1/cmr/m/n/12 +\OT1/cmtt/m/n/12 PixelUnshuffle\OT1/cmr/m/n/12 /\OT1/cmtt/m/n/12 PixelShuffle
  []
 
 
-Overfull \hbox (27.72751pt too wide) in paragraph at lines 268--269
+Overfull \hbox (27.72751pt too wide) in paragraph at lines 272--273
 \OT1/cmr/m/n/12 ture. The only Hy-brid RGS adap-ta-tions are at the I/O bound-ary: $[] =
  []
 
-[13]
-Overfull \hbox (7.95705pt too wide) in paragraph at lines 447--447
+[14]
+Overfull \hbox (7.95705pt too wide) in paragraph at lines 451--451
  [][]\OT1/cmr/bx/n/12 Restormer3D 
  []
 
-[14] [15] [16] [17] [18] [19] [20] [21]
-Overfull \hbox (17.4585pt too wide) in paragraph at lines 529--530
+[15] [16] [17] [18] [19] [20] [21]
+Overfull \hbox (17.4585pt too wide) in paragraph at lines 533--534
 \OT1/cmr/m/n/12 domain fi-delity, with $26\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 93$ dB PSNR-ROI and $0\OML/cmm/m/it/12 :\OT1/cmr/m/n/12 5247$ SSIM-ROI. The sequential-
  []
 
 [22] [23] [24]
-<figures/k_sweep_psnr_roi.png, id=358, 528.5346pt x 340.6326pt>
+<figures/k_sweep_psnr_roi.png, id=362, 528.5346pt x 340.6326pt>
 File: figures/k_sweep_psnr_roi.png Graphic file (type png)
 <use figures/k_sweep_psnr_roi.png>
-Package pdftex.def Info: figures/k_sweep_psnr_roi.png  used on input line 600.
+Package pdftex.def Info: figures/k_sweep_psnr_roi.png  used on input line 604.
 (pdftex.def)             Requested size: 304.19952pt x 196.04933pt.
- [25]
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 611--611
+ [25] [26 <./figures/k_sweep_psnr_roi.png>]
+Overfull \hbox (22.28416pt too wide) in paragraph at lines 615--615
+\OT1/cmr/m/n/12 Restormer- 
+ []
+
+
+Overfull \hbox (13.24536pt too wide) in paragraph at lines 615--615
+\OT1/cmr/m/n/12 backbone 
+ []
+
+
+Overfull \hbox (9.51913pt too wide) in paragraph at lines 615--615
+\OT1/cmr/m/n/12 ($\OMS/cmsy/m/n/12 ^^X$\OT1/cmr/m/n/12 2.1M) 
+ []
+
+
+Overfull \hbox (22.28416pt too wide) in paragraph at lines 615--615
+\OT1/cmr/m/n/12 Restormer- 
+ []
+
+
+Overfull \hbox (13.24536pt too wide) in paragraph at lines 615--615
+\OT1/cmr/m/n/12 backbone 
+ []
+
+
+Overfull \hbox (9.51913pt too wide) in paragraph at lines 615--615
+\OT1/cmr/m/n/12 ($\OMS/cmsy/m/n/12 ^^X$\OT1/cmr/m/n/12 2.1M) 
+ []
+
+
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 618--618
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 611--611
-\OT1/cmr/m/n/12 Restormer 
- []
-
-[26 <./figures/k_sweep_psnr_roi.png>]
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 616--616
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 618--618
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 616--616
-\OT1/cmr/m/n/12 Restormer 
- []
+LaTeX Warning: Marginpar on page 27 moved.
 
 [27]
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 619--619
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 623--623
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 619--619
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 623--623
+\OT1/cmr/m/n/12 Restormer 
+ []
+
+[28]
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 629--629
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 621--621
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 629--629
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (18.36754pt too wide) in paragraph at lines 621--621
+Overfull \hbox (22.28416pt too wide) in paragraph at lines 629--629
+\OT1/cmr/m/n/12 Restormer- 
+ []
+
+
+Overfull \hbox (13.24536pt too wide) in paragraph at lines 629--629
+\OT1/cmr/m/n/12 backbone 
+ []
+
+
+Overfull \hbox (9.51913pt too wide) in paragraph at lines 629--629
+\OT1/cmr/m/n/12 ($\OMS/cmsy/m/n/12 ^^X$\OT1/cmr/m/n/12 2.1M) 
+ []
+
+
+Overfull \hbox (22.28416pt too wide) in paragraph at lines 629--629
+\OT1/cmr/m/n/12 Restormer- 
+ []
+
+
+Overfull \hbox (13.24536pt too wide) in paragraph at lines 629--629
+\OT1/cmr/m/n/12 backbone 
+ []
+
+
+Overfull \hbox (9.51913pt too wide) in paragraph at lines 629--629
+\OT1/cmr/m/n/12 ($\OMS/cmsy/m/n/12 ^^X$\OT1/cmr/m/n/12 2.1M) 
+ []
+
+
+LaTeX Warning: Marginpar on page 29 moved.
+
+[29]
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 631--631
 \OT1/cmr/m/n/12 Restormer 
  []
 
 
-Overfull \hbox (2.01698pt too wide) in paragraph at lines 621--622
-\OT1/cmr/m/n/12 strict-ing at-ten-tion to 2D slices yields an ap-prox-i-mately $5\OMS/cmsy/m/n/12 ^^B$ \OT1/cmr/m/n/12 wall-clock speedup,
+Overfull \hbox (18.36754pt too wide) in paragraph at lines 631--631
+\OT1/cmr/m/n/12 Restormer 
  []
 
-[28] [29]
-<figures/sigma_robustness_psnr_roi.png, id=393, 528.5346pt x 340.6326pt>
+[30] [31]
+<figures/sigma_robustness_psnr_roi.png, id=414, 528.5346pt x 340.6326pt>
 File: figures/sigma_robustness_psnr_roi.png Graphic file (type png)
 <use figures/sigma_robustness_psnr_roi.png>
-Package pdftex.def Info: figures/sigma_robustness_psnr_roi.png  used on input line 675.
+Package pdftex.def Info: figures/sigma_robustness_psnr_roi.png  used on input line 687.
 (pdftex.def)             Requested size: 304.19952pt x 196.04933pt.
- [30]
-Overfull \hbox (8.42932pt too wide) in paragraph at lines 687--688
+ [32]
+Overfull \hbox (8.42932pt too wide) in paragraph at lines 699--700
 []\OT1/cmr/m/n/12 We in-stead use Feature-wise Lin-ear Mod-u-la-tion (FiLM) [[]] as a lightweight
  []
 
-[31]
-Overfull \hbox (73.41635pt too wide) in paragraph at lines 690--692
+
+Overfull \hbox (73.41635pt too wide) in paragraph at lines 702--704
 \OT1/cmr/m/n/12 mul-ti-layer per-cep-tron from the four-dimensional con-di-tion vec-tor $\OML/cmm/m/it/12 q[] \OT1/cmr/m/n/12 = [[][]\OML/cmm/m/it/12 ; [][]; [][]; b[]\OT1/cmr/m/n/12 ]$
  []
 
-[32 <./figures/sigma_robustness_psnr_roi.png>] [33]
-Overfull \hbox (6.53838pt too wide) in paragraph at lines 726--728
+[33] [34 <./figures/sigma_robustness_psnr_roi.png>] [35]
+Overfull \hbox (6.53838pt too wide) in paragraph at lines 738--740
 \OT1/cmr/m/n/12 uses \OT1/cmtt/m/n/12 seed=91021 \OT1/cmr/m/n/12 and Stan-ford train-ing uses \OT1/cmtt/m/n/12 seed=91022\OT1/cmr/m/n/12 , with \OT1/cmtt/m/n/12 reproducible:
  []
 
-[34] [35]
-Overfull \hbox (1.36131pt too wide) in paragraph at lines 771--772
+[36] [37]
+Overfull \hbox (1.36131pt too wide) in paragraph at lines 783--784
 \OT1/cmr/m/n/12 which in-di-cates that its lo-cal PCA as-sump-tions can pre-serve ten-sor anisotropy
  []
 
-[36]
-Overfull \hbox (9.30002pt too wide) in paragraph at lines 777--778
+[38]
+Overfull \hbox (9.30002pt too wide) in paragraph at lines 789--790
 []\OT1/cmr/m/n/12 The su-per-vised ref-er-ence runs pro-vide con-text for the cost of self-supervision
  []
 
-[37] [38] [39]
-Overfull \hbox (6.80988pt too wide) in paragraph at lines 815--816
+[39] [40] [41]
+Overfull \hbox (6.80988pt too wide) in paragraph at lines 827--828
 []\OT1/cmr/m/n/12 FiLM con-di-tion-ing also trans-fers to Stan-ford with-out ar-chi-tec-tural changes.
  []
 
-[40]
-Overfull \hbox (20.30696pt too wide) in paragraph at lines 846--847
+[42]
+Overfull \hbox (20.30696pt too wide) in paragraph at lines 858--859
 []\OT1/cmr/m/n/12 The ex-per-i-ments sup-port Hy-brid RGS pri-mar-ily as a self-supervised sampling-
  []
 
-[41] [42] [43]
-Underfull \hbox (badness 1281) in paragraph at lines 872--875
+[43] [44]
+Underfull \hbox (badness 1281) in paragraph at lines 884--887
 []\OT1/cmr/m/n/12 Javier Gurrola-Ramos, Teresa Alarc^^Son, Os-car Dal-mau, and Jos^^Se
  []
 
 
-Underfull \hbox (badness 2103) in paragraph at lines 872--875
+Underfull \hbox (badness 2103) in paragraph at lines 884--887
 \OT1/cmr/m/n/12 V. Manj^^Son. MRI Ri-cian noise re-duc-tion us-ing re-cur-rent con-vo-
  []
 
 
-Underfull \hbox (badness 2426) in paragraph at lines 872--875
+Underfull \hbox (badness 2426) in paragraph at lines 884--887
 \OT1/cmr/m/n/12 lu-tional neu-ral net-works. \OT1/cmr/m/it/12 IEEE Ac-cess\OT1/cmr/m/n/12 , 12:128272--128286, 2024.
  []
 
-[44]
-Underfull \hbox (badness 4096) in paragraph at lines 907--910
+[45]
+Underfull \hbox (badness 4096) in paragraph at lines 919--922
 []\OT1/cmr/m/n/12 Shreyas Fad-navis, Joshua Bat-son, and Eleft-he-rios Gary-fal-lidis.
  []
 
-[45] (./Sepulveda_dwmri_restormer.aux)
+[46] [47] (./Sepulveda_dwmri_restormer.aux)
 Package rerunfilecheck Info: File `Sepulveda_dwmri_restormer.out' has not changed.
 (rerunfilecheck)             Checksum: 26DC494F4676592B63083111A6A90705;5430.
  ) 
 Here is how much of TeX's memory you used:
- 26787 strings out of 478268
- 544976 string characters out of 5846348
- 838295 words of memory out of 5000000
- 44434 multiletter control sequences out of 15000+600000
+ 26828 strings out of 478268
+ 545793 string characters out of 5846348
+ 839887 words of memory out of 5000000
+ 44466 multiletter control sequences out of 15000+600000
  479825 words of font info for 70 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,12n,89p,2662b,983s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,12n,89p,2455b,983s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {/usr/local/texlive/2022/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx6.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmti7.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb>
-Output written on Sepulveda_dwmri_restormer.pdf (45 pages, 833357 bytes).
+Output written on Sepulveda_dwmri_restormer.pdf (47 pages, 842262 bytes).
 PDF statistics:
- 652 PDF objects out of 1000 (max. 8388607)
- 526 compressed objects within 6 object streams
- 141 named destinations out of 1000 (max. 500000)
+ 674 PDF objects out of 1000 (max. 8388607)
+ 546 compressed objects within 6 object streams
+ 150 named destinations out of 1000 (max. 500000)
  271 words of extra memory for PDF output out of 10000 (max. 10000000)
 
