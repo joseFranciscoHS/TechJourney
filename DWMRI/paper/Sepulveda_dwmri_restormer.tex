@@ -74,7 +74,7 @@ Three-dimensional neural networks are natural for volumetric MRI because they pr
 
 \section{Materials and Methods}
 \subsection{Data Representation}
-A DW-MRI acquisition is represented as a 4D array $Y \in \mathbb{R}^{N_x \times N_y \times N_z \times G}$, where $G$ is the number of diffusion-weighted volumes or gradients and $N_x,N_y,N_z$ are spatial dimensions. Let $y_g \in \mathbb{R}^{N_x \times N_y \times N_z}$ denote the noisy 3D volume associated with gradient $g$. When synthetic noise experiments are used, a clean or higher-quality reference $x_g$ may be available for evaluation only. The proposed self-supervised training does not require $x_g$.
+A DW-MRI acquisition is represented as a 4D array $Y \in \mathbb{R}^{N_x \times N_y \times N_z \times G}$, where $G$ is the number of diffusion-weighted volumes or gradients and $N_x$, $N_y$, $N_z$ are spatial dimensions. Let $y_g \in \mathbb{R}^{N_x \times N_y \times N_z}$ denote the noisy 3D volume associated with gradient $g$. When synthetic noise experiments are used, a clean or higher-quality reference $x_g$ may be available for evaluation only. The proposed self-supervised training does not require $x_g$.
 
 The current experiments include D-Brain data at $b=2500~\mathrm{s/mm^2}$ and Stanford HARDI data at $b=2000~\mathrm{s/mm^2}$, with additional noise-level studies under synthetic Rician corruption. The reported self-supervised objective does not use clean targets during training, but quantitative D-Brain evaluation uses the available reference after denoising.
 
