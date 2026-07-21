@@ -22,11 +22,12 @@ from drcnet_hybrid_rgs.reconstruction2d import (
     reconstruct_dwis_sequential_sliding_k_2d,
 )
 from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
+from paper_eval.export_denoised import maybe_export_denoised
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model2d import ResCNN2D
 from restormer_hybrid_rgs.restormer_arch_2d import Restormer2D
 from utils import setup_logging
-from utils.data import DBrainDataLoader, invert_normalization
+from utils.data import DBrainDataLoader, StanfordDataLoader, invert_normalization
 from utils.eval_protocol import (
     apply_reconstruction_eval_protocol,
     compute_roi_mask,
@@ -109,7 +110,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Restormer hybrid 2D (RGS / sequential-K)"
     )
-    parser.add_argument("--dataset", default="dbrain", choices=["dbrain"])
+    parser.add_argument(
+        "--dataset", default="dbrain", choices=["dbrain", "stanford"]
+    )
     parser.add_argument("--config", default=None)
     parser.add_argument(
         "--set",
@@ -141,7 +144,25 @@ def main():
     full_settings = load_config(config_path)
     if args.overrides:
         apply_overrides(full_settings, args.overrides)
-    settings = full_settings.dbrain
+    dataset = args.dataset
+    if dataset == "dbrain":
+        settings = full_settings.dbrain
+        data_loader = DBrainDataLoader(
+            nii_path=settings.data.nii_path,
+            bvecs_path=settings.data.bvecs_path,
+            bvalue=settings.data.bvalue,
+            noise_sigma=settings.data.noise_sigma,
+            noise_type=getattr(settings.data, "noise_type", "rician"),
+            n_coils=getattr(settings.data, "noise_n_coils", 1),
+        )
+    elif dataset == "stanford":
+        settings = full_settings.stanford
+        data_loader = StanfordDataLoader(
+            bvalue=settings.data.bvalue,
+            noise_sigma=settings.data.noise_sigma,
+        )
+    else:
+        raise ValueError(f"Invalid dataset: {dataset}")
     apply_output_root(settings, args.output_root)
 
     train_seed = int(getattr(settings.train, "seed", 42))
@@ -151,15 +172,13 @@ def main():
     log_runtime_env(settings.train.device)
     dl_generator = make_dataloader_generator(train_seed)
 
-    data_loader = DBrainDataLoader(
-        nii_path=settings.data.nii_path,
-        bvecs_path=settings.data.bvecs_path,
-        bvalue=settings.data.bvalue,
-        noise_sigma=settings.data.noise_sigma,
-        noise_type=getattr(settings.data, "noise_type", "rician"),
-        n_coils=getattr(settings.data, "noise_n_coils", 1),
-    )
     original_data, noisy_data = data_loader.load_data()
+    if original_data is None:
+        original_data = noisy_data
+        logging.info(
+            "StanfordDataLoader returned original_data=None; using noisy_data as "
+            "reference (self-supervised)"
+        )
     take_volumes = _take_volumes_dwi(settings)
     tx, ty, tz = settings.data.take_x, settings.data.take_y, settings.data.take_z
     original_xyzv_b0 = original_data[:tx, :ty, :tz, :take_volumes]
@@ -367,6 +386,10 @@ def main():
                 )
             recon_xyzv = np.transpose(recon_vxyz, (1, 2, 3, 0))
             sec_per_volume = float(time.time() - infer_t0) / float(recon_xyzv.shape[-1])
+            # Native (pre-eval-protocol) reconstruction, captured for the denoised
+            # NIfTI/.npy export (correctness rule 2: per-volume rescale below would
+            # distort each volume's S(g)/S0 and corrupt downstream CSD peaks).
+            recon_xyzv_native = recon_xyzv
             recon_xyzv = apply_reconstruction_eval_protocol(
                 recon_xyzv,
                 original_data,
@@ -447,13 +470,25 @@ def main():
                 }
             save_dti_metrics(dti_metrics, metrics_dir)
 
+            # Optional denoised array export for downstream CSD fixel study
+            # (no-op unless reconstruct.save_denoised_{npy,nifti} is set).
+            maybe_export_denoised(
+                settings,
+                dataset,
+                args.job_id or f"{backbone}",
+                recon_xyzv_native,
+                original_xyzv_b0,
+                data_loader,
+                take_volumes,
+            )
+
             save_run_manifest(
                 out_dir=metrics_dir,
                 seed=train_seed,
                 reproducible=bool(getattr(settings.train, "reproducible", False)),
                 runtime_device=str(device),
                 config={
-                    "dataset": "dbrain",
+                    "dataset": dataset,
                     "architecture": "restormer_hybrid_rgs",
                     "sampling_mode": mode,
                     "k_input": int(k),
@@ -472,7 +507,9 @@ def main():
                     "backbone": backbone,
                 },
                 metrics_policy=metrics_policy_dict(
-                    reference_name="clean_gt",
+                    reference_name="clean_gt"
+                    if dataset == "dbrain"
+                    else "self_reference_noisy",
                     rescale_to_01=bool(
                         getattr(settings.reconstruct, "rescale_to_01", False)
                     ),
@@ -542,7 +579,7 @@ def main():
             "stage": "train_reconstruct"
             if (not args.skip_train and not args.skip_reconstruct)
             else ("train" if not args.skip_train else "reconstruct"),
-            "dataset": "dbrain",
+            "dataset": dataset,
             "regime": args.regime,
             "architecture": "restormer",
             "dimensionality": "2d",

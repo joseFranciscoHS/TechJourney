@@ -77,6 +77,11 @@ dbrain:
     compute_dti: true  # Post-recon: FA/MD/AD/RD MAE vs GT (needs DIPY; uses bvecs from config)
     metrics_dir: "drcnet_hybrid_rgs/metrics/dbrain"
     images_dir: "drcnet_hybrid_rgs/images/dbrain"
+    # Denoised array export for CSD fixel study (paper_eval/export_denoised.py). Off by
+    # default; enable via --set dbrain.reconstruct.save_denoised_npy=true (and/or _nifti).
+    save_denoised_npy: false
+    save_denoised_nifti: false
+    denoised_out_dir: "tmp/paper_final_k16_stanford_fixels/arrays"
   model:
     in_channel: 16 # is the number of volumes (all volumes including masked target)
     out_channel: 1 # is the predicted volume
@@ -203,3 +208,8 @@ stanford:
     compute_dti: true
     metrics_dir: "drcnet_hybrid_rgs/metrics/stanford"
     images_dir: "drcnet_hybrid_rgs/images/stanford"
+    # Denoised array export for CSD fixel study (paper_eval/export_denoised.py). Off by
+    # default; enable via --set stanford.reconstruct.save_denoised_npy=true (and/or _nifti).
+    save_denoised_npy: false
+    save_denoised_nifti: false
+    denoised_out_dir: "tmp/paper_final_k16_stanford_fixels/arrays"

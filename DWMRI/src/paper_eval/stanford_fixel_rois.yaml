@@ -1,0 +1,41 @@
+# Frozen ROI boxes for the Stanford CSD fixel glyph figure.
+# Coordinates are in the TRAINING CROP (take_x=80, take_y=106, take_z=76),
+# NOT the native full Stanford HARDI FOV.
+#
+# Status: PLACEHOLDER — replace after the Phase 5 scout pass (run CSD on the
+# noisy crop once, inspect coronal/sagittal slices for corona radiata / CC
+# crossings / gyral blades, then freeze indices here and copy to
+# tmp/paper_final_k16_stanford_fixels/rois/).
+#
+# Schema (see paper_eval/plot_fixels.py):
+#   name: short id
+#   axis: 0=x (sagittal), 1=y (coronal), 2=z (axial)
+#   index: slice along `axis`
+#   bbox: [[a0, a1], [b0, b1]] in the two remaining axes (ascending)
+#   description: scout rationale
+
+rois:
+  - name: corona_radiata_crossing
+    axis: 1
+    index: 53
+    bbox: [[20, 60], [20, 56]]
+    description: >
+      PLACEHOLDER coronal slice through presumed corona radiata / CST crossing
+      region in the Stanford training crop. Revisit after noisy-arm CSD scout.
+
+  - name: callosal_crossing
+    axis: 2
+    index: 38
+    bbox: [[15, 65], [30, 76]]
+    description: >
+      PLACEHOLDER axial slice through mid-body corpus callosum / crossing fibers.
+      Revisit after noisy-arm CSD scout.
+
+  - name: gyral_blade
+    axis: 0
+    index: 40
+    bbox: [[25, 80], [20, 56]]
+    description: >
+      PLACEHOLDER sagittal slice through a cortical gyral blade for fanning
+      qualitative comparison. Revisit after noisy-arm CSD scout; also set
+      gyral_fan_spread reference_axis once a local cortical normal is estimated.

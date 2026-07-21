@@ -11,6 +11,7 @@ import wandb
 from torch.utils.data import DataLoader
 
 from paper_eval.dti_metrics import save_dti_metrics, try_compute_dti_errors
+from paper_eval.export_denoised import maybe_export_denoised
 from restormer_hybrid_rgs.data import TrainingDataSet
 from restormer_hybrid_rgs.fit import fit_model
 from restormer_hybrid_rgs.model import Restormer3D
@@ -798,6 +799,11 @@ def main(
                     reconstructed_dwis = reconstructed_dwis.astype(np.float64) - shift
                     reconstructed_dwis = np.clip(reconstructed_dwis, 0, 1)
 
+            # Native (pre-eval-protocol) reconstruction, captured for the denoised
+            # NIfTI/.npy export (correctness rule 2: per-volume rescale below would
+            # distort each volume's S(g)/S0 and corrupt downstream CSD peaks).
+            reconstructed_dwis_native = reconstructed_dwis
+
             rescale_to_01 = bool(getattr(settings.reconstruct, "rescale_to_01", False))
             rescale_mode = str(
                 getattr(settings.reconstruct, "rescale_mode", "per_volume")
@@ -923,6 +929,18 @@ def main(
                     "dti_skipped_reason": "no_clean_gt_or_compute_dti_false",
                 }
                 save_dti_metrics(dti_metrics, metrics_dir)
+
+            # Optional denoised array export for downstream CSD fixel study
+            # (no-op unless reconstruct.save_denoised_{npy,nifti} is set).
+            maybe_export_denoised(
+                settings,
+                dataset,
+                job_id or "restormer3d",
+                reconstructed_dwis_native,
+                original_xyzv_b0,
+                data_loader,
+                take_volumes,
+            )
 
             policy = metrics_policy_dict(
                 reference_name="clean_gt"

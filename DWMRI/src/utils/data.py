@@ -100,6 +100,8 @@ class StanfordDataLoader:
     def __init__(self, bvalue=2500, noise_sigma=0.01):
         self.bvalue = bvalue
         self.noise_sigma = noise_sigma
+        self.norm_params_ = None
+        self.affine_ = None
         logging.info(
             f"StanfordDataLoader initialized - bvalue: {bvalue}, noise_sigma: {noise_sigma}"
         )
@@ -121,14 +123,20 @@ class StanfordDataLoader:
         logging.info("Loading Stanford HARDI data...")
         hardi_fname, _, _ = get_fnames("stanford_hardi")
         logging.info(f"Stanford HARDI data file: {hardi_fname}")
-        data, _ = load_nifti(hardi_fname)
+        data, affine = load_nifti(hardi_fname)
         logging.info(f"Stanford data loaded - shape: {data.shape}, dtype: {data.dtype}")
         logging.info(
             f"Stanford data stats - min: {data.min():.4f}, max: {data.max():.4f}, mean: {data.mean():.4f}"
         )
 
         logging.info("Normalizing Stanford data spatial dimensions...")
-        data_norm_spatial = normalize_spatial_dimensions(data)
+        # Store norm_params_ + affine_ (mirrors DBrainDataLoader, data.py:77-78) so
+        # denoised arrays can be denormalized back to physical intensities for CSD
+        # (see src/paper_eval/export_denoised.py). Previously this returned None for
+        # norm_params, which silently skipped the denorm branch in run.py for Stanford.
+        data_norm_spatial, norm_params = normalize_spatial_dimensions_with_params(data)
+        self.norm_params_ = norm_params
+        self.affine_ = affine
         logging.info(
             f"Normalized Stanford data stats - min: {data_norm_spatial.min():.4f}, max: {data_norm_spatial.max():.4f}, mean: {data_norm_spatial.mean():.4f}"
         )
