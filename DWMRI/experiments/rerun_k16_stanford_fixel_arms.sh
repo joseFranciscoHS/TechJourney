@@ -82,10 +82,21 @@ LARGE_MODEL_ARGS=(
   --set 'stanford.model.heads=[1,2,4]'
   --set 'stanford.model.ffn_expansion_factor=2.66'
   --set 'stanford.model.num_refinement_blocks=4'
+  # Keep large capacity artifacts off the baseline Restormer-3D path
+  # (checkpoints/metrics/images would otherwise collide under rgs_G150_K16/).
+  --set 'stanford.model.path_tag=restormer3d_large'
 )
 
-# Memory-safe progressive stages for the large ~2M Restormer (same OOM lesson as D-Brain).
-LARGE_PROGRESSIVE_STAGES='[{"patch_size":32,"batch_size":24,"epochs":300,"step":8},{"patch_size":24,"batch_size":24,"epochs":300,"step":6},{"patch_size":16,"batch_size":64,"epochs":300,"step":4}]'
+# Progressive stages for the large ~2M Restormer (same batch recipe as
+# rerun_k16_restormer3d_large.sh on D-Brain). Default targets L4 24GB / L40S.
+# Must use single quotes around the JSON so bash does not strip key quotes
+# (double-quoted ${VAR:-[...]} mangles "patch_size" and --set gets a raw str).
+# T4 (16GB) OOMs at batch=24/patch=32 — override if needed:
+#   LARGE_PROGRESSIVE_STAGES='[{"patch_size":32,"batch_size":4,"epochs":300,"step":8},{"patch_size":24,"batch_size":8,"epochs":300,"step":6},{"patch_size":16,"batch_size":16,"epochs":300,"step":4}]' \
+#     RUN_TRAIN_LARGE=1 ...
+if [[ -z "${LARGE_PROGRESSIVE_STAGES:-}" ]]; then
+  LARGE_PROGRESSIVE_STAGES='[{"patch_size":32,"batch_size":24,"epochs":300,"step":8},{"patch_size":24,"batch_size":24,"epochs":300,"step":6},{"patch_size":16,"batch_size":64,"epochs":300,"step":4}]'
+fi
 
 cd src
 

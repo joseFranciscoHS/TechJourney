@@ -67,6 +67,7 @@ dbrain:
     denoised_out_dir: "tmp/paper_final_k16_stanford_fixels/arrays"
   model:
     backbone: res_cnn_2d  # res_cnn_2d | restormer_2d (controls run2d_hybrid only)
+    path_tag: null  # optional; e.g. restormer3d_large -> _bb_restormer3d_large in artifact paths
     in_channel: 16
     out_channel: 1
     output_activation: "prelu"
@@ -151,6 +152,9 @@ stanford:
           step: 4
   model:
     backbone: res_cnn_2d  # res_cnn_2d | restormer_2d (controls run2d_hybrid only)
+    # Optional filesystem tag so capacity variants do not collide with baseline
+    # under checkpoints/metrics/images (e.g. restormer3d_large -> _bb_restormer3d_large).
+    path_tag: null
     in_channel: 16
     out_channel: 1
     output_activation: "prelu"

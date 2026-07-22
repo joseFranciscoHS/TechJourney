@@ -87,6 +87,26 @@ def _volume_path_segment(settings) -> str:
     return f"num_volumes_{settings.data.num_volumes}"
 
 
+def _model_path_tag_segment(settings) -> str | None:
+    """Optional filesystem token so capacity variants do not collide.
+
+    Set via ``--set stanford.model.path_tag=restormer3d_large`` (or dbrain.*).
+    Stored as ``_bb_<tag>`` under checkpoints/metrics/images, matching the 2D
+    ``_bb_res_cnn_2d`` convention.
+    """
+    tag = getattr(settings.model, "path_tag", None)
+    if tag is None:
+        return None
+    t = str(tag).strip().replace("/", "_").replace(" ", "_")
+    if not t:
+        return None
+    if t.startswith("_bb_"):
+        return t
+    if t.startswith("_"):
+        return f"_bb{t}"
+    return f"_bb_{t}"
+
+
 def _patch_volume_dim(settings) -> int:
     if _is_rgs(settings) or _is_sequential(settings):
         return int(
@@ -581,7 +601,12 @@ def main(
         bvalue_segment = f"b{getattr(settings.data, 'bvalue', 2500)}"
         vol_seg = _volume_path_segment(settings)
         _sub_seg = training_subset_checkpoint_segment(settings.train)
-        _path_mid = [bvalue_segment, vol_seg] + ([_sub_seg] if _sub_seg else [])
+        _tag_seg = _model_path_tag_segment(settings)
+        _path_mid = (
+            [bvalue_segment, vol_seg]
+            + ([_sub_seg] if _sub_seg else [])
+            + ([_tag_seg] if _tag_seg else [])
+        )
         checkpoint_dir = os.path.join(
             settings.train.checkpoint_dir,
             *_path_mid,
@@ -819,8 +844,7 @@ def main(
 
             metrics_dir = os.path.join(
                 settings.reconstruct.metrics_dir,
-                bvalue_segment,
-                vol_seg,
+                *_path_mid,
                 noise_segment,
                 f"learning_rate_{settings.train.learning_rate}",
             )
@@ -991,8 +1015,7 @@ def main(
                 logging.info("Generating images...")
                 images_dir = os.path.join(
                     settings.reconstruct.images_dir,
-                    bvalue_segment,
-                    vol_seg,
+                    *_path_mid,
                     noise_segment,
                     f"learning_rate_{settings.train.learning_rate}",
                 )
