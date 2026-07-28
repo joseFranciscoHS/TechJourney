@@ -202,10 +202,15 @@ def maybe_export_denoised(
         )
         return None
     if affine is None:
+        # D-Brain crops start at voxel (0,0,0); an identity spacing affine is
+        # enough for NIfTI sidecar / qualitative panels when the loader did not
+        # retain the original header affine.
         logging.warning(
-            "denoised export skipped for arm '%s': no affine available", arm
+            "denoised export for arm '%s': no affine available; using 1.4mm identity",
+            arm,
         )
-        return None
+        affine = np.eye(4, dtype=np.float64)
+        affine[0, 0] = affine[1, 1] = affine[2, 2] = 1.4
 
     vol_4d = assemble_denorm_4d(
         recon_native_xyzv, original_xyzv_b0, nb0, take_volumes, norm_params

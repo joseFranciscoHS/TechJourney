@@ -2,7 +2,7 @@
   "status": "ok",
   "output_root": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_out",
   "registry_path": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_out/registry.jsonl",
-  "metrics_rows": 56,
+  "metrics_rows": 60,
   "runtime_rows": 136,
   "outputs": {
     "metrics_csv": "/teamspace/studios/this_studio/TechJourney/DWMRI/tmp/paper_final_k16_out/paper_tables/paper_metrics_summary.csv",

@@ -243,105 +243,12 @@ Hybrid RGS defines the gradient-subset sampling, target masking, $K$-channel inp
 \subsubsection{DRCNet Instantiation}
 DRCNet provides a compact recurrent-convolutional 3D instantiation of Hybrid RGS. The model retains the original single-level encoder--decoder and Recurrent Convolutional Denoising Block (RCDB) \cite{gurrola2024drcnet}. The RCDB performs four recurrent refinements and uses parallel $3\times1\times1$, $1\times3\times1$, and $1\times1\times3$ factorized convolutions fused by a $1\times1\times1$ convolution. This configuration preserves the recurrent inductive bias of DRCNet while remaining practical for volumetric patches.
 
-The adaptation is limited primarily to the Hybrid RGS input--output interface. The network receives $K$ channels containing the randomly sampled gradient context and masked target but produces one denoised target channel; consequently, the original global input residual is undefined and is removed. The feature width is reduced from 64 to 32 maps to control memory use, and the output activation is either PReLU or sigmoid. Optional FiLM conditioning is applied at the bottleneck and decoder using the target-gradient metadata vector $[\cos_x,\cos_y,\cos_z,b_{\mathrm{norm}}]$ \cite{perez2018film}. The resulting model contains approximately 0.116M parameters at $K=16$ (Table~\ref{tab:sampling_ablations}). Figure~\ref{fig:drcnet_architecture} summarizes DRCNet3D alongside the independent Plain-CNN-2D comparison architecture.
+The adaptation is limited primarily to the Hybrid RGS input--output interface. The network receives $K$ channels containing the randomly sampled gradient context and masked target but produces one denoised target channel; consequently, the original global input residual is undefined and is removed. The feature width is reduced from 64 to 32 maps to control memory use, and the output activation is either PReLU or sigmoid. Optional FiLM conditioning is applied at the bottleneck and decoder using the target-gradient metadata vector $[\cos_x,\cos_y,\cos_z,b_{\mathrm{norm}}]$ \cite{perez2018film}. The resulting model contains approximately 0.116M parameters at $K=16$ (Table~\ref{tab:sampling_ablations}). Figure~\ref{fig:drcnet_architecture} summarizes the DRCNet3D Hybrid RGS instantiation.
 
 \begin{figure}[H]
   \centering
-  \footnotesize
-  \resizebox{0.60\linewidth}{!}{%
-    \begin{tikzpicture}[
-        node distance=0.5cm and 0.8cm,
-        block/.style={rectangle, draw, minimum width=1.6cm, minimum height=0.6cm, align=center, fill=blue!10},
-        proc/.style={rectangle, draw, minimum width=1.8cm, minimum height=1.0cm, align=center, fill=orange!15},
-        skip/.style={->, thick, dashed, gray, bend right=30},
-        >=Stealth
-      ]
-
-      % Panel (a) - DRCNet3D architecture
-      \node[font=\small\bfseries] at (-3.5, 4.0) {(a) DRCNet3D Architecture};
-
-      % Input
-      \node[block] (input) at (-3.5, 3.0) {Input\\$K$ ch};
-
-      % Encoder
-      \node[block, below=0.4cm of input] (enc_conv) {Conv3d\\$3\!\times\!3\!\times\!3$};
-      \node[block, below=0.4cm of enc_conv] (down) {Conv3d\\$2\!\times\!2\!\times\!2$\\stride 2};
-
-      % FiLM at bottleneck
-      \node[block, below=0.4cm of down, fill=yellow!20, minimum width=0.8cm, minimum height=0.4cm, font=\tiny] (film1) {FiLM};
-
-      % RCDB recurrent loop
-      \node[proc, below=0.4cm of film1] (rcdb) {RCDB\\$\times 4$ iter\\GRU gates\\Factorized};
-
-      % Skip connection from encoder
-      \node[coordinate, right=1.5cm of enc_conv] (skip_point) {};
-
-      % Decoder
-      \node[block, below=0.4cm of rcdb] (up) {ConvTranspose3d\\$2\!\times\!2\!\times\!2$\\stride 2};
-
-      % FiLM at decoder
-      \node[block, below=0.4cm of up, fill=yellow!20, minimum width=0.8cm, minimum height=0.4cm, font=\tiny] (film2) {FiLM};
-
-      % Concatenation
-      \node[block, below=0.4cm of film2] (concat) {Concat\\w/ skip};
-
-      % Output
-      \node[block, below=0.4cm of concat] (out_conv1) {Conv3d\\$1\!\times\!1\!\times\!1$};
-      \node[block, below=0.4cm of out_conv1] (out_conv2) {Conv3d\\$3\!\times\!3\!\times\!3$};
-      \node[block, below=0.4cm of out_conv2] (out_act) {PReLU/\\Sigmoid};
-      \node[block, below=0.4cm of out_act] (output) {Output\\$1$ ch};
-
-      % Connections
-      \draw[->, thick] (input) -- (enc_conv);
-      \draw[->, thick] (enc_conv) -- (down);
-      \draw[->, thick] (down) -- (film1);
-      \draw[->, thick] (film1) -- (rcdb);
-      \draw[->, thick] (rcdb) -- (up);
-      \draw[->, thick] (up) -- (film2);
-      \draw[->, thick] (film2) -- (concat);
-      \draw[->, thick] (concat) -- (out_conv1);
-      \draw[->, thick] (out_conv1) -- (out_conv2);
-      \draw[->, thick] (out_conv2) -- (out_act);
-      \draw[->, thick] (out_act) -- (output);
-
-      % Skip connection
-      \draw[->, thick, dashed, gray] (enc_conv.east) -- ++(0.8,0) |- (concat.east);
-
-      % Note about no global residual
-      \node[below=0.1cm of output, font=\tiny, align=center, text width=3cm] {No $+x$ global residual\\(channel mismatch)};
-
-      % FiLM annotation
-      \node[right=0.2cm of film1, font=\tiny, align=center] {$[\cos_x, \cos_y,$\\$\cos_z, b_{\text{norm}}]$};
-
-      % RCDB detail inset
-      \node[below=0.05cm of rcdb, font=\tiny, align=center] {$u_t, r_t$ gates\\Dense factorized\\$3\!\times\!1\!\times\!1$, $1\!\times\!3\!\times\!1$,\\$1\!\times\!1\!\times\!3$};
-
-      % Panel (b) - Volumetric backbone vs lightweight 2D baseline
-      \node[font=\small\bfseries] at (3.5, 4.0) {(b) Volumetric and lightweight 2D backbones};
-
-      \node[block, minimum width=2.5cm, minimum height=1.8cm] (drc3d) at (2.0, 1.5) {
-        \textbf{DRCNet3D}\\
-        \tiny Single-level U-Net\\
-        RCDB recurrent\\
-        Gated, factorized\\
-        FiLM optional\\
-        0.116M params
-      };
-
-      \node[block, minimum width=2.5cm, minimum height=1.8cm] (drc2d) at (5.0, 1.5) {
-        \textbf{Plain-CNN-2D}\\
-        \tiny Feed-forward CNN\\
-        3-layer 2D CNN\\
-        \textbf{No gating}\\
-        \textbf{No recurrence}\\
-        0.014M params
-      };
-
-      \node[below=0.3cm of drc2d, font=\tiny, align=center, text width=2.8cm] {Both use Hybrid RGS\\Plain-CNN-2D is not\\an RCDB port};
-
-    \end{tikzpicture}%
-  }% end resizebox
-  \caption{Convolutional backbone instantiations under the same Hybrid RGS interface. \textbf{(a)} DRCNet3D uses a single-level encoder--decoder and four RCDB recurrent refinements with factorized 3D convolutions. The $K$-input, one-output-channel interface removes the original global residual, and optional FiLM conditions the bottleneck and decoder. \textbf{(b)} Plain-CNN-2D is an independent three-layer feed-forward baseline without gating or recurrence. The models contain 0.116M and 0.014M parameters, respectively (Tables~\ref{tab:sampling_ablations} and~\ref{tab:3d_vs_2d}).}
+  \includegraphics[width=0.42\linewidth]{figures/arch_drcnet3d.png}
+  \caption{DRCNet3D under the Hybrid RGS interface: a single-level encoder--decoder with four RCDB recurrent refinements and factorized 3D convolutions. The $K$-input, one-output-channel interface removes the original global residual; optional FiLM (yellow) conditions the bottleneck and decoder. Parameter count: 0.116M at $K=16$ (Table~\ref{tab:sampling_ablations}).}
   \label{fig:drcnet_architecture}
 \end{figure}
 
@@ -352,135 +259,42 @@ As in the DRCNet instantiation, the model receives $K$ input channels and produc
 
 A larger Restormer3D configuration is included only as a capacity-control experiment. It preserves the same three-level topology and Hybrid RGS protocol while increasing the embedding width from 12 to 24, the block counts from $(1,2,2)$ to $(2,4,10)$, the attention-head counts from $(1,2,2)$ to $(1,2,4)$, the feed-forward expansion factor from 1.5 to 2.66, and the refinement depth from two to four blocks. This model contains approximately 2.10M parameters and is used to distinguish the effect of backbone capacity from that of spatial dimensionality (Table~\ref{tab:3d_vs_2d}).
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.72\linewidth]{figures/arch_restormer3d.png}
+  \caption{Restormer3D under Hybrid RGS: three-level encoder--decoder with volumetric MDTA and GDFN blocks, channel widths of 12, 24, and 48, skip connections, refinement blocks, and a learned affine output head. Optional FiLM layers (yellow) condition three stages on the target-gradient metadata. Parameter count: approximately 0.178M (Table~\ref{tab:3d_vs_2d}).}
+  \label{fig:restormer3d_arch}
+\end{figure}
+
+
 \subsubsection{Two-Dimensional Backbones for Architecture Evaluation}
-\todo[author=FHS, color=cyan]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
 The architecture evaluation (Section~\ref{subsec:capacity_dimensionality}, Table~\ref{tab:3d_vs_2d}) uses three slice-wise backbones. Plain-CNN-2D and Res-CNN-2D are deliberately small, independent convolutional models used to test whether Hybrid RGS works with inexpensive 2D architectures. Restormer-2D follows the original two-dimensional Restormer formulation and is approximately capacity matched to Restormer3D, providing the only controlled dimensionality comparison in this group.
 
 Plain-CNN-2D contains three convolutional layers with PReLU activation and no recurrence, gating, attention, or skip connections. Res-CNN-2D uses a convolutional embedding, lightweight residual blocks with GELU activation, and a single-channel output projection. They contain approximately 0.014M and 0.015M parameters, respectively, and are intended as minimal baselines rather than two-dimensional ports of DRCNet or Restormer. In particular, Plain-CNN-2D is distinct from the recurrent DRCNet-2D architecture of Gurrola et al. \cite{gurrola2024drcnet}.
 
-Restormer-2D retains the same baseline widths, block counts, attention heads, feed-forward expansion, and refinement depth as Restormer3D while using the original two-dimensional MDTA/GDFN blocks and PixelShuffle-based resampling \cite{restormer}. It contains approximately 0.149M parameters, compared with 0.178M for Restormer3D, and provides the controlled within-family dimensionality comparison shown in Figure~\ref{fig:backbone_comparison}.
+Restormer-2D retains the same baseline widths, block counts, attention heads, feed-forward expansion, and refinement depth as Restormer3D while using the original two-dimensional MDTA/GDFN blocks and PixelShuffle-based resampling \cite{restormer}. It contains approximately 0.149M parameters, compared with 0.178M for Restormer3D, and provides the controlled within-family dimensionality comparison summarized in Figures~\ref{fig:restormer2d_arch}--\ref{fig:res_cnn2d_arch} and Table~\ref{tab:3d_vs_2d}.
 
 All 2D backbones use the same random gradient subsets, Bernoulli masking probability $p=0.3$, masked loss, optimizer, and progressive in-plane patch schedule. They process axial slices independently and receive no through-plane context. Comparisons involving Plain-CNN-2D or Res-CNN-2D jointly change architecture, capacity, and dimensionality, whereas Restormer-2D versus Restormer3D approximately controls architecture and capacity to isolate spatial dimensionality.
 
 \begin{figure}[H]
   \centering
-  \footnotesize
-  \resizebox{0.42\linewidth}{!}{%
-    \begin{tikzpicture}[
-        node distance=0.5cm and 0.8cm,
-        block/.style={rectangle, draw, minimum width=1.6cm, minimum height=0.6cm, align=center, fill=blue!10},
-        enc/.style={rectangle, draw, minimum width=1.4cm, minimum height=1.2cm, align=center, fill=blue!15},
-        dec/.style={rectangle, draw, minimum width=1.4cm, minimum height=1.2cm, align=center, fill=green!15},
-        skip/.style={->, thick, dashed, gray, bend right=40},
-        >=Stealth
-      ]
-
-      % Input
-      \node[block] (input) at (0, 2.5) {Input\\$K$ ch};
-      \node[block, below=of input] (embed) {Patch\\Embed};
-
-      % Encoder
-      \node[enc, below=of embed] (enc1) {Enc L1\\$N\!=\!1$\\MDTA\\$h\!=\!1$};
-      \node[block, below=0.3cm of enc1] (down1) {Down\\$2\times$};
-      \node[enc, below=of down1] (enc2) {Enc L2\\$N\!=\!2$\\MDTA\\$h\!=\!2$};
-      \node[block, right=0.2cm of enc2, fill=yellow!20, minimum width=0.8cm, minimum height=0.4cm, font=\tiny] (film1) {FiLM};
-      \node[block, below=0.3cm of enc2] (down2) {Down\\$2\times$};
-
-      % Bottleneck
-      \node[enc, below=of down2, fill=purple!15] (latent) {Latent\\$N\!=\!2$\\48 ch};
-      \node[block, right=0.2cm of latent, fill=yellow!20, minimum width=0.8cm, minimum height=0.4cm, font=\tiny] (film2) {FiLM};
-
-      % Decoder
-      \node[block, right=1.8cm of down2] (up2) {Up\\$2\times$};
-      \node[dec, right=0.3cm of up2] (dec2) {Dec L2\\$N\!=\!2$\\$h\!=\!2$};
-      \node[block, left=0.2cm of dec2, fill=yellow!20, minimum width=0.8cm, minimum height=0.4cm, font=\tiny] (film3) {FiLM};
-      \node[block, right=1.8cm of down1, above=0.3cm of up2] (up1) {Up\\$2\times$};
-      \node[dec, right=0.3cm of up1] (dec1) {Dec L1\\$N\!=\!1$\\$h\!=\!1$};
-
-      % Output
-      \node[block, above=of dec1] (refine) {Refine\\$N\!=\!2$};
-      \node[block, above=of refine] (output) {Conv+PReLU\\$\gamma\!\cdot\!x\!+\!\beta$};
-      \node[block, above=of output] (out) {Output\\$1$ ch};
-
-      % Connections
-      \draw[->, thick] (input) -- (embed);
-      \draw[->, thick] (embed) -- (enc1) node[midway, right, font=\tiny] {12 ch};
-      \draw[->, thick] (enc1) -- (down1);
-      \draw[->, thick] (down1) -- (enc2) node[midway, right, font=\tiny] {24 ch};
-      \draw[->, thick] (enc2) -- (down2);
-      \draw[->, thick] (down2) -- (latent) node[midway, right, font=\tiny] {48 ch};
-      \draw[->, thick] (latent) -- (up2);
-      \draw[->, thick] (up2) -- (dec2);
-      \draw[->, thick] (dec2) -- (up1);
-      \draw[->, thick] (up1) -- (dec1);
-      \draw[->, thick] (dec1) -- (refine);
-      \draw[->, thick] (refine) -- (output);
-      \draw[->, thick] (output) -- (out);
-
-      % Skip connections
-      \draw[skip] (enc1.east) to (dec1.west);
-      \draw[skip] (enc2.east) to (dec2.west);
-
-      % FiLM annotation
-      \node[above=0.1cm of film2, font=\tiny, align=center] {$[\cos_x, \cos_y,$\\$\cos_z, b_{\text{norm}}]$};
-
-    \end{tikzpicture}%
-  }% end resizebox
-  \caption{Transformer-style backbone instantiations under Hybrid RGS. Restormer3D uses a three-level encoder--decoder with volumetric MDTA and GDFN blocks, channel widths of 12, 24, and 48, skip connections, refinement blocks, and a learned affine output head. Optional FiLM layers (yellow) condition three stages on the target-gradient metadata. Restormer-2D follows the original two-dimensional Restormer formulation, using 2D MDTA/GDFN blocks and PixelUnshuffle/PixelShuffle resampling with approximately matched baseline topology and capacity.}
-  \label{fig:restormer3d_arch}
+  \includegraphics[width=0.72\linewidth]{figures/arch_restormer2d.png}
+  \caption{Restormer-2D under Hybrid RGS: same baseline topology and capacity as Restormer3D, but with 2D MDTA/GDFN blocks and PixelUnshuffle/PixelShuffle resampling for axial slice-wise processing (approximately 0.149M parameters; Table~\ref{tab:3d_vs_2d}).}
+  \label{fig:restormer2d_arch}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \footnotesize
-  \todo[author=FHS, color=cyan, inline]{new 2026-07-14 Original Restormer 2D vs 3D vs other backbones}
-  \resizebox{\linewidth}{!}{%
-    \begin{tikzpicture}[
-        node distance=0.5cm and 0.8cm,
-        block/.style={rectangle, draw, minimum width=1.6cm, minimum height=0.6cm, align=center, fill=blue!10},
-        >=Stealth
-      ]
+  \includegraphics[width=0.38\linewidth]{figures/arch_plain_cnn2d.png}
+  \caption{Plain-CNN-2D under Hybrid RGS: independent three-layer feed-forward baseline with $K$ input channels and one output channel (approximately 0.014M parameters; Table~\ref{tab:3d_vs_2d}).}
+  \label{fig:plain_cnn2d_arch}
+\end{figure}
 
-      \node[font=\small\bfseries] at (3.4, 2.7) {Restormer dimensionality pair and independent 2D baseline};
-
-      \node[block, minimum width=2.9cm, minimum height=2.1cm, text width=2.5cm, font=\tiny] (rest3d) at (0, 0) {
-        \normalsize\textbf{Restormer3D}\\[2pt]
-        \tiny Volumetric, three-level\\
-        MDTA+GDFN (3D)\\
-        Learnable 3D resampling\\
-        Attention; FiLM optional\\
-        0.178M params
-      };
-
-      \node[block, minimum width=2.9cm, minimum height=2.1cm, text width=2.5cm, font=\tiny] (rest2d) at (3.4, 0) {
-        \normalsize\textbf{Restormer-2D}\\[2pt]
-        \tiny Slice-wise, three-level\\
-        MDTA+GDFN (2D)\\
-        PixelUnshuffle/\\
-        PixelShuffle\\
-        \textbf{Same-family MDTA}\\
-        0.149M params
-      };
-
-      \node[block, minimum width=2.9cm, minimum height=2.1cm, text width=2.5cm, font=\tiny] (rescnn2d) at (6.8, 0) {
-        \normalsize\textbf{Res-CNN-2D}\\[2pt]
-        \tiny Slice-wise residual CNN\\
-        Conv-GELU-Conv\\
-        \textbf{No attention}\\
-        Not an MDTA port\\
-        0.015M params
-      };
-
-      \node[below=0.35cm of rest3d, font=\tiny, align=center, text width=2.9cm] {Same-family 3D backbone};
-      \node[below=0.35cm of rest2d, font=\tiny, align=center, text width=2.9cm] {Original 2D formulation\\matched baseline topology};
-      \node[below=0.35cm of rescnn2d, font=\tiny, align=center, text width=2.9cm] {Generic residual CNN\\(different family)};
-
-      \node[below=1.7cm of rest2d, font=\tiny, align=center, text width=9.5cm] {All three backbones are trained with identical Hybrid RGS sampling, masking, and loss (Table~\ref{tab:3d_vs_2d}).};
-
-    \end{tikzpicture}%
-  }% end resizebox
-  \caption{Backbones used in the architecture evaluation. Restormer3D and the original Restormer-2D formulation form an approximately capacity-matched pair for testing volumetric versus slice-wise processing within the Restormer family. Res-CNN-2D is an independent, much smaller residual architecture that tests whether Hybrid RGS remains effective with limited model capacity. All three use the same gradient sampling, target masking, and self-supervised loss (Table~\ref{tab:3d_vs_2d}).}
-  \label{fig:backbone_comparison}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.38\linewidth]{figures/arch_res_cnn2d.png}
+  \caption{Res-CNN-2D under Hybrid RGS: convolutional embedding, Conv--GELU--Conv residual blocks, and a single-channel projection (approximately 0.015M parameters; Table~\ref{tab:3d_vs_2d}).}
+  \label{fig:res_cnn2d_arch}
 \end{figure}
 
 \subsection{Inference}
@@ -584,6 +398,13 @@ The full DRCNet Hybrid RGS objective achieves the highest image-domain fidelity,
     \end{tabular}
   }
 \end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/drcnet_objective_ablation_visual.png}
+  \caption{DRCNet objective-ablation visual on D-Brain ($\sigma=0.1$): angular-only, spatial-only, sequential-hybrid, and Hybrid RGS (representative comparison slices from the corresponding runs). Restormer angular/spatial ablations were not trained.}
+  \label{fig:drcnet_objective_ablation}
+\end{figure}
 \par\noindent\textit{Note:} $^\dagger$MD-MAE values are reported in arbitrary units derived from the D-Brain phantom intensity scale and should be interpreted as relative comparisons across methods.
 
 \subsection{Sampling Strategy Ablations}
@@ -636,10 +457,25 @@ The runtime and model-size trends favor moderate values of $K$. For DRCNet, the 
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.78\linewidth]{figures/k_sweep_psnr_roi.png}
+  \includegraphics[width=0.95\linewidth]{figures/k_sweep_two_panel.png}
   \caption{$K$-sweep visualization on D-Brain. The plot shows PSNR-ROI versus $K \in \{5,10,16,24,30\}$ for DRCNet and Restormer, with the fixed cross-model operating point $K=16$ annotated.}
   \label{fig:k_sweep}
 \end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/accuracy_cost_pareto.png}
+  \caption{Accuracy--cost Pareto on D-Brain ($K=16$, $\sigma=0.1$): PSNR-ROI versus inference time per volume. Marker families distinguish classical/self-supervised baselines, Hybrid RGS 3D backbones, and Hybrid RGS 2D backbones (Table~\ref{tab:3d_vs_2d}).}
+  \label{fig:accuracy_cost_pareto}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/rgs_vs_sequential_schematic.png}
+  \caption{Schematic comparison of sequential sliding $K$-windows versus random gradient subsets. Sequential windows can leave some directions under-used as targets, whereas RGS samples random $K$-subsets so every direction is a valid target over training (Table~\ref{tab:sampling_ablations}).}
+  \label{fig:rgs_vs_sequential}
+\end{figure}
+
 
 Figure~\ref{fig:k_sweep} presents the same tradeoff as a quality-versus-input-size curve. Hybrid RGS does not require a large fraction of the diffusion volumes to be processed simultaneously: moderate subsets provide useful angular context while preserving feasible 3D training and inference. However, the optimal subset size remains backbone dependent.
 
@@ -686,9 +522,9 @@ The independent 2D architectures are also the least expensive: Plain-CNN-2D uses
 \subsection{Robustness to Noise Level}
 The effective signal-to-noise ratio and artifact severity of DW-MRI data vary with scanner hardware, field strength, coil sensitivity, acquisition time, acceleration, and patient motion. A practical denoising method should therefore behave predictably across signal-to-noise regimes rather than being tuned to a single synthetic noise level. We assess this behavior by varying the Rician noise level on D-Brain and examining whether Hybrid RGS degrades gradually while preserving diffusion-derived quantities. This is a matched-noise experiment rather than a cross-noise transfer study: each model is trained and evaluated at the same noise level. The results therefore characterize the robustness of the training protocol across noise conditions, not generalization to an unseen noise distribution.
 
-We evaluate $\sigma \in \{0.05,0.10,0.15,0.20\}$ using the same D-Brain ground-truth reference and the same Hybrid RGS configuration ($K=16$). DRCNet-Hybrid-RGS and Restormer-Hybrid-RGS are trained separately at each noise level, and MP-PCA is evaluated at all four levels. Patch2Self and MD-S2S results are available only for $\sigma=0.05$ and $0.10$. The analysis focuses on PSNR-ROI as the primary image-domain metric and FA-MAE as a downstream tensor-preservation metric. The $\sigma=0.10$, $K=16$ entries correspond to the primary experimental condition; models trained for other ablations are reported only in their respective ablation tables.
+We evaluate $\sigma \in \{0.05,0.10,0.15,0.20\}$ using the same D-Brain ground-truth reference and the same Hybrid RGS configuration ($K=16$). DRCNet-Hybrid-RGS and Restormer-Hybrid-RGS are trained separately at each noise level, and MP-PCA is evaluated at all four levels. Patch2Self (DIPY OLS) and MD-S2S are evaluated at all four noise levels; each $\sigma$ uses independently corrupted D-Brain data with the same seed as the main experiments. The analysis focuses on PSNR-ROI as the primary image-domain metric and FA-MAE as a downstream tensor-preservation metric. The $\sigma=0.10$, $K=16$ entries correspond to the primary experimental condition; models trained for other ablations are reported only in their respective ablation tables.
 
-Table~\ref{tab:sigma_sweep} and Figure~\ref{fig:sigma_robustness} show an overall decline in PSNR-ROI as the noise level increases. MP-PCA achieves the highest PSNR-ROI at every tested level, from $33.33$ dB at $\sigma=0.05$ to $23.55$ dB at $\sigma=0.20$. Its strong performance is consistent with local PCA assumptions being well matched to spatially homogeneous synthetic Rician corruption. DRCNet-Hybrid-RGS declines from $29.76$ to $23.52$ dB across the sweep. Restormer-Hybrid-RGS declines from $27.19$ to $23.02$ dB overall, with a partial recovery at $\sigma=0.15$. Both neural models remain stable and show gradual degradation rather than abrupt failure.
+Table~\ref{tab:sigma_sweep} and Figure~\ref{fig:sigma_robustness} show an overall decline in PSNR-ROI as the noise level increases. MP-PCA achieves the highest PSNR-ROI at every tested level, from $33.33$ dB at $\sigma=0.05$ to $23.55$ dB at $\sigma=0.20$. Its strong performance is consistent with local PCA assumptions being well matched to spatially homogeneous synthetic Rician corruption. DRCNet-Hybrid-RGS declines from $29.76$ to $23.52$ dB across the sweep. Restormer-Hybrid-RGS declines from $27.19$ to $23.02$ dB overall, with a partial recovery at $\sigma=0.15$. Both neural models remain stable and show gradual degradation rather than abrupt failure. Patch2Self and MD-S2S likewise decline at higher noise ($21.48$ and $19.10$~dB PSNR-ROI for Patch2Self; $15.10$ and $14.57$~dB for MD-S2S at $\sigma=0.15$ and $0.20$), and Hybrid RGS retains a substantial margin over both baselines at these levels.
 
 The low-noise regime illustrates the tradeoff between classical denoising and learned self-supervision. At $\sigma=0.05$, MP-PCA achieves the best PSNR-ROI and FA-MAE. DRCNet-Hybrid-RGS nevertheless substantially outperforms Patch2Self ($29.76$ versus $23.74$ dB) and MD-S2S ($16.77$ dB) in image-domain fidelity. Restormer-Hybrid-RGS has lower PSNR-ROI than DRCNet but also a lower, better FA-MAE ($0.2170$ versus $0.2579$). Thus, the methods occupy different positions in the image-fidelity versus tensor-preservation tradeoff even under mild corruption.
 
@@ -696,7 +532,7 @@ At higher noise levels, DRCNet-Hybrid-RGS remains close to MP-PCA in PSNR-ROI: $
 
 \begin{table}[ht]
   \centering
-  \caption{Noise-level robustness on D-Brain. Values are PSNR-ROI (dB); FA-MAE is shown in parentheses for the proposed methods and MP-PCA. Patch2Self and MD-S2S are available only at $\sigma=0.05$ and $0.10$. Each neural model is trained and evaluated at the same Rician noise level. Bold indicates the highest PSNR-ROI at each noise level.}
+  \caption{Noise-level robustness on D-Brain. Values are PSNR-ROI (dB); FA-MAE is shown in parentheses for the proposed methods and MP-PCA. All five methods are reported at $\sigma\in\{0.05,0.10,0.15,0.20\}$. Each neural model is trained and evaluated at the same Rician noise level. Bold indicates the highest PSNR-ROI at each noise level.}
   \label{tab:sigma_sweep}
   \resizebox{\linewidth}{!}{%
     \begin{tabular}{lccccc}
@@ -705,8 +541,8 @@ At higher noise levels, DRCNet-Hybrid-RGS remains close to MP-PCA in PSNR-ROI: $
       \midrule
       0.05 & \textbf{33.33} (0.1009) & 23.74 & 16.77 & 29.76 (0.2579) & 27.19 (0.2170) \\
       0.10 & \textbf{28.44} (0.0898) & 21.31 & 15.28 & 26.93 (0.2575) & 23.43 (0.2238) \\
-      0.15 & \textbf{25.54} (0.0978) & -- & -- & 25.11 (0.2202) & 24.63 (0.2452) \\
-      0.20 & \textbf{23.55} (0.0863) & -- & -- & 23.52 (0.2211) & 23.02 (0.2597) \\
+      0.15 & \textbf{25.54} (0.0978) & 21.48 & 15.10 & 25.11 (0.2202) & 24.63 (0.2452) \\
+      0.20 & \textbf{23.55} (0.0863) & 19.10 & 14.57 & 23.52 (0.2211) & 23.02 (0.2597) \\
       \bottomrule
     \end{tabular}
   }
@@ -714,8 +550,8 @@ At higher noise levels, DRCNet-Hybrid-RGS remains close to MP-PCA in PSNR-ROI: $
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.78\linewidth]{figures/sigma_robustness_psnr_roi.png}
-  \caption{Noise-robustness curve on D-Brain. The plot shows PSNR-ROI versus Rician noise level $\sigma \in \{0.05,0.10,0.15,0.20\}$. Patch2Self and MD-S2S are plotted only at $\sigma=0.05$ and $0.10$, where results are available.}
+  \includegraphics[width=0.95\linewidth]{figures/sigma_robustness_two_panel.png}
+  \caption{Noise-robustness on D-Brain. Left: PSNR-ROI versus Rician noise level $\sigma \in \{0.05,0.10,0.15,0.20\}$ for all five methods (Patch2Self: DIPY OLS). Right: FA-MAE for the same sweep. Each method is trained and evaluated at the same noise level.}
   \label{fig:sigma_robustness}
 \end{figure}
 
@@ -839,16 +675,35 @@ The supervised reference runs provide context for interpreting the self-supervis
 \end{table}
 \par\noindent\textit{Note:} $^\dagger$MD-MAE for D-Brain rows is reported in arbitrary units derived from the phantom intensity scale and should be interpreted as a relative comparison across methods, not as a physical diffusivity in mm$^2$/s.
 
-\todo[author=FHS,color=yellow, inline]{Replace this planned qualitative comparison with final image panels or remove the figure before submission. The final figure should include noisy input, MP-PCA, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, reference image when available, and error maps.}
+\todo[author=FHS,color=yellow, inline]{D-Brain multi-method qualitative + FA/MD panels: baselines (gt/noisy/MP-PCA/P2S) and MDS2S volumes are staged under \texttt{tmp/paper\_final\_k16\_dbrain\_exports/arrays/}; still blocked on GPU re-export of Hybrid RGS (DRCNet + Restormer) from June K=16 checkpoints via \texttt{experiments/export\_dbrain\_qualitative\_volumes.sh}.}
 
 \subsection{Generalization to Real Scanner Noise}
 The D-Brain experiments provide controlled quantitative evaluation because synthetic Rician noise is added to data with an available reference. However, this setting cannot fully represent real scanner noise, which may include thermal noise, Gibbs ringing, eddy-current residuals, motion, coil-dependent spatial variation, and deviations from an ideal Rician model in low-SNR regions. We therefore evaluate Hybrid RGS on Stanford HARDI as a complementary real-data experiment. Stanford HARDI uses a different acquisition protocol from D-Brain, with $b=2000~\mathrm{s/mm^2}$ and $G=150$ diffusion directions, compared with $b=2500~\mathrm{s/mm^2}$ and $G=60$ in the primary synthetic experiments. Because only a single acquisition is available, no clean ground truth exists; this section therefore emphasizes qualitative assessment, downstream FA/MD map plausibility, and scalability rather than PSNR/SSIM against a reference.
 
 The Stanford experiment trains the same self-supervised models directly on the noisy Stanford data. We use the same Hybrid RGS objective with $K=16$, target-channel Bernoulli masking, and the same reconstruction loss; no clean targets are used. Although Stanford HARDI contains $G=150$ diffusion directions, each network input still contains only 15 randomly sampled context gradients and one masked target rather than scaling to 149 non-target channels. Patch2Self and MD-S2S are included as self-supervised baselines that are applicable without ground truth. MP-PCA can also be evaluated as a classical preprocessing method when available, but the central comparison is qualitative because all methods operate without an external reference. Evaluation focuses on visual inspection of denoised diffusion-weighted volumes, smoothness and anatomical plausibility of FA and MD maps, and reference-free stability measures such as variance within homogeneous tissue regions.
 
-The Hybrid RGS models were successfully trained and applied to Stanford HARDI volumes. The method can be trained directly on real scanner data using the same self-supervised objective, and denoised outputs can be used to compute downstream tensor-derived maps. Visual assessment of denoised volumes and FA/MD maps requires the panels described in the TODO below; without those panels, Stanford results support feasibility and scalability rather than specific visual quality claims. FiLM-conditioned Stanford models yield internal-reference FA deviations of $0.0356$ for DRCNet-FiLM and $0.0756$ for Restormer-FiLM (deviation from the tensor fit of the acquired noisy signal, not ground-truth error); these numbers indicate that the pipeline can produce stable diffusion-derived summaries on real scanner data.
+The Hybrid RGS models were successfully trained and applied to Stanford HARDI volumes. The method can be trained directly on real scanner data using the same self-supervised objective, and denoised outputs can be used to compute downstream tensor-derived maps. Figure~\ref{fig:stanford_stage1} shows a representative axial DWI slice together with fitted FA and MD maps for noisy input, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, and two lightweight 2D Hybrid RGS backbones. Because no clean reference exists, the panel is qualitative only and does not include error maps. FiLM-conditioned Stanford models yield internal-reference FA deviations of $0.0356$ for DRCNet-FiLM and $0.0756$ for Restormer-FiLM (deviation from the tensor fit of the acquired noisy signal, not ground-truth error); these numbers indicate that the pipeline can produce stable diffusion-derived summaries on real scanner data.
 
-\todo[author=FHS,color=yellow, inline]{Add visual Stanford FA/MD panels, residual maps, and/or homogeneous-ROI variance summaries. Without those panels, keep Stanford claims limited to feasibility and scalability.}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/stanford_stage1_dwi_fa_md.png}
+  \caption{Stanford HARDI qualitative panel (no clean ground truth): axial DWI, FA, and MD for noisy input, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, Restormer-2D, and Res-CNN-2D under shared display ranges. MD-S2S and MP-PCA are omitted pending export into the same array tree.}
+  \label{fig:stanford_stage1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/stanford_2d_vs_3d_coherence.png}
+  \caption{Stanford spatial-coherence comparison across Hybrid RGS backbones: Restormer-2D, Res-CNN-2D, Restormer-3D, and Restormer-3D-large (axial/sagittal/coronal DWI under a shared intensity range; no GT).}
+  \label{fig:stanford_2d3d}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/stanford_fixel_glyphs.png}
+  \caption{Stanford CSD fixel glyphs for noisy, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, Restormer3D-large, Res-CNN-2D, and Restormer-2D (MP-PCA omitted pending export).}
+  \label{fig:stanford_fixels}
+\end{figure}
 
 Table~\ref{tab:stanford_k_sweep} summarizes the Stanford $K$ sweep using noisy-input PSNR-ROI, where the acquired noisy image is used as the comparison image. These values should not be compared with D-Brain PSNR and should not be interpreted as restoration accuracy; they measure closeness to the acquired signal. A method that changes the image very little can score well under this metric. For DRCNet, the noisy-input score increases from $34.86$ dB at $K=5$ to $39.47$ dB at $K=24$, then drops at $K=30$, suggesting that very large input stacks are not necessarily beneficial. Restormer increases from $23.79$ dB at $K=5$ to $27.08$ dB at $K=30$, but remains more computationally expensive. Inference time scales moderately with $K$ for DRCNet, from $23.5$ to $28.0$ s per volume, and remains around $84$--$85$ s for Restormer. Because noisy-input PSNR rewards input closeness rather than restoration accuracy, it should not be used to select $K$. Given the absence of ground truth, the Stanford sweep serves as a feasibility and runtime probe only. $K=16$ is retained as the cross-model operating point for consistency and cost, while $K=24$ or $K=30$ require validation with reference-free or test--retest criteria before recommendation.
 
@@ -877,8 +732,6 @@ FiLM conditioning also transfers to Stanford without architectural changes. The 
     \end{tabular}
   }
 \end{table}
-
-\todo[author=FHS,color=yellow, inline]{Replace the planned Stanford HARDI FA-map comparison with final image panels or remove the figure before submission. The final figure should show a representative axial slice crossing major white-matter tracts for noisy input, Patch2Self, MD-S2S, DRCNet-Hybrid-RGS, and Restormer-Hybrid-RGS.}
 
 Overall, the Stanford experiment supports the feasibility of Hybrid RGS beyond synthetic D-Brain corruption. The method can be trained directly on real scanner data, scales from $G=60$ to $G=150$ without architectural changes, and produces outputs suitable for qualitative FA/MD assessment. The main limitation is the absence of ground truth, which prevents claims of quantitative restoration accuracy. Future work should evaluate the same protocol on repeated acquisitions or test--retest datasets where one scan can serve as an approximate reference.
 

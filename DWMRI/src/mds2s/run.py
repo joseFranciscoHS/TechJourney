@@ -313,6 +313,70 @@ def main(
                 ),
             )
 
+            # Persist full 4D volume for paper qualitative panels / FA-MD maps.
+            # MDS2S reconstructs DWI-only in (Z, V, X, Y) normalized space; assemble
+            # physical-intensity [b0s + DWIs] to match hybrid/baseline export layout.
+            _vol_dir = os.environ.get("MDS2S_SAVE_VOLUME_DIR", "").strip()
+            if _vol_dir:
+                os.makedirs(_vol_dir, exist_ok=True)
+                _raw = np.asarray(reconstructed_dwis)
+                _raw_path = os.path.join(_vol_dir, "denoised_mds2s_raw.npy")
+                np.save(_raw_path, _raw.astype(np.float32))
+                logging.info("Saved MDS2S raw volume %s shape=%s", _raw_path, _raw.shape)
+                try:
+                    from paper_eval.export_denoised import save_arm
+                    from utils.data import invert_normalization
+
+                    nb0 = int(settings.data.num_b0s)
+                    n_dwi = int(settings.data.num_volumes)
+                    take_volumes = nb0 + n_dwi
+                    if _raw.ndim == 4 and _raw.shape[1] == n_dwi:
+                        dwi_01 = np.transpose(_raw, (2, 3, 0, 1)).astype(np.float64)
+                    elif _raw.ndim == 4 and _raw.shape[-1] == n_dwi:
+                        dwi_01 = _raw.astype(np.float64)
+                    else:
+                        raise ValueError(
+                            f"unexpected MDS2S reconstruct shape {_raw.shape}"
+                        )
+                    # Prefer live loader GT (normalized) for b0s + norm params.
+                    src_full = (
+                        original_from_loader
+                        if original_from_loader is not None
+                        else None
+                    )
+                    if src_full is None or src_full.shape[-1] < take_volumes:
+                        raise RuntimeError("missing full normalized volume for b0 assemble")
+                    # Crop Z to match reconstruct if needed (shared take_z vs raw Z).
+                    if dwi_01.shape[2] != src_full.shape[2]:
+                        z = min(dwi_01.shape[2], src_full.shape[2])
+                        dwi_01 = dwi_01[:, :, :z, :]
+                        src_full = src_full[:, :, :z, :]
+                    norm_params = getattr(data_loader, "norm_params_", None)
+                    if norm_params is None:
+                        raise RuntimeError("data_loader.norm_params_ missing")
+                    b0_phys = invert_normalization(
+                        src_full[..., :nb0].astype(np.float64), norm_params[:nb0]
+                    )
+                    dwi_phys = invert_normalization(
+                        dwi_01, norm_params[nb0:take_volumes]
+                    )
+                    vol_4d = np.concatenate([b0_phys, dwi_phys], axis=-1).astype(
+                        np.float32
+                    )
+                    gtab = data_loader.load_gradient_table()
+                    bvals = np.asarray(gtab.bvals)[:take_volumes]
+                    bvecs = np.asarray(gtab.bvecs)[:take_volumes]
+                    affine = getattr(data_loader, "affine_", None)
+                    if affine is None:
+                        affine = np.eye(4, dtype=np.float64)
+                        affine[0, 0] = affine[1, 1] = affine[2, 2] = 1.4
+                    save_arm(_vol_dir, "mds2s", vol_4d, affine, bvals, bvecs, nb0)
+                    logging.info(
+                        "Saved MDS2S paper volume via save_arm shape=%s", vol_4d.shape
+                    )
+                except Exception as exc:
+                    logging.exception("MDS2S paper volume assemble failed: %s", exc)
+
             # Full-image metrics (background voxels can dominate and worsen PSNR/SSIM)
             metrics = compute_metrics(original_data, reconstructed_dwis)
             logging.info(f"Metrics: {metrics}")

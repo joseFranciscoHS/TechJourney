@@ -29,6 +29,7 @@ class DBrainDataLoader:
         self.n_coils = n_coils
         self.bvalue = bvalue
         self.norm_params_ = None
+        self.affine_ = None
         logging.info(
             f"DBrainDataLoader initialized - nii_path: {nii_path}, bvecs_path: {bvecs_path}, bvalue: {bvalue}, noise_sigma: {noise_sigma}, noise_type: {noise_type}, n_coils: {n_coils}"
         )
@@ -67,7 +68,8 @@ class DBrainDataLoader:
     def load_data(self):
         logging.info(f"Loading data from {self.nii_path}")
 
-        data, _ = load_nifti(self.nii_path)
+        data, affine = load_nifti(self.nii_path)
+        self.affine_ = affine
         logging.info(f"Raw data loaded - shape: {data.shape}, dtype: {data.dtype}")
         logging.info(
             f"Raw data stats - min: {data.min():.4f}, max: {data.max():.4f}, mean: {data.mean():.4f}"
