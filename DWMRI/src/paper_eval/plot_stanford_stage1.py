@@ -22,6 +22,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 # Core Stage-1 arms (+ optional 2D).
 ARMS = [
     ("noisy", "Noisy", "denoised_noisy.npy"),
+    ("mppca", "MP-PCA", "denoised_mppca.npy"),
     ("p2s", "Patch2Self", "denoised_p2s.npy"),
     ("drcnet3d", "DRCNet-Hybrid-RGS", "denoised_drcnet3d.npy"),
     ("restormer3d", "Restormer-Hybrid-RGS", "denoised_restormer3d.npy"),

@@ -329,9 +329,9 @@ INPUT ./figures/paperbanana-arch_res_cnn2d.png
 INPUT figures/paperbanana-arch_restormer2d.png
 INPUT ./figures/paperbanana-arch_restormer2d.png
 INPUT ./figures/paperbanana-arch_restormer2d.png
-INPUT figures/rgs_vs_sequential_schematic.png
-INPUT ./figures/rgs_vs_sequential_schematic.png
-INPUT ./figures/rgs_vs_sequential_schematic.png
+INPUT figures/paperbanana-rgs_vs_sequential_schematic.png
+INPUT ./figures/paperbanana-rgs_vs_sequential_schematic.png
+INPUT ./figures/paperbanana-rgs_vs_sequential_schematic.png
 INPUT figures/k_sweep_two_panel.png
 INPUT ./figures/k_sweep_two_panel.png
 INPUT ./figures/k_sweep_two_panel.png
