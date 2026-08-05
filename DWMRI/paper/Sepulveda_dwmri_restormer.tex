@@ -412,7 +412,7 @@ The results in Table~\ref{tab:sampling_ablations} show that random sampling impr
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.88\linewidth]{figures/rgs_vs_sequential_schematic.png}
+  \includegraphics[width=0.92\linewidth]{figures/paperbanana-rgs_vs_sequential_schematic.png}
   \caption{Schematic contrast between sequential sliding-window context selection and Hybrid RGS random $K$-subset sampling. Sequential windows leave early gradient indices under-covered as targets under the adopted boundary convention, whereas random subsets make every direction a valid target over training.}
   \label{fig:rgs_vs_sequential}
 \end{figure}
@@ -696,19 +696,19 @@ The D-Brain experiments provide controlled quantitative evaluation because synth
 
 The Stanford experiment trains the same self-supervised models directly on the noisy Stanford data. We use the same Hybrid RGS objective with $K=16$, target-channel Bernoulli masking, and the same reconstruction loss; no clean targets are used. Although Stanford HARDI contains $G=150$ diffusion directions, each network input still contains only 15 randomly sampled context gradients and one masked target rather than scaling to 149 non-target channels. Patch2Self and MD-S2S are included as self-supervised baselines that are applicable without ground truth. MP-PCA can also be evaluated as a classical preprocessing method when available, but the central comparison is qualitative because all methods operate without an external reference. Evaluation focuses on visual inspection of denoised diffusion-weighted volumes, smoothness and anatomical plausibility of FA and MD maps, and reference-free stability measures such as variance within homogeneous tissue regions.
 
-The Hybrid RGS models were successfully trained and applied to Stanford HARDI volumes. The method can be trained directly on real scanner data using the same self-supervised objective, and denoised outputs can be used to compute downstream tensor-derived maps. Figure~\ref{fig:stanford_stage1} shows a representative axial DWI slice together with fitted FA and MD maps for noisy input, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, and two lightweight 2D Hybrid RGS backbones. Because no clean reference exists, the panel is qualitative only and does not include error maps. FiLM-conditioned Stanford models yield internal-reference FA deviations of $0.0356$ for DRCNet-FiLM and $0.0756$ for Restormer-FiLM (deviation from the tensor fit of the acquired noisy signal, not ground-truth error); these numbers indicate that the pipeline can produce stable diffusion-derived summaries on real scanner data.
+The Hybrid RGS models were successfully trained and applied to Stanford HARDI volumes. The method can be trained directly on real scanner data using the same self-supervised objective, and denoised outputs can be used to compute downstream tensor-derived maps. Figure~\ref{fig:stanford_stage1} shows a representative axial DWI slice together with fitted FA and MD maps for noisy input, MP-PCA, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, and two lightweight 2D Hybrid RGS backbones. Because no clean reference exists, the panel is qualitative only and does not include error maps. FiLM-conditioned Stanford models yield internal-reference FA deviations of $0.0356$ for DRCNet-FiLM and $0.0756$ for Restormer-FiLM (deviation from the tensor fit of the acquired noisy signal, not ground-truth error); these numbers indicate that the pipeline can produce stable diffusion-derived summaries on real scanner data.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\linewidth]{figures/stanford_stage1_dwi_fa_md.png}
-  \caption{Stanford HARDI qualitative panel (no clean ground truth): axial DWI, FA, and MD for noisy input, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, Restormer-2D, and Res-CNN-2D under shared display ranges. MD-S2S and MP-PCA are omitted pending export into the same array tree.}
+  \caption{Stanford HARDI qualitative panel (no clean ground truth): axial DWI, FA, and MD for noisy input, MP-PCA, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, Restormer-2D, and Res-CNN-2D under shared display ranges. MD-S2S is omitted pending export into the same array tree.}
   \label{fig:stanford_stage1}
 \end{figure}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\linewidth]{figures/stanford_2d_vs_3d_coherence.png}
-  \caption{Stanford 2D-versus-3D spatial coherence comparison for Hybrid RGS backbones (axial/sagittal/coronal views under shared display ranges).}
+  \caption{Stanford 2D-versus-3D spatial coherence: noisy input alongside Restormer-2D, Res-CNN-2D, Restormer-3D, and Restormer-3D-large (axial/sagittal/coronal mid-shell DWI under shared display ranges; no clean GT).}
   \label{fig:stanford_2d3d}
 \end{figure}
 
@@ -744,7 +744,7 @@ FiLM conditioning also transfers to Stanford without architectural changes. The 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.92\linewidth]{figures/stanford_fixel_glyphs.png}
-  \caption{Stanford CSD fixel glyphs for noisy, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, Restormer3D-large, Res-CNN-2D, and Restormer-2D (MP-PCA omitted pending export).}
+  \caption{Stanford CSD fixel glyphs for noisy, MP-PCA, Patch2Self, DRCNet-Hybrid-RGS, Restormer-Hybrid-RGS, Restormer3D-large, Res-CNN-2D, and Restormer-2D.}
   \label{fig:stanford_fixels}
 \end{figure}
 
